@@ -12,7 +12,10 @@ libgstfarsightinclude_HEADERS = \
 		fs-stream-transmitter.h \
 		fs-plugin.h \
 		fs-element-added-notifier.h \
-		fs-interfaces.h
+		fs-interfaces.h \
+		fsu-conference.h \
+		fsu-session.h \
+		fsu-stream.h
 
 nodist_libgstfarsightinclude_HEADERS = \
 		fs-enum-types.h
@@ -39,7 +42,10 @@ libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fs-plugin.c \
 		fs-element-added-notifier.c \
 		fs-interfaces.c \
-		fs-private.h
+		fs-private.h \
+		fsu-conference.c \
+		fsu-session.c \
+		fsu-stream.c
 
 nodist_libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fs-marshal.c \

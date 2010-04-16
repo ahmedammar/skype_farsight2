@@ -100,6 +100,7 @@ AC_SUBST(GST_INSTALL_PLUGINS_HELPER)
 
 dnl these are all the gst plug-ins, compilable without additional libs
 FS2_PLUGINS_ALL=" \
+	farsight-utils \
 	fsrtpconference \
 	fsmsnconference \
 	funnel \
@@ -237,6 +238,8 @@ AG_GST_CHECK_GST($GST_MAJORMINOR, [$GST_REQ])
 AG_GST_CHECK_GST_BASE($GST_MAJORMINOR, [$GST_REQ])
 AG_GST_CHECK_GST_CHECK($GST_MAJORMINOR, [$GST_REQ], no)
 AG_GST_CHECK_GST_PLUGINS_BASE($GST_MAJORMINOR, [$GSTPB_REQ])
+AG_GST_CHECK_MODULES(GST_INTERFACES, gstreamer-interfaces-$GST_MAJORMINOR,
+			[$GST_REQ], [GStreamer Interfaces Library])
 AM_CONDITIONAL(HAVE_GST_CHECK, test "x$HAVE_GST_CHECK" = "xyes")
 
 dnl Check for documentation xrefs
@@ -386,6 +389,7 @@ common-modified/Makefile
 common/shave
 common/shave-libtool
 gst/Makefile
+gst/farsight-utils/Makefile
 gst/fsrtpconference/Makefile
 gst/fsmsnconference/Makefile
 gst/funnel/Makefile
