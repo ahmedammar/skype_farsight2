@@ -18,10 +18,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include "fsu-common.h"
 
 #include <string.h>
-#include <gst/gst.h>
+
+#include "fsu-audio-source.h"
+#include "fsu-video-source.h"
+#include "fsu-audio-sink.h"
+
 
 gboolean
 g_object_has_property (GObject *object, const gchar *property)
@@ -127,3 +136,28 @@ get_plugins_filtered (klass_check check)
 
   return result;
 }
+
+
+static gboolean plugin_init (GstPlugin * plugin)
+{
+  gboolean ret = TRUE;
+  ret &= gst_element_register (plugin, "fsuaudiosrc",
+      GST_RANK_NONE, FSU_TYPE_AUDIO_SOURCE);
+  ret &= ret && gst_element_register (plugin, "fsuvideosrc",
+      GST_RANK_NONE, FSU_TYPE_VIDEO_SOURCE);
+  ret &= ret && gst_element_register (plugin, "fsuaudiosink",
+      GST_RANK_NONE, FSU_TYPE_AUDIO_SINK);
+  return ret;
+}
+
+GST_PLUGIN_DEFINE (
+  GST_VERSION_MAJOR,
+  GST_VERSION_MINOR,
+  "fsutils",
+  "Farsight utils plugin",
+  plugin_init,
+  VERSION,
+  "LGPL",
+  "Farsight",
+  "http://farsight.freedesktop.org/"
+)
