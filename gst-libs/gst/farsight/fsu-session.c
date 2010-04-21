@@ -163,7 +163,11 @@ fsu_session_constructed (GObject *object)
     goto no_source;
   }
 
-  srcpad = gst_element_get_request_pad (priv->source, "src%d");
+  srcpad = gst_element_get_static_pad (priv->source, "src");
+  if (srcpad == NULL)
+    srcpad = gst_element_get_request_pad (priv->source, "src%d");
+  /* TODO: keep track if we requested a pad or not, so we can release it */
+
   if (srcpad == NULL) {
     error = "Couldn't request pad from Source";
     goto no_source;

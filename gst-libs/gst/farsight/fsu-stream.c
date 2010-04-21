@@ -276,10 +276,12 @@ src_pad_added (FsStream *stream, GstPad *pad,
       gst_object_unref (sink);
       goto error;
     }
-    sinkpad = gst_element_get_static_pad (sink, "sink");
-  } else {
-    sinkpad = gst_element_get_request_pad (sink, "sink%d");
   }
+
+  sinkpad = gst_element_get_static_pad (sink, "sink");
+  if (sinkpad == NULL)
+    sinkpad = gst_element_get_request_pad (sink, "sink%d");
+  /* TODO: keep track if we requested a pad or not, so we can release it */
 
   if (sinkpad == NULL) {
     error = "Could not request sink pad from Sink";
