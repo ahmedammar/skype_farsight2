@@ -23,6 +23,7 @@
 
 #include <gst/gst.h>
 
+#include "fsu-common.h"
 
 G_BEGIN_DECLS
 
@@ -56,8 +57,7 @@ struct _FsuSourceClass
   GstBinClass parent_class;
   const gchar **priority_sources;
   const gchar **blacklisted_sources;
-  gboolean audio;
-  GstPad *(*add_converters) (FsuSource *self, GstPad *src_pad);
+  klass_check klass_check;
 };
 
 struct _FsuSource

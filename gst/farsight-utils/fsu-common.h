@@ -22,12 +22,19 @@
 #define __FSU_COMMON_H__
 
 #include <glib-object.h>
+#include <gst/gst.h>
 
 
 G_BEGIN_DECLS
 
+typedef gboolean (*klass_check) (GstElementFactory *factory);
+
 gboolean g_object_has_property (GObject *object, const gchar *property);
-GList * get_plugins_filtered (gboolean source, gboolean audio);
+GList * get_plugins_filtered (klass_check check);
+gboolean is_audio_source (GstElementFactory *factory);
+gboolean is_video_source (GstElementFactory *factory);
+gboolean is_audio_sink (GstElementFactory *factory);
+gboolean is_video_sink (GstElementFactory *factory);
 
 G_END_DECLS
 

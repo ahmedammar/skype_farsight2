@@ -49,7 +49,6 @@ G_BEGIN_DECLS
 
 typedef struct _FsuAudioSource      FsuAudioSource;
 typedef struct _FsuAudioSourceClass FsuAudioSourceClass;
-typedef struct _FsuAudioSourcePrivate FsuAudioSourcePrivate;
 
 struct _FsuAudioSourceClass
 {
@@ -59,7 +58,6 @@ struct _FsuAudioSourceClass
 struct _FsuAudioSource
 {
   FsuSource parent;
-  FsuAudioSourcePrivate *priv;
 };
 
 GType fsu_audio_source_get_type (void) G_GNUC_CONST;

@@ -47,7 +47,7 @@ klass_contains (const gchar *klass, const gchar *needle)
   return TRUE;
 }
 
-static gboolean
+gboolean
 is_audio_source (GstElementFactory *factory)
 {
   const gchar *klass = gst_element_factory_get_klass (factory);
@@ -56,7 +56,7 @@ is_audio_source (GstElementFactory *factory)
           klass_contains (klass, "Source"));
 }
 
-static gboolean
+gboolean
 is_audio_sink (GstElementFactory *factory)
 {
   const gchar *klass = gst_element_factory_get_klass (factory);
@@ -65,8 +65,7 @@ is_audio_sink (GstElementFactory *factory)
           klass_contains (klass, "Sink"));
 }
 
-
-static gboolean
+gboolean
 is_video_source (GstElementFactory *factory)
 {
   const gchar *klass = gst_element_factory_get_klass (factory);
@@ -75,7 +74,7 @@ is_video_source (GstElementFactory *factory)
           klass_contains (klass, "Source"));
 }
 
-static gboolean
+gboolean
 is_video_sink (GstElementFactory *factory)
 {
   const gchar *klass = gst_element_factory_get_klass (factory);
@@ -105,7 +104,7 @@ compare_ranks (GstPluginFeature * f1, GstPluginFeature * f2)
 }
 
 GList *
-get_plugins_filtered (gboolean source, gboolean audio)
+get_plugins_filtered (klass_check check)
 {
   GList *walk, *registry, *result = NULL;
   GstElementFactory *factory;
@@ -118,20 +117,10 @@ get_plugins_filtered (gboolean source, gboolean audio)
   for (walk = registry; walk; walk = g_list_next (walk)) {
     factory = GST_ELEMENT_FACTORY (walk->data);
 
-    if (audio) {
-      if ((source && is_audio_source (factory)) ||
-          (!source && is_audio_sink (factory))) {
-        result = g_list_append (result, factory);
-        gst_object_ref (factory);
-      }
-    } else {
-      if ((source && is_video_source (factory)) ||
-          (!source && is_video_sink (factory))) {
-        result = g_list_append (result, factory);
-        gst_object_ref (factory);
-      }
+    if (check (factory)) {
+      result = g_list_append (result, factory);
+      gst_object_ref (factory);
     }
-
   }
 
   gst_plugin_feature_list_free (registry);
