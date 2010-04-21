@@ -2,7 +2,8 @@ plugin_LTLIBRARIES = libfsutils.la
 
 libfsutils_la_SOURCES = fsu-common.c \
 			fsu-source.c \
-			fsu-audio-source.c
+			fsu-audio-source.c \
+			fsu-video-source.c
 
 libfsutils_la_CFLAGS = \
 	$(GST_CFLAGS) \
