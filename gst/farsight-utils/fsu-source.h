@@ -58,6 +58,7 @@ struct _FsuSourceClass
   const gchar **priority_sources;
   const gchar **blacklisted_sources;
   klass_check klass_check;
+  GstPad *(*add_converters) (FsuSource *self, GstPad *pad);
 };
 
 struct _FsuSource

@@ -228,6 +228,18 @@ fsu_source_dispose (GObject *object)
 }
 
 
+static GstPad *
+add_converters (FsuSource *self, GstPad *pad)
+{
+  GstPad *(*func) (FsuSource *self, GstPad *pad) = \
+      FSU_SOURCE_GET_CLASS (self)->add_converters;
+
+  if (func != NULL)
+    return func (self, pad);
+
+  return pad;
+}
+
 static GstElement *
 create_tee (FsuSource *self)
 {
@@ -305,6 +317,9 @@ fsu_source_request_new_pad (GstElement * element, GstPadTemplate * templ,
     WARNING ("Couldn't get new request pad from src tee");
     return NULL;
   }
+
+  tee_pad = add_converters (self, tee_pad);
+
   pad = gst_ghost_pad_new (name, tee_pad);
   gst_object_unref (tee_pad);
   if (pad == NULL) {
@@ -332,7 +347,8 @@ fsu_source_release_pad (GstElement * element, GstPad * pad)
 
   if (GST_IS_GHOST_PAD (pad)) {
     GstPad *tee_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
-    gst_element_release_request_pad (priv->tee, tee_pad);
+    /* converter before tee... :( */
+    /*gst_element_release_request_pad (priv->tee, tee_pad);*/
   }
 
   gst_element_remove_pad (element, pad);
@@ -345,11 +361,20 @@ fsu_source_release_pad (GstElement * element, GstPad * pad)
     }
   }
 
-  /*TODO : state to NULL */
   DEBUG ("No more request source pads");
-  gst_bin_remove (GST_BIN (self), priv->tee);
+  if (priv->tee != NULL) {
+    gst_object_ref (priv->tee);
+    gst_bin_remove (GST_BIN (self), priv->tee);
+    gst_element_set_state (priv->tee, GST_STATE_NULL);
+    gst_object_unref (priv->tee);
+  }
   priv->tee = NULL;
-  gst_bin_remove (GST_BIN (self), priv->source);
+  if (priv->source != NULL) {
+    gst_object_ref (priv->source);
+    gst_bin_remove (GST_BIN (self), priv->source);
+    gst_element_set_state (priv->source, GST_STATE_NULL);
+    gst_object_unref (priv->source);
+  }
   priv->source = NULL;
 }
 
