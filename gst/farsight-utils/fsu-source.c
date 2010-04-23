@@ -87,9 +87,22 @@ struct _FsuSourcePrivate
   gchar *source_device;
   gchar *source_pipeline;
 
-  /* The src tee coming out of the source element */
+  /* The source element inside the bin */
   GstElement *source;
+  /* The src tee coming out of the source element */
   GstElement *tee;
+  /* Which priority source we are trying */
+  const gchar **priority_source_ptr;
+  /* plugins filtered */
+  GList *filtered_sources;
+  /* current plugins filtered being tested */
+  GList *current_filtered_source;
+  /* whether we're done with the plugins filtered or not */
+  gboolean filtered_sources_done;
+  /* Which device we were probing */
+  gint probe_idx;
+  /* Thread for replacing the source */
+  GThread *thread;
 };
 
 
@@ -155,6 +168,7 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
 
   self->priv = priv;
   priv->dispose_has_run = FALSE;
+  priv->probe_idx = -1;
 }
 
 static void
@@ -214,7 +228,7 @@ fsu_source_dispose (GObject *object)
 {
   FsuSource *self = (FsuSource *)object;
   FsuSourcePrivate *priv = self->priv;
-  GList *item;
+  GList *item, *sources, *walk;
 
   if (priv->dispose_has_run)
     return;
@@ -230,6 +244,16 @@ fsu_source_dispose (GObject *object)
       goto restart;
     }
   }
+
+  priv->current_filtered_source = NULL;
+
+  for (walk = priv->filtered_sources; walk; walk = g_list_next (walk)) {
+    if (walk->data)
+      gst_object_unref (GST_ELEMENT_FACTORY (walk->data));
+  }
+  g_list_free (priv->filtered_sources);
+  priv->filtered_sources = NULL;
+
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
@@ -454,8 +478,11 @@ find_source (GstElement *src)
 static GstElement *
 test_source (FsuSource *self, const gchar *name)
 {
+  FsuSourcePrivate *priv = self->priv;
   GstPropertyProbe *probe = NULL;
   GstElement *element = NULL;
+  GstState target_state = GST_STATE_READY;
+  gchar * target_state_name = "READY";
   GstStateChangeReturn state_ret;
   GValueArray *arr;
   const gchar **blacklist = FSU_SOURCE_GET_CLASS (self)->blacklisted_sources;
@@ -474,17 +501,23 @@ test_source (FsuSource *self, const gchar *name)
   DEBUG ("Testing source %s. probe idx = %d", name, priv->probe_idx);
 
   for (;blacklist && *blacklist; blacklist++) {
-    if (strcmp (name, *blacklist) == 0)
+    if (strcmp (name, *blacklist) == 0) {
+      priv->probe_idx = -1;
       return NULL;
+    }
   }
 
 
   element = gst_element_factory_make (name, NULL);
 
-  if (element == NULL)
+  if (element == NULL) {
+    priv->probe_idx = -1;
     return NULL;
+  }
 
   /* Test the source */
+  if (priv->probe_idx == -1) {
+    priv->probe_idx = 0;
 
     state_ret = gst_element_set_state (element, target_state);
     if (state_ret == GST_STATE_CHANGE_ASYNC) {
@@ -505,7 +538,7 @@ test_source (FsuSource *self, const gchar *name)
           get_device_property_name(name));
       if (arr && arr->n_values > 0) {
         guint i;
-        for (i = 0; i < arr->n_values; ++i) {
+        for (i = priv->probe_idx; i < arr->n_values; i++) {
           const gchar *device;
           GValue *val;
 
@@ -528,7 +561,9 @@ test_source (FsuSource *self, const gchar *name)
           }
 
           if (state_ret != GST_STATE_CHANGE_FAILURE) {
+            DEBUG ("Took device %s with idx %d", device, i);
             g_value_array_free (arr);
+            priv->probe_idx = i + 1;
             return element;
           }
         }
@@ -539,6 +574,7 @@ test_source (FsuSource *self, const gchar *name)
 
   gst_element_set_state (element, GST_STATE_NULL);
   gst_object_unref (element);
+  priv->probe_idx = -1;
   return NULL;
 }
 
@@ -626,10 +662,11 @@ create_source (FsuSource *self)
 
   } else {
     GList *sources, *walk;
-    const gchar **priority_source = NULL;
+    const gchar **priority_source = priv->priority_source_ptr;
 
-    for (priority_source = FSU_SOURCE_GET_CLASS (self)->priority_sources;
-         priority_source && *priority_source;
+    if (priority_source == NULL)
+      priority_source = FSU_SOURCE_GET_CLASS (self)->priority_sources;
+    for (;priority_source && *priority_source;
          priority_source++) {
       GstElement *element = test_source (self, *priority_source);
 
@@ -640,11 +677,19 @@ create_source (FsuSource *self)
       src = element;
       break;
     }
+    priv->priority_source_ptr = priority_source;
 
     if (src == NULL) {
-      sources = get_plugins_filtered (FSU_SOURCE_GET_CLASS (self)->klass_check);
+      if (!priv->filtered_sources_done && priv->filtered_sources == NULL)
+        priv->filtered_sources = get_plugins_filtered (
+            FSU_SOURCE_GET_CLASS (self)->klass_check);
+      sources = priv->filtered_sources;
 
-      for (walk = sources; walk; walk = g_list_next (walk)) {
+      walk = priv->current_filtered_source;
+      if (walk == NULL && !priv->filtered_sources_done)
+        walk = sources;
+
+      for (;walk; walk = g_list_next (walk)) {
         GstElement *element;
         GstElementFactory *factory = GST_ELEMENT_FACTORY(walk->data);
 
@@ -657,11 +702,18 @@ create_source (FsuSource *self)
         src = element;
         break;
       }
-      for (walk = sources; walk; walk = g_list_next (walk)) {
-        if (walk->data)
-          gst_object_unref (GST_ELEMENT_FACTORY (walk->data));
+      priv->current_filtered_source = walk;
+
+      if (walk == NULL) {
+        priv->filtered_sources_done = TRUE;
+        for (walk = sources; walk; walk = g_list_next (walk)) {
+          if (walk->data)
+            gst_object_unref (GST_ELEMENT_FACTORY (walk->data));
+        }
+        g_list_free (sources);
+        priv->filtered_sources = NULL;
       }
-      g_list_free (sources);
+
     }
   }
 
