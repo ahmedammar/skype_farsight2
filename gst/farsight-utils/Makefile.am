@@ -5,7 +5,8 @@ libfsutils_la_SOURCES = fsu-common.c \
 			fsu-audio-source.c \
 			fsu-video-source.c \
 			fsu-sink.c \
-			fsu-audio-sink.c
+			fsu-audio-sink.c \
+			fsu-video-sink.c
 
 libfsutils_la_CFLAGS = \
 	$(GST_CFLAGS) \

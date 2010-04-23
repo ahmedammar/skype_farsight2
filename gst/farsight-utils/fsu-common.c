@@ -30,6 +30,7 @@
 #include "fsu-audio-source.h"
 #include "fsu-video-source.h"
 #include "fsu-audio-sink.h"
+#include "fsu-video-sink.h"
 
 
 gboolean
@@ -147,6 +148,8 @@ static gboolean plugin_init (GstPlugin * plugin)
       GST_RANK_NONE, FSU_TYPE_VIDEO_SOURCE);
   ret &= ret && gst_element_register (plugin, "fsuaudiosink",
       GST_RANK_NONE, FSU_TYPE_AUDIO_SINK);
+  ret &= ret && gst_element_register (plugin, "fsuvideosink",
+      GST_RANK_NONE, FSU_TYPE_VIDEO_SINK);
   return ret;
 }
 
