@@ -703,6 +703,10 @@ create_source (FsuSource *self)
       for (;walk; walk = g_list_next (walk)) {
         GstElement *element;
         GstElementFactory *factory = GST_ELEMENT_FACTORY(walk->data);
+        GstPluginFeature *plugin_feature = GST_PLUGIN_FEATURE (factory);
+
+        if (gst_plugin_feature_get_rank (plugin_feature) == GST_RANK_NONE)
+          continue;
 
         element = test_source (self, GST_PLUGIN_FEATURE_NAME(factory));
 
