@@ -425,13 +425,24 @@ fsu_source_release_pad (GstElement * element, GstPad * pad)
 }
 
 static gchar *
-get_device_property_name (const gchar *plugin_name)
+get_device_property_name (GstElement *element)
 {
-  if (!strcmp (plugin_name, "dshowaudiosrc") ||
-	  !strcmp (plugin_name, "dshowvideosrc"))
-    return "device-name";
-  else
+  if (g_object_has_property (G_OBJECT (element), "device") == TRUE &&
+      g_object_has_property (G_OBJECT (element), "device-name") == FALSE)
     return "device";
+  else if (g_object_has_property (G_OBJECT (element), "device") == FALSE &&
+      g_object_has_property (G_OBJECT (element), "device-name") == TRUE)
+    return "device-name";
+  else if (g_object_has_property (G_OBJECT (element), "device") == TRUE &&
+      g_object_has_property (G_OBJECT (element), "device-name") == TRUE) {
+    if (strcmp (GST_ELEMENT_NAME (element), "dshowaudiosrc") == 0 ||
+        strcmp (GST_ELEMENT_NAME (element), "dshowvideosrc") == 0)
+      return "device-name";
+    else
+      return "device";
+  } else {
+    return NULL;
+  }
 }
 
 static GstElement *
@@ -533,9 +544,9 @@ test_source (FsuSource *self, const gchar *name)
 
   if (GST_IS_PROPERTY_PROBE (element)) {
     probe = GST_PROPERTY_PROBE (element);
-    if (probe) {
+    if (probe != NULL && get_device_property_name(element) != NULL) {
       arr = gst_property_probe_probe_and_get_values_name (probe,
-          get_device_property_name(name));
+          get_device_property_name(element));
       if (arr && arr->n_values > 0) {
         guint i;
         for (i = priv->probe_idx; i < arr->n_values; i++) {
@@ -551,7 +562,7 @@ test_source (FsuSource *self, const gchar *name)
             continue;
 
           DEBUG ("Testing device %s", device);
-          g_object_set(element, get_device_property_name(name), device, NULL);
+          g_object_set(element, get_device_property_name(element), device, NULL);
 
           state_ret = gst_element_set_state (element, target_state);
           if (state_ret == GST_STATE_CHANGE_ASYNC) {
@@ -643,8 +654,8 @@ create_source (FsuSource *self)
 
     src = gst_element_factory_make (priv->source_name, NULL);
 
-    if (src && priv->source_device)
-      g_object_set(src, get_device_property_name(priv->source_name),
+    if (src && priv->source_device && get_device_property_name(src) != NULL)
+      g_object_set(src, get_device_property_name(src),
           priv->source_device, NULL);
 
     state_ret = gst_element_set_state (src, GST_STATE_READY);
