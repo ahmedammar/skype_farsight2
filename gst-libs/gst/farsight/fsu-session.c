@@ -60,7 +60,7 @@ fsu_session_class_init (FsuSessionClass *klass)
   gobject_class->dispose = fsu_session_dispose;
   gobject_class->finalize = fsu_session_finalize;
 
-  g_object_class_install_property (gobject_class, PROP_SESSION,
+  g_object_class_install_property (gobject_class, PROP_CONFERENCE,
       g_param_spec_object ("conference", "Farsight-utils conference",
           "The FSU conference handling this session.",
           FSU_TYPE_CONFERENCE,

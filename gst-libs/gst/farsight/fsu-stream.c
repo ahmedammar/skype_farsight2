@@ -65,7 +65,7 @@ fsu_stream_class_init (FsuStreamClass *klass)
   gobject_class->dispose = fsu_stream_dispose;
   gobject_class->finalize = fsu_stream_finalize;
 
-  g_object_class_install_property (gobject_class, PROP_SESSION,
+  g_object_class_install_property (gobject_class, PROP_CONFERENCE,
       g_param_spec_object ("conference", "Farsight-utils conference",
           "The FSU conference handling this session.",
           FSU_TYPE_CONFERENCE,
@@ -80,7 +80,7 @@ fsu_stream_class_init (FsuStreamClass *klass)
   g_object_class_install_property (gobject_class, PROP_STREAM,
       g_param_spec_object ("stream", "Farsight stream",
           "Farsight stream object.",
-          FSU_TYPE_SESSION,
+          FS_TYPE_STREAM,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_SINK,
