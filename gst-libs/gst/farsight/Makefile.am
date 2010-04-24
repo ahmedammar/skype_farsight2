@@ -84,7 +84,10 @@ public_headers = fs-candidate.h \
 		fs-participant.h \
 		fs-session.h \
 		fs-stream.h \
-		fs-conference-iface.h
+		fs-conference-iface.h \
+		fsu-conference.h \
+		fsu-session.h \
+		fsu-stream.h
 
 glib_enum_headers=$(public_headers)
 glib_enum_define=FS
