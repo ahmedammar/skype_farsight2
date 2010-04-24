@@ -334,6 +334,18 @@ create_mixer (FsuSink *self, GstElement *sink)
 }
 
 static GstPad *
+add_converters (FsuSink *self, GstPad *pad)
+{
+  GstPad *(*func) (FsuSink *self, GstPad *pad) = \
+      FSU_SINK_GET_CLASS (self)->add_converters;
+
+  if (func != NULL)
+    return func (self, pad);
+
+  return pad;
+}
+
+static GstPad *
 fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
   const gchar * name)
 {
@@ -399,6 +411,8 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
       GST_STATE_CHANGE_FAILURE) {
     WARNING ("Unable to set sink to READY");
     gst_bin_remove (GST_BIN (self), sink);
+    if (sink_pad != NULL)
+      gst_object_unref (sink_pad);
     return NULL;
   }
 
@@ -421,6 +435,8 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
       return NULL;
     }
   }
+
+  sink_pad = add_converters (self, sink_pad);
 
   pad = gst_ghost_pad_new (name, sink_pad);
   gst_object_unref (sink_pad);
