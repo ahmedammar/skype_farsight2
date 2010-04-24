@@ -314,7 +314,7 @@ AC_SUBST(FS2_ALL_LDFLAGS)
 dnl FS2_LIB_LDFLAGS
 dnl linker flags shared by all libraries
 dnl LDFLAGS modifier defining exported symbols from built libraries
-FS2_LIB_LDFLAGS="-export-symbols-regex ^fs_.*"
+FS2_LIB_LDFLAGS="-export-symbols-regex ^fsu\{0,1\}_.*"
 AC_SUBST(FS2_LIB_LDFLAGS)
 
 dnl this really should only contain flags, not libs - they get added before
