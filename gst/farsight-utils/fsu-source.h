@@ -24,6 +24,7 @@
 #include <gst/gst.h>
 
 #include "fsu-common.h"
+#include <gst/farsight/fsu-filter-manager.h>
 
 G_BEGIN_DECLS
 
@@ -58,7 +59,7 @@ struct _FsuSourceClass
   const gchar **priority_sources;
   const gchar **blacklisted_sources;
   klass_check klass_check;
-  GstPad *(*add_converters) (FsuSource *self, GstPad *pad);
+  void (*add_filters) (FsuSource *self, FsuFilterManager *manager);
 };
 
 struct _FsuSource

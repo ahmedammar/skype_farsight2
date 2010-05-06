@@ -24,6 +24,7 @@
 #include <gst/gst.h>
 
 #include "fsu-common.h"
+#include <gst/farsight/fsu-filter-manager.h>
 
 G_BEGIN_DECLS
 
@@ -58,7 +59,7 @@ struct _FsuSinkClass
   gchar *auto_sink_name;
   GstElement *(*create_auto_sink) (FsuSink *self);
   gchar *(*need_mixer) (FsuSink *self, GstElement *sink);
-  GstPad *(*add_converters) (FsuSink *self, GstPad *pad);
+  void (*add_filters) (FsuSink *self, FsuFilterManager *manager);
 };
 
 struct _FsuSink

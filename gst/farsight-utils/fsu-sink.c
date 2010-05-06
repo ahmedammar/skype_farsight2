@@ -91,6 +91,8 @@ struct _FsuSinkPrivate
   GstElement *mixer;
   GstElement *sink;
   GList *sinks;
+  /* The list of FsuFilterManager filters to apply on the sink */
+  GList *filters;
 };
 
 
@@ -287,7 +289,6 @@ find_sink (GstElement *snk)
 static GstElement *
 create_mixer (FsuSink *self, GstElement *sink)
 {
-  FsuSinkPrivate *priv = self->priv;
   GstElement *mixer = NULL;
   GstPad *sink_pad = NULL;
   GstPad *mixer_pad = NULL;
@@ -333,17 +334,16 @@ create_mixer (FsuSink *self, GstElement *sink)
   return mixer;
 }
 
-static GstPad *
-add_converters (FsuSink *self, GstPad *pad)
+static void
+add_filters (FsuSink *self, FsuFilterManager *manager)
 {
-  GstPad *(*func) (FsuSink *self, GstPad *pad) = \
-      FSU_SINK_GET_CLASS (self)->add_converters;
+  void (*func) (FsuSink *self, FsuFilterManager *manager) = \
+      FSU_SINK_GET_CLASS (self)->add_filters;
 
   if (func != NULL)
-    return func (self, pad);
-
-  return pad;
+    func (self, manager);
 }
+
 
 static GstPad *
 fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
@@ -354,6 +354,8 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
   GstElement *sink = NULL;
   GstPad *pad = NULL;
   GstPad *sink_pad = NULL;
+  GstPad *filter_pad = NULL;
+  FsuFilterManager *filter = NULL;
 
   DEBUG ("requesting pad");
 
@@ -436,10 +438,20 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
     }
   }
 
-  sink_pad = add_converters (self, sink_pad);
+  filter = fsu_filter_manager_new ();
+  add_filters (self, filter);
+  priv->filters = g_list_prepend (priv->filters, filter);
 
-  pad = gst_ghost_pad_new (name, sink_pad);
-  gst_object_unref (sink_pad);
+  filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad, NULL);
+
+  if (filter_pad == NULL) {
+    WARNING ("Could not add filters to sink pad");
+    filter_pad = sink_pad;
+  }
+
+  pad = gst_ghost_pad_new (name, filter_pad);
+  gst_object_unref (filter_pad);
+
   if (pad == NULL) {
     WARNING ("Couldn't create ghost pad for tee");
     if (sink != NULL)
@@ -468,15 +480,26 @@ fsu_sink_release_pad (GstElement * element, GstPad * pad)
 {
   FsuSink *self = FSU_SINK (element);
   FsuSinkPrivate *priv = self->priv;
-  GList *item = NULL;
 
   DEBUG ("releasing pad");
 
   gst_pad_set_active (pad, FALSE);
 
-  if (priv->mixer != NULL && GST_IS_GHOST_PAD (pad)) {
-    GstPad *mixer_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
-    gst_element_release_request_pad (priv->mixer, mixer_pad);
+  if (GST_IS_GHOST_PAD (pad)) {
+    GstPad *filter_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
+    GstPad *mixer_pad = NULL;
+    GList *i = NULL;
+
+    for (i = priv->filters; i && mixer_pad == NULL; i = i->next) {
+      FsuFilterManager *manager = i->data;
+      mixer_pad = fsu_filter_manager_revert (manager,
+          GST_BIN (self), filter_pad);
+    }
+    gst_object_unref (filter_pad);
+    if (priv->mixer != NULL && mixer_pad != NULL) {
+      gst_element_release_request_pad (priv->mixer, mixer_pad);
+      gst_object_unref (mixer_pad);
+    }
   }
 
   gst_element_remove_pad (element, pad);
@@ -502,7 +525,6 @@ create_sink (FsuSink *self)
     GstBin *bin = NULL;
     gchar *desc = NULL;
     GError *error  = NULL;
-    GstStateChangeReturn state_ret;
 
     /* parse the pipeline to a bin */
     desc = g_strdup_printf ("bin.( queue ! %s )", priv->sink_pipeline);
@@ -527,7 +549,6 @@ create_sink (FsuSink *self)
   } else if (priv->sink_name != NULL &&
       (auto_sink_name == NULL ||
           strcmp (priv->sink_name, auto_sink_name) != 0)) {
-    GstStateChangeReturn state_ret;
     GstElement *sink = NULL;
 
     sink = gst_element_factory_make (priv->sink_name, NULL);

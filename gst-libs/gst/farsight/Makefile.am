@@ -15,7 +15,14 @@ libgstfarsightinclude_HEADERS = \
 		fs-interfaces.h \
 		fsu-conference.h \
 		fsu-session.h \
-		fsu-stream.h
+		fsu-stream.h \
+		fsu-filter-manager.h \
+		fsu-filter.h \
+		fsu-filter-helper.h \
+		fsu-volume-filter.h \
+		fsu-resolution-filter.h \
+		fsu-audioconverter-filter.h \
+		fsu-videoconverter-filter.h
 
 nodist_libgstfarsightinclude_HEADERS = \
 		fs-enum-types.h
@@ -45,7 +52,14 @@ libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fs-private.h \
 		fsu-conference.c \
 		fsu-session.c \
-		fsu-stream.c
+		fsu-stream.c \
+		fsu-filter-manager.c \
+		fsu-filter.c \
+		fsu-filter-helper.c \
+		fsu-volume-filter.c \
+		fsu-resolution-filter.c \
+		fsu-audioconverter-filter.c \
+		fsu-videoconverter-filter.c
 
 nodist_libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fs-marshal.c \
@@ -87,7 +101,14 @@ public_headers = fs-candidate.h \
 		fs-conference-iface.h \
 		fsu-conference.h \
 		fsu-session.h \
-		fsu-stream.h
+		fsu-stream.h \
+		fsu-filter-manager.h \
+		fsu-filter.h \
+		fsu-filter-helper.h \
+		fsu-volume-filter.h \
+		fsu-resolution-filter.h \
+		fsu-audioconverter-filter.h \
+		fsu-videoconverter-filter.h
 
 glib_enum_headers=$(public_headers)
 glib_enum_define=FS

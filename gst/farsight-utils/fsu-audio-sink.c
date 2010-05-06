@@ -18,7 +18,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+  #include "config.h"
+#endif
+
 #include "fsu-audio-sink.h"
+#include <gst/farsight/fsu-audioconverter-filter.h>
+#include <string.h>
 
 GST_DEBUG_CATEGORY_STATIC (fsu_audio_sink_debug);
 #define GST_CAT_DEFAULT fsu_audio_sink_debug
@@ -42,107 +48,12 @@ _do_init (GType type)
 GST_BOILERPLATE_FULL (FsuAudioSink, fsu_audio_sink,
     FsuSink, FSU_TYPE_SINK, _do_init)
 
-static GstPad *
-add_converters (FsuSink *self, GstPad *pad)
+static void
+add_filters (FsuSink *self, FsuFilterManager *manager)
 {
-  GstElement *convert = gst_element_factory_make ("audioconvert", NULL);
-  GstElement *resample = gst_element_factory_make ("audioresample", NULL);
-  GstElement *convert2 = gst_element_factory_make ("audioconvert", NULL);
-  GstPad *sink_pad = NULL;
-  GstPad *src_pad = NULL;
+  FsuAudioconverterFilter *filter = fsu_audioconverter_filter_get_singleton ();
 
-  DEBUG ("Adding converters");
-
-  if (convert == NULL)
-    WARNING ("Could not create audioconverter");
-  if (resample == NULL)
-    WARNING ("Could not create audioresampler");
-  if (convert2 == NULL)
-    WARNING ("Could not create second audioconverter");
-
-  if (convert != NULL &&
-      gst_bin_add (GST_BIN (self), convert) == FALSE) {
-    WARNING ("Could not add converter to bin");
-    gst_object_unref (convert);
-    convert = NULL;
-  }
-  if (resample != NULL &&
-      gst_bin_add (GST_BIN (self), resample) == FALSE) {
-    WARNING ("Could not add resampler to bin");
-    gst_object_unref (resample);
-    resample = NULL;
-  }
-  if (convert2 != NULL &&
-      gst_bin_add (GST_BIN (self), convert2) == FALSE) {
-    WARNING ("Could not add second converter to bin");
-    gst_object_unref (convert2);
-    convert2 = NULL;
-  }
-
-  if (convert != NULL) {
-    sink_pad = gst_element_get_static_pad (convert, "sink");
-    src_pad = gst_element_get_static_pad (convert, "src");
-
-    if (src_pad == NULL || sink_pad == NULL ||
-        gst_pad_link(src_pad, pad) != GST_PAD_LINK_OK)  {
-      WARNING ("Could not get converter pads (%p - %p) or link the source to it",
-          src_pad, sink_pad);
-      gst_bin_remove (GST_BIN (self), convert);
-      if (src_pad != NULL)
-        gst_object_unref (src_pad);
-      if (sink_pad != NULL)
-        gst_object_unref (sink_pad);
-    } else {
-      DEBUG ("audioconvert added");
-      gst_object_unref (src_pad);
-      gst_object_unref (pad);
-      pad = sink_pad;
-    }
-  }
-
-  if (resample != NULL) {
-    sink_pad = gst_element_get_static_pad (resample, "sink");
-    src_pad = gst_element_get_static_pad (resample, "src");
-
-    if (src_pad == NULL || sink_pad == NULL ||
-        gst_pad_link(src_pad, pad) != GST_PAD_LINK_OK)  {
-      WARNING ("Could not get resampler pads (%p - %p) or link the source to it",
-          src_pad, sink_pad);
-      gst_bin_remove (GST_BIN (self), resample);
-      if (src_pad != NULL)
-        gst_object_unref (src_pad);
-      if (sink_pad != NULL)
-        gst_object_unref (sink_pad);
-    } else {
-      DEBUG ("audioresample added");
-      gst_object_unref (src_pad);
-      gst_object_unref (pad);
-      pad = sink_pad;
-    }
-  }
-
-  if (convert2 != NULL) {
-    sink_pad = gst_element_get_static_pad (convert2, "sink");
-    src_pad = gst_element_get_static_pad (convert2, "src");
-
-    if (src_pad == NULL || sink_pad == NULL ||
-        gst_pad_link(src_pad, pad) != GST_PAD_LINK_OK)  {
-      WARNING ("Could not get converter2 pads (%p - %p) or link the source to it",
-          src_pad, sink_pad);
-      gst_bin_remove (GST_BIN (self), convert2);
-      if (src_pad != NULL)
-        gst_object_unref (src_pad);
-      if (sink_pad != NULL)
-        gst_object_unref (sink_pad);
-    } else {
-      DEBUG ("audioconvert2 added");
-      gst_object_unref (src_pad);
-      gst_object_unref (pad);
-      pad = sink_pad;
-    }
-  }
-
-  return pad;
+  fsu_filter_manager_insert_filter (manager, FSU_FILTER (filter), 0);
 }
 
 
@@ -201,7 +112,7 @@ fsu_audio_sink_class_init (FsuAudioSinkClass *klass)
   fsu_sink_class->auto_sink_name = "autoaudiosink";
   fsu_sink_class->create_auto_sink = create_auto_sink;
   fsu_sink_class->need_mixer = need_mixer;
-  fsu_sink_class->add_converters = add_converters;
+  fsu_sink_class->add_filters = add_filters;
 }
 
 static void

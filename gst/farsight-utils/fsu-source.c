@@ -103,6 +103,8 @@ struct _FsuSourcePrivate
   gint probe_idx;
   /* Thread for replacing the source */
   GThread *thread;
+  /* The list of FsuFilterManager filters to apply on the source */
+  GList *filters;
 };
 
 
@@ -228,7 +230,7 @@ fsu_source_dispose (GObject *object)
 {
   FsuSource *self = (FsuSource *)object;
   FsuSourcePrivate *priv = self->priv;
-  GList *item, *sources, *walk;
+  GList *item, *walk;
 
   if (priv->dispose_has_run)
     return;
@@ -259,16 +261,14 @@ fsu_source_dispose (GObject *object)
 }
 
 
-static GstPad *
-add_converters (FsuSource *self, GstPad *pad)
+static void
+add_filters (FsuSource *self, FsuFilterManager *manager)
 {
-  GstPad *(*func) (FsuSource *self, GstPad *pad) = \
-      FSU_SOURCE_GET_CLASS (self)->add_converters;
+  void (*func) (FsuSource *self, FsuFilterManager *manager) = \
+      FSU_SOURCE_GET_CLASS (self)->add_filters;
 
   if (func != NULL)
-    return func (self, pad);
-
-  return pad;
+    func (self, manager);
 }
 
 static void
@@ -348,6 +348,8 @@ fsu_source_request_new_pad (GstElement * element, GstPadTemplate * templ,
   FsuSourcePrivate *priv = self->priv;
   GstPad *pad = NULL;
   GstPad *tee_pad = NULL;
+  GstPad *filter_pad = NULL;
+  FsuFilterManager *filter = NULL;
 
   DEBUG ("requesting pad");
 
@@ -364,10 +366,19 @@ fsu_source_request_new_pad (GstElement * element, GstPadTemplate * templ,
     return NULL;
   }
 
-  tee_pad = add_converters (self, tee_pad);
+  filter = fsu_filter_manager_new ();
+  add_filters (self, filter);
+  priv->filters = g_list_prepend (priv->filters, filter);
 
-  pad = gst_ghost_pad_new (name, tee_pad);
-  gst_object_unref (tee_pad);
+  filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), tee_pad, NULL);
+
+  if (filter_pad == NULL) {
+    WARNING ("Could not add filters to source tee pad");
+    filter_pad = tee_pad;
+  }
+
+  pad = gst_ghost_pad_new (name, filter_pad);
+  gst_object_unref (filter_pad);
   if (pad == NULL) {
     WARNING ("Couldn't create ghost pad for tee");
     return NULL;
@@ -392,9 +403,19 @@ fsu_source_release_pad (GstElement * element, GstPad * pad)
   gst_pad_set_active (pad, FALSE);
 
   if (GST_IS_GHOST_PAD (pad)) {
-    GstPad *tee_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
-    /* converter before tee... :( */
-    /*gst_element_release_request_pad (priv->tee, tee_pad);*/
+    GstPad *filter_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
+    GstPad *tee_pad = NULL;
+    GList *i = NULL;
+
+    for (i = priv->filters; i && tee_pad == NULL; i = i->next) {
+      FsuFilterManager *manager = i->data;
+      tee_pad = fsu_filter_manager_revert (manager, GST_BIN (self), filter_pad);
+    }
+    gst_object_unref (filter_pad);
+    if (tee_pad != NULL) {
+      gst_element_release_request_pad (priv->tee, tee_pad);
+      gst_object_unref (tee_pad);
+    }
   }
 
   gst_element_remove_pad (element, pad);

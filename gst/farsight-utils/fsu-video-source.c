@@ -18,7 +18,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+  #include "config.h"
+#endif
+
 #include "fsu-video-source.h"
+#include <gst/farsight/fsu-videoconverter-filter.h>
 
 GST_DEBUG_CATEGORY_STATIC (fsu_video_source_debug);
 #define GST_CAT_DEFAULT fsu_video_source_debug
@@ -57,41 +62,12 @@ static const gchar *video_blacklisted_sources[] = {"videotestsrc",
                                                    "gdiscreencapsrc",
                                                    NULL};
 
-static GstPad *
-add_converters (FsuSource *self, GstPad *pad)
+static void
+add_filters (FsuSource *self, FsuFilterManager *manager)
 {
-  GstElement *colorspace = gst_element_factory_make ("ffmpegcolorspace", NULL);
-  GstPad *sink_pad = NULL;
-  GstPad *src_pad = NULL;
+  FsuVideoconverterFilter *filter = fsu_videoconverter_filter_get_singleton ();
 
-  DEBUG ("Adding converters");
-
-  if (colorspace == NULL ||
-      gst_bin_add (GST_BIN (self), colorspace) == FALSE) {
-    WARNING ("Could not create colorspace (%p) or add it to bin", colorspace);
-    if (colorspace != NULL)
-      gst_object_unref (colorspace);
-    return pad;
-  }
-  sink_pad = gst_element_get_static_pad (colorspace, "sink");
-  src_pad = gst_element_get_static_pad (colorspace, "src");
-
-  if (src_pad == NULL || sink_pad == NULL ||
-      gst_pad_link(pad, sink_pad) != GST_PAD_LINK_OK)  {
-    WARNING ("Could not get colorspace pads (%p - %p) or link the source to it",
-        src_pad, sink_pad);
-    gst_bin_remove (GST_BIN (self), colorspace);
-    if (src_pad != NULL)
-      gst_object_unref (src_pad);
-    if (sink_pad != NULL)
-      gst_object_unref (sink_pad);
-    return pad;
-  }
-
-  DEBUG ("Converter ffmpegcolorspace added");
-  gst_object_unref (sink_pad);
-  gst_object_unref (pad);
-  return src_pad;
+  fsu_filter_manager_insert_filter (manager, FSU_FILTER (filter), 0);
 }
 
 static void
@@ -110,7 +86,7 @@ fsu_video_source_class_init (FsuVideoSourceClass *klass)
   fsu_source_class->priority_sources = video_priority_sources;
   fsu_source_class->blacklisted_sources = video_blacklisted_sources;
   fsu_source_class->klass_check = is_video_source;
-  fsu_source_class->add_converters = add_converters;
+  fsu_source_class->add_filters = add_filters;
 }
 
 static void
