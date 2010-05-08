@@ -151,11 +151,11 @@ fsu_filter_add_standard_element (GstBin *bin, GstPad *pad,
   if (elem != NULL) {
     gst_object_unref (pad);
 
-    if (*elements != NULL) {
+    if (elements != NULL) {
       *elements = g_list_prepend (*elements, elem);
       gst_object_ref (elem);
     }
-    if (*element != NULL)
+    if (element != NULL)
       *element = elem;
   }
 
