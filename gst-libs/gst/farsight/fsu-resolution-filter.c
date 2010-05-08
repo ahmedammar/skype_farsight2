@@ -97,8 +97,8 @@ fsu_resolution_filter_set_resolution (FsuResolutionFilter *self,
 
 
   priv->caps = gst_caps_new_simple ("video/x-raw-yuv",
-      "width", G_TYPE_UINT, width,
-      "height", G_TYPE_UINT, height,
+      "width", G_TYPE_INT, width,
+      "height", G_TYPE_INT, height,
       NULL);
 
   for (i = priv->elements; i; i = i->next) {
