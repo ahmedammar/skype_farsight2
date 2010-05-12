@@ -96,7 +96,6 @@ fsu_audioconverter_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
   gst_object_unref (other_pad);
 
   gst_bin_remove (bin, converters);
-  gst_object_unref (converters);
 
   return out_pad;
 }
