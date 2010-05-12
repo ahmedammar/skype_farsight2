@@ -43,6 +43,7 @@ fsu_filter_add_element (GstBin *bin, GstPad *pad,
       GST_OBJECT_FLAG_SET (GST_OBJECT (element), GST_OBJECT_FLOATING);
     return FALSE;
   }
+  gst_element_sync_state_with_parent (element);
 
   return TRUE;
 }
