@@ -19,7 +19,7 @@
  */
 
 #include "fsu-session.h"
-
+#include "fsu-filter-manager.h"
 
 G_DEFINE_TYPE (FsuSession, fsu_session, G_TYPE_OBJECT);
 
@@ -45,6 +45,7 @@ struct _FsuSessionPrivate
   FsuConference *conference;
   FsSession *session;
   GstElement *source;
+  FsuFilterManager *filters;
 };
 
 static void
@@ -88,6 +89,7 @@ fsu_session_init (FsuSession *self)
 
   self->priv = priv;
   priv->dispose_has_run = FALSE;
+  priv->filters = fsu_filter_manager_new ();
 }
 
 static void
@@ -144,6 +146,7 @@ fsu_session_constructed (GObject *object)
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
+  GstPad *filter_pad = NULL;
   GstPad *srcpad = NULL;
   GstPad *sinkpad = NULL;
   gchar *error;
@@ -173,19 +176,26 @@ fsu_session_constructed (GObject *object)
     goto no_source;
   }
 
+  filter_pad = fsu_filter_manager_apply (priv->filters,
+      GST_BIN (pipeline), srcpad, NULL);
+  if (filter_pad == NULL) {
+    error = "Couldn't add filter manager";
+    goto no_source;
+  }
+  gst_object_unref (srcpad);
+
   g_object_get (priv->session,
       "sink-pad", &sinkpad,
       NULL);
 
-  if (gst_pad_link (srcpad, sinkpad) != GST_PAD_LINK_OK) {
+  if (gst_pad_link (filter_pad, sinkpad) != GST_PAD_LINK_OK) {
     gst_object_unref (sinkpad);
-    gst_object_unref (srcpad);
+    gst_object_unref (filter_pad);
     error = "Couldn't link the volume/level/src to fsrtpconference";
     goto no_source;
   }
 
   gst_object_unref (sinkpad);
-  gst_object_unref (srcpad);
 
   //fsu_source_start (priv->source);
 
@@ -256,4 +266,23 @@ FsuStream *
 fsu_session_handle_stream (FsuSession *self, FsStream *stream, GstElement *sink)
 {
   return fsu_stream_new (self->priv->conference, self, stream, sink);
+}
+
+
+gboolean
+fsu_session_insert_filter (FsuSession *self, FsuFilter *filter, guint pos)
+{
+  return fsu_filter_manager_insert_filter (self->priv->filters, filter, pos);
+}
+
+GList *
+fsu_session_list_filters (FsuSession *self)
+{
+  return fsu_filter_manager_list_filters (self->priv->filters);
+}
+
+gboolean
+fsu_session_remove_filter (FsuSession *self, FsuFilter *filter, guint pos)
+{
+  return fsu_filter_manager_remove_filter (self->priv->filters, filter, pos);
 }

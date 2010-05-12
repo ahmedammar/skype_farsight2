@@ -28,6 +28,7 @@ typedef struct _FsuSession      FsuSession;
 
 #include "fsu-conference.h"
 #include "fsu-stream.h"
+#include "fsu-filter.h"
 
 
 G_BEGIN_DECLS
@@ -73,6 +74,12 @@ FsuSession *fsu_session_new (FsuConference *conference,
     FsSession *session, GstElement *source);
 FsuStream *fsu_session_handle_stream (FsuSession *self,
     FsStream *stream, GstElement *sink);
+
+gboolean fsu_session_insert_filter (FsuSession *self,
+    FsuFilter *filter, guint position);
+GList *fsu_session_list_filters (FsuSession *self);
+gboolean fsu_session_remove_filter (FsuSession *self,
+    FsuFilter *filter, guint position);
 
 G_END_DECLS
 
