@@ -68,7 +68,7 @@ GType fsu_filter_manager_get_type (void) G_GNUC_CONST;
 
 FsuFilterManager *fsu_filter_manager_new (void);
 gboolean fsu_filter_manager_insert_filter (FsuFilterManager *self,
-    FsuFilter *filter, guint position);
+    FsuFilter *filter, gint position);
 GList *fsu_filter_manager_list_filters (FsuFilterManager *self);
 gboolean fsu_filter_manager_remove_filter (FsuFilterManager *self,
     FsuFilter *filter, guint position);

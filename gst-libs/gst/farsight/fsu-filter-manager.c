@@ -27,14 +27,23 @@ static void fsu_filter_manager_constructed (GObject *object);
 static void fsu_filter_manager_dispose (GObject *object);
 static void fsu_filter_manager_finalize (GObject *object);
 
+typedef enum {INSERT, REMOVE} ModificationAction;
+
+typedef struct {
+  ModificationAction action;
+  FsuFilter *filter;
+  gint position;
+} FilterModification;
 
 struct _FsuFilterManagerPrivate
 {
   gboolean dispose_has_run;
+  GList *applied_filters;
   GList *filters;
   GstBin *applied_bin;
   GstPad *applied_pad;
   GstPad *out_pad;
+  GQueue *modifications;
 };
 
 static void
@@ -59,6 +68,7 @@ fsu_filter_manager_init (FsuFilterManager *self)
 
   self->priv = priv;
   priv->dispose_has_run = FALSE;
+  priv->modifications = g_queue_new ();
 }
 
 
@@ -108,23 +118,253 @@ FsuFilterManager *fsu_filter_manager_new (void)
   return g_object_new (FSU_TYPE_FILTER_MANAGER, NULL);
 }
 
+static void
+pad_block_do_nothing (GstPad *pad, gboolean blocked, gpointer user_data)
+{
+  g_debug ("Pad unblocked");
+}
+
+/*
+ * Two use cases :
+ * * fitler manager applied on a SRC pad :
+ * applied_pad                                             out_pad
+ *    0                 1                  2                  3
+ *   [ ]-> [ filter1 ] [ ] -> [ filter2 ] [ ] -> [ filter3 ] [ ] ->
+ *
+ * REMOVE filter2 means we have position 1 and start at out_pad with position 3
+ * then we follow once to pad 2, and again to pad 1 for the position 1.
+ * This means the pad's parent is filter1 not filter2, and we need to revert from
+ * sink to source so we need to actually stop at pad 2 in order to revert filter2
+ * For INSERTING a filter between filter1 and filter2, we have position 1. We
+ * start at pad 3 and follow twice to pad 1, which we can apply source to sink to
+ * get the desired effect.
+ *
+ * to pad 2
+ *
+ * * filter manager applied on a SINK pad :
+ *    out_pad                                                 applied_pad
+ *       0                  1                  2                  3
+ *   -> [ ] [ filter1 ] -> [ ] [ filter2 ] -> [ ] [ filter3 ] -> [ ]
+ *
+ * REMOVE filter2 means we have position 1 and start at out_pad with position 0
+ * then we follow once to pad 1. Since we revert from source to sink, the revert
+ * will work.
+ * For INSERTING a filter between filter1 and filter2, we have position 1. We
+ * start at pad 0 and follow once to pad 1, which we can apply sink to source to
+ * get the desired effect.
+ */
+
+static void
+apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
+{
+  FsuFilterManager *self = user_data;
+  FsuFilterManagerPrivate *priv = self->priv;
+
+  g_debug ("Pad blocked, now modifying pipeline with %d modifications",
+      g_queue_get_length (priv->modifications));
+
+  g_debug ("Currently : applied pad %p and output pad %p", priv->applied_pad, priv->out_pad);
+
+  /* TODO: mutex */
+  while (g_queue_is_empty (priv->modifications) == FALSE) {
+    FilterModification *modif = g_queue_pop_head (priv->modifications);
+    GstPad *out_pad = NULL;
+    FsuFilter *current_filter = NULL;
+    GstPad *current_pad = priv->out_pad;
+    FsuFilter *previous_filter = NULL;
+    GstPad *previous_pad = NULL;
+    GstPad *srcpad, *sinkpad;
+    gint current_position = 0;
+    gint low, high;
+    gint target_position = modif->position;
+
+    if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE) {
+      low = 1;
+      high = g_list_length (priv->applied_filters);
+      current_position = high;
+    } else {
+      low = 0;
+      high = g_list_length (priv->applied_filters) - 1;
+      current_position = low;
+    }
+
+    /* If we want to remove a filter where the apply is source to sink
+       then we need to find the output pad of the filter in order to revert it.
+       For sink to source, we get the sink pad already of the filter since the
+       revert will go source to sink. See function header for explanation */
+    if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE && modif->action == REMOVE)
+      target_position++;
+
+    g_debug ("trying to find proper pad. %s %p at %d (%d <= %d <= %d)",
+        modif->action == REMOVE? "Removing":"Inserting", modif->filter, modif->position,
+        low, target_position, high);
+
+    while (current_position >= low &&
+        current_position <= high &&
+        target_position != current_position) {
+
+      /* In a source to sink apply, the current position of the pad is shifted
+         by one from the position of the filter in the list */
+      current_filter = g_list_nth_data (priv->applied_filters,
+          GST_PAD_IS_SRC (priv->applied_pad) ?
+          current_position -1 : current_position);
+
+      if (current_filter != NULL)
+        out_pad = fsu_filter_follow (current_filter, current_pad);
+
+      g_debug ("Followed filter %p from pos %d got %p->%p",
+          current_filter, current_position, current_pad, out_pad);
+
+      if (out_pad != NULL) {
+        previous_pad = current_pad;
+        current_pad = out_pad;
+      }
+
+      if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE)
+        current_position--;
+      else
+        current_position++;
+      g_debug ("Next position to test : %d", current_position);
+    }
+
+    if (target_position != current_position)
+      g_warning ("Unable to locate position of filter to modify");
+    g_assert (target_position == current_position);
+
+    previous_filter = current_filter;
+
+    /* In a source to sink apply, the current position of the pad is shifted
+       by one from the position of the filter in the list */
+    current_filter = g_list_nth_data (priv->applied_filters,
+        GST_PAD_IS_SRC (priv->applied_pad) ?
+        current_position -1 : current_position);
+
+    if (modif->action == REMOVE && current_filter != modif->filter)
+      g_warning ("Unable to locate the proper filter for removal");
+    g_assert (modif->action != REMOVE || current_filter == modif->filter);
+
+    if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE) {
+      srcpad = current_pad;
+      sinkpad = gst_pad_get_peer (srcpad);
+    } else {
+      sinkpad = current_pad;
+      srcpad = gst_pad_get_peer (sinkpad);
+    }
+
+    gst_pad_unlink (srcpad, sinkpad);
+
+    /* TODO unref pads*/
+    if (modif->action == INSERT) {
+      g_debug ("Inserting new filter %p at position %d", modif->filter,
+          current_position);
+      if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE) {
+        out_pad = fsu_filter_apply (modif->filter, priv->applied_bin, srcpad);
+        if (out_pad != NULL)
+          gst_pad_link (out_pad, sinkpad);
+        else
+          gst_pad_link (srcpad, sinkpad);
+
+        g_debug ("Applied filter on src pad %p got %p", srcpad, out_pad);
+
+      } else {
+        out_pad = fsu_filter_apply (modif->filter, priv->applied_bin, sinkpad);
+        if (out_pad != NULL)
+          gst_pad_link (srcpad, out_pad);
+        else
+          gst_pad_link (srcpad, sinkpad);
+
+        g_debug ("Applied filter on sink pad %p got %p", sinkpad, out_pad);
+
+      }
+      priv->applied_filters = g_list_insert (priv->applied_filters,
+          modif->filter, current_position);
+    } else {
+      GList *link = NULL;
+
+      g_debug ("Removing filter %p at position %d", modif->filter, current_position);
+      if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE) {
+        out_pad = fsu_filter_revert (modif->filter, priv->applied_bin, srcpad);
+        if (out_pad != NULL)
+          gst_pad_link (out_pad, sinkpad);
+        else
+          gst_pad_link (srcpad, sinkpad);
+
+        g_debug ("reverted filter on src pad %p got %p", srcpad, out_pad);
+      } else {
+        out_pad = fsu_filter_revert (modif->filter, priv->applied_bin, sinkpad);
+        if (out_pad != NULL)
+          gst_pad_link (srcpad, out_pad);
+        else
+          gst_pad_link (srcpad, sinkpad);
+
+        g_debug ("reverted filter on sink pad %p got %p", sinkpad, out_pad);
+
+      }
+
+
+      g_object_unref (modif->filter);
+      link = g_list_nth (priv->applied_filters, modif->position);
+      g_assert (link != NULL);
+      g_assert (link->data == modif->filter);
+      priv->applied_filters = g_list_delete_link (priv->applied_filters, link);
+    }
+    if (current_pad == priv->out_pad) {
+      g_debug ("out pad changed from %p to %p", priv->out_pad, out_pad);
+      priv->out_pad = out_pad;
+    }
+    if (previous_filter != NULL && previous_pad != NULL) {
+      g_debug ("Updating previous filter %p for %p from %p to %p", previous_filter, previous_pad, current_pad, out_pad);
+      g_debug ("Returned %d", fsu_filter_update_link (previous_filter, previous_pad, current_pad, out_pad));
+    }
+
+    g_slice_free (FilterModification, modif);
+  }
+
+
+  gst_pad_set_blocked_async (pad, FALSE, pad_block_do_nothing, NULL);
+}
+
+static void
+new_modification (FsuFilterManager *self, ModificationAction action,
+    FsuFilter *filter, gint position)
+{
+  FsuFilterManagerPrivate *priv = self->priv;
+  FilterModification *modif = g_slice_new0 (FilterModification);
+
+  modif->action = action;
+  modif->filter = filter;
+  modif->position = position;
+
+  g_debug ("New modification, %s filter %p at position %d. blocking pad %p",
+      action == REMOVE?"Removing":"Inserting", filter, position,
+      GST_PAD_IS_SRC (priv->applied_pad)?priv->applied_pad:priv->out_pad);
+
+  /* TODO: mutex */
+  g_queue_push_tail (priv->modifications, modif);
+
+  if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE) {
+    gst_pad_set_blocked_async (priv->applied_pad, TRUE, apply_modifs, self);
+  } else {
+    /* TODO: out_pad is still a sink pad.. we need to get the peer pad and make sure everything else uses the peer pad when necessary!!!!! */
+    gst_pad_set_blocked_async (priv->out_pad, TRUE, apply_modifs, self);
+  }
+}
+
 gboolean
 fsu_filter_manager_insert_filter (FsuFilterManager *self,
-    FsuFilter *filter, guint position)
+    FsuFilter *filter, gint position)
 {
   FsuFilterManagerPrivate *priv = self->priv;
 
-  if (priv->applied_bin != NULL) {
-    g_debug ("Cannot modify filters after being applied (for now)");
-    return FALSE;
-  }
-
   g_object_ref (filter);
-  if (position < 0)
-    priv->filters = g_list_append (priv->filters, filter);
-  else
-    /* FIXME: doc says if position < 0, then it appends, but it takes a gint? */
-    priv->filters = g_list_insert (priv->filters, filter, (gint) position);
+
+  if (position < 0 || position > g_list_length (priv->filters))
+    position = g_list_length (priv->filters);
+
+  priv->filters = g_list_insert (priv->filters, filter, (gint) position);
+
+  if (priv->applied_bin != NULL)
+    new_modification (self, INSERT, filter, position);
 
   return TRUE;
 }
@@ -132,7 +372,9 @@ fsu_filter_manager_insert_filter (FsuFilterManager *self,
 GList *
 fsu_filter_manager_list_filters (FsuFilterManager *self)
 {
-  return g_list_copy (self->priv->filters);
+  GList *ret = g_list_copy (self->priv->filters);
+  g_list_foreach (ret, (GFunc) g_object_ref, NULL);
+  return ret;
 }
 
 gboolean
@@ -142,13 +384,8 @@ fsu_filter_manager_remove_filter (FsuFilterManager *self,
   FsuFilterManagerPrivate *priv = self->priv;
   GList *link = NULL;
 
-
-  if (priv->applied_bin != NULL) {
-    g_debug ("Cannot modify filters after being applied (for now)");
-    return FALSE;
-  }
-
   g_object_unref (filter);
+
   if (position < 0)
     position = g_list_index (priv->filters, filter);
 
@@ -163,6 +400,9 @@ fsu_filter_manager_remove_filter (FsuFilterManager *self,
     return FALSE;
   }
   priv->filters = g_list_delete_link (priv->filters, link);
+
+  if (priv->applied_bin != NULL)
+    new_modification (self, REMOVE, filter, position);
 
   return TRUE;
 }
@@ -205,8 +445,10 @@ fsu_filter_manager_apply (FsuFilterManager *self,
         *failing_filter = filter;
         return NULL;
       }
+    } else {
+      pad = out_pad;
     }
-    pad = out_pad;
+
     if (GST_PAD_IS_SRC (pad))
       i = i->next;
     else
@@ -217,6 +459,8 @@ fsu_filter_manager_apply (FsuFilterManager *self,
 
   priv->out_pad = pad;
   priv->applied_bin = bin;
+  priv->applied_filters = g_list_copy (self->priv->filters);
+  g_list_foreach (priv->applied_filters, (GFunc) g_object_ref, NULL);
 
   return pad;
 }
@@ -227,8 +471,6 @@ fsu_filter_manager_revert (FsuFilterManager *self,
 {
   FsuFilterManagerPrivate *priv = self->priv;
   GList *i = NULL;
-
-  /* TODO: blocked pad ? */
 
   if (bin == NULL || pad == NULL) {
     g_debug ("Bin and/or pad NULL. Cannot revert");
@@ -246,9 +488,9 @@ fsu_filter_manager_revert (FsuFilterManager *self,
   g_debug ("Reverting on filter manager %p", self);
 
   if (GST_PAD_IS_SRC (pad))
-    i = g_list_last (priv->filters);
+    i = g_list_last (priv->applied_filters);
   else
-    i = priv->filters;
+    i = priv->applied_filters;
 
   for (; i != NULL;) {
     FsuFilter *filter = i->data;
@@ -271,6 +513,12 @@ fsu_filter_manager_revert (FsuFilterManager *self,
   priv->applied_pad = NULL;
   priv->applied_bin = NULL;
   priv->out_pad = NULL;
+  if (priv->applied_filters != NULL) {
+    g_list_foreach (priv->applied_filters, (GFunc) g_object_unref, NULL);
+    g_list_free (priv->applied_filters);
+  }
+  priv->applied_filters = NULL;
 
   return pad;
 }
+
