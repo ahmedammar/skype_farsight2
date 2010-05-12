@@ -409,7 +409,7 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
 
   /* Set to READY so the auto*sink can create the underlying sink and the
      subclass can decide whether or not a mixer is needed for that sink */
-  if (gst_element_set_state (sink, GST_STATE_READY) ==
+  if (sink != NULL && gst_element_set_state (sink, GST_STATE_READY) ==
       GST_STATE_CHANGE_FAILURE) {
     WARNING ("Unable to set sink to READY");
     gst_bin_remove (GST_BIN (self), sink);
@@ -466,11 +466,13 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
 
   gst_element_add_pad (element, pad);
 
-  gst_element_sync_state_with_parent (sink);
+  if (sink != NULL)
+    gst_element_sync_state_with_parent (sink);
   if (priv->mixer != NULL)
     gst_element_sync_state_with_parent (priv->mixer);
 
-  priv->sinks = g_list_prepend (priv->sinks, sink);
+  if (sink != NULL)
+    priv->sinks = g_list_prepend (priv->sinks, sink);
 
   return pad;
 }
