@@ -184,3 +184,23 @@ fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
   return expected;
 }
 
+gboolean
+fsu_filter_update_link (FsuFilter *self, GstPad *pad,
+    GstPad *old_pad, GstPad *new_pad)
+{
+  FsuFilterPrivate *priv = self->priv;
+  GstPad *expected = GST_PAD (g_hash_table_lookup (priv->pads, pad));
+
+  if (expected == old_pad) {
+    gst_object_ref (new_pad);
+    g_hash_table_replace (priv->pads, pad, new_pad);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+GstPad *
+fsu_filter_follow (FsuFilter *self, GstPad *pad)
+{
+  return GST_PAD (g_hash_table_lookup (self->priv->pads, pad));
+}

@@ -70,6 +70,9 @@ GType fsu_filter_get_type (void) G_GNUC_CONST;
 
 GstPad *fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad);
 GstPad *fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad);
+GstPad *fsu_filter_follow (FsuFilter *self, GstPad *pad);
+gboolean fsu_filter_update_link (FsuFilter *self, GstPad *pad,
+    GstPad *old_pad, GstPad *new_pad);
 
 G_END_DECLS
 
