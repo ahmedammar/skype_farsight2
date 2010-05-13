@@ -21,6 +21,7 @@ libgstfarsightinclude_HEADERS = \
 		fsu-filter-helper.h \
 		fsu-volume-filter.h \
 		fsu-resolution-filter.h \
+		fsu-effectv-filter.h \
 		fsu-audioconverter-filter.h \
 		fsu-videoconverter-filter.h
 
@@ -58,6 +59,7 @@ libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-filter-helper.c \
 		fsu-volume-filter.c \
 		fsu-resolution-filter.c \
+		fsu-effectv-filter.c \
 		fsu-audioconverter-filter.c \
 		fsu-videoconverter-filter.c
 
@@ -107,6 +109,7 @@ public_headers = fs-candidate.h \
 		fsu-filter-helper.h \
 		fsu-volume-filter.h \
 		fsu-resolution-filter.h \
+		fsu-effectv-filter.h \
 		fsu-audioconverter-filter.h \
 		fsu-videoconverter-filter.h
 
