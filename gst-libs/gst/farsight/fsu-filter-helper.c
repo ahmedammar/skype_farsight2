@@ -35,8 +35,10 @@ fsu_filter_add_element (GstBin *bin, GstPad *pad,
     return FALSE;
   }
 
-  if ((GST_PAD_IS_SRC (pad) && gst_pad_link(pad, element_pad) != GST_PAD_LINK_OK) ||
-      (GST_PAD_IS_SINK (pad) && gst_pad_link(element_pad, pad))) {
+  if ((GST_PAD_IS_SRC (pad) &&
+          gst_pad_link(pad, element_pad) != GST_PAD_LINK_OK) ||
+      (GST_PAD_IS_SINK (pad) &&
+          gst_pad_link(element_pad, pad) != GST_PAD_LINK_OK)) {
     gst_object_ref (element);
     gst_bin_remove (bin, element);
     if (floating)
@@ -71,16 +73,22 @@ fsu_filter_add_element_by_name (GstBin *bin, GstPad *pad,
       gst_object_unref (element);
     if (element_pad != NULL)
       gst_object_unref (element_pad);
-    if (out_pad != NULL && *out_pad != NULL)
+    if (out_pad != NULL && *out_pad != NULL) {
       gst_object_unref (*out_pad);
+      *out_pad = NULL;
+      g_debug ("****Failed trying to add element %s", element_name);
+    }
     return NULL;
   }
 
   if (fsu_filter_add_element (bin, pad, element, element_pad) == FALSE) {
     gst_object_unref (element);
     gst_object_unref (element_pad);
-    if (out_pad != NULL)
+    if (out_pad != NULL) {
       gst_object_unref (*out_pad);
+      g_debug ("****Failed trying to add element %s", element_name);
+      *out_pad = NULL;
+    }
     return NULL;
   }
 
@@ -150,17 +158,17 @@ fsu_filter_add_standard_element (GstBin *bin, GstPad *pad,
       &out_pad, GST_PAD_IS_SRC (pad) ? "src" : "sink");
 
   if (elem != NULL) {
-    gst_object_unref (pad);
-
     if (elements != NULL) {
       *elements = g_list_prepend (*elements, elem);
       gst_object_ref (elem);
     }
     if (element != NULL)
       *element = elem;
+    return out_pad;
   }
 
-  return out_pad;
+  g_debug ("****Failed trying to add standard element %s", element_name);
+  return NULL;
 }
 
 GstPad *
