@@ -37,6 +37,7 @@ GstPad *fsu_filter_add_standard_element (GstBin *bin, GstPad *pad,
     const gchar *element_name, GstElement **element, GList **elements);
 GstPad *fsu_filter_revert_standard_element (GstBin *bin,
     GstPad *pad, GList **elements);
+GstPad *fsu_filter_revert_bin (GstBin *bin, GstPad *pad);
 
 G_END_DECLS
 

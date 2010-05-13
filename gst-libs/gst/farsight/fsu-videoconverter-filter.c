@@ -65,40 +65,15 @@ fsu_videoconverter_filter_get_singleton (void)
 static GstPad *
 fsu_videoconverter_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 {
-  GstElement *colorspace = NULL;
-  GstPad *out_pad = NULL;
-
-
-  colorspace = fsu_filter_add_element_by_name (bin, pad,
-      "ffmpegcolorspace", GST_PAD_IS_SRC (pad) ? "sink" : "src",
-      &out_pad, GST_PAD_IS_SRC (pad) ? "src" : "sink");
-
-  if (colorspace == NULL) {
-    return NULL;
-  } else {
-    gst_object_unref (pad);
-    pad = out_pad;
-  }
-
-  return pad;
+  GstPad *out = fsu_filter_add_standard_element (bin, pad, "ffmpegcolorspace",
+      NULL, NULL);
+  g_debug ("output video converter filter : %p", out);
+  return out;
 }
 
 static GstPad *
 fsu_videoconverter_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
 {
-  GstElement *converters = GST_ELEMENT (gst_pad_get_parent (pad));
-  GstPad *other_pad = NULL;
-  GstPad *out_pad = NULL;
-
-
-  other_pad = gst_element_get_static_pad (converters,
-      GST_PAD_IS_SRC (pad) ? "sink" : "src");
-  out_pad = gst_pad_get_peer (other_pad);
-  gst_object_unref (other_pad);
-
-  gst_bin_remove (bin, converters);
-  gst_object_unref (converters);
-
-  return out_pad;
+  return fsu_filter_revert_standard_element (bin, pad, NULL);
 }
 

@@ -76,27 +76,12 @@ fsu_audioconverter_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 
   g_debug ("Applying audioconverter filter : %p", converters);
 
-  if (converters != NULL)
-    gst_object_unref (pad);
-
   return out_pad;
 }
 
 static GstPad *
 fsu_audioconverter_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
 {
-  GstElement *converters = GST_ELEMENT (gst_pad_get_parent (pad));
-  GstPad *other_pad = NULL;
-  GstPad *out_pad = NULL;
-
-
-  other_pad = gst_element_get_static_pad (converters,
-      GST_PAD_IS_SRC (pad) ? "sink" : "src");
-  out_pad = gst_pad_get_peer (other_pad);
-  gst_object_unref (other_pad);
-
-  gst_bin_remove (bin, converters);
-
-  return out_pad;
+  return fsu_filter_revert_bin (bin, pad);
 }
 

@@ -186,3 +186,21 @@ fsu_filter_revert_standard_element (GstBin *bin, GstPad *pad, GList **elements)
   return out_pad;
 }
 
+
+GstPad *
+fsu_filter_revert_bin (GstBin *bin, GstPad *pad)
+{
+  GstElement *filter_bin = GST_ELEMENT (gst_pad_get_parent (pad));
+  GstPad *other_pad = NULL;
+  GstPad *out_pad = NULL;
+
+
+  other_pad = gst_element_get_static_pad (filter_bin,
+      GST_PAD_IS_SRC (pad) ? "sink" : "src");
+  out_pad = gst_pad_get_peer (other_pad);
+  gst_object_unref (other_pad);
+
+  gst_bin_remove (bin, filter_bin);
+
+  return out_pad;
+}
