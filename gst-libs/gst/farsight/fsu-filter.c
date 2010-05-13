@@ -143,9 +143,11 @@ fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad)
   out_pad = func (self, bin, pad);
   g_debug ("Applied filter %p : %p", self, out_pad);
 
-  gst_object_ref (pad);
-  gst_object_ref (out_pad);
-  g_hash_table_insert (priv->pads, out_pad, pad);
+  if (out_pad != NULL) {
+    gst_object_ref (pad);
+    gst_object_ref (out_pad);
+    g_hash_table_insert (priv->pads, out_pad, pad);
+  }
 
   return out_pad;
 }
@@ -193,6 +195,7 @@ fsu_filter_update_link (FsuFilter *self, GstPad *pad,
 
   if (expected == old_pad) {
     gst_object_ref (new_pad);
+    gst_object_ref (pad);
     g_hash_table_replace (priv->pads, pad, new_pad);
     return TRUE;
   }
