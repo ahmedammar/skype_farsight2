@@ -324,8 +324,9 @@ new_modification (FsuFilterManager *self, ModificationAction action,
   if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE) {
     gst_pad_set_blocked_async (priv->applied_pad, TRUE, apply_modifs, self);
   } else {
-    /* TODO: out_pad is still a sink pad.. we need to get the peer pad and make sure everything else uses the peer pad when necessary!!!!! */
-    gst_pad_set_blocked_async (priv->out_pad, TRUE, apply_modifs, self);
+    GstPad *src_pad = gst_pad_get_peer (priv->out_pad);
+    gst_pad_set_blocked_async (src_pad, TRUE, apply_modifs, self);
+    gst_object_unref (src_pad);
   }
 }
 
