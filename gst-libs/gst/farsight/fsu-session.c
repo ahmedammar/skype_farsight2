@@ -36,6 +36,7 @@ enum {
   PROP_CONFERENCE = 1,
   PROP_SESSION,
   PROP_SOURCE,
+  PROP_FILTER_MANAGER,
   LAST_PROPERTY
 };
 
@@ -78,6 +79,12 @@ fsu_session_class_init (FsuSessionClass *klass)
           "The source to use with the session.",
           GST_TYPE_ELEMENT,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_FILTER_MANAGER,
+      g_param_spec_object ("filter-manager", "Filter manager",
+          "The filter manager applied on the session",
+          FSU_TYPE_FILTER_MANAGER,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -108,6 +115,9 @@ fsu_session_get_property (GObject *object,
       break;
     case PROP_SOURCE:
       g_value_set_object (value, priv->source);
+      break;
+    case PROP_FILTER_MANAGER:
+      g_value_set_object (value, priv->filters);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -266,23 +276,4 @@ FsuStream *
 fsu_session_handle_stream (FsuSession *self, FsStream *stream, GstElement *sink)
 {
   return fsu_stream_new (self->priv->conference, self, stream, sink);
-}
-
-
-gboolean
-fsu_session_insert_filter (FsuSession *self, FsuFilter *filter, guint pos)
-{
-  return fsu_filter_manager_insert_filter (self->priv->filters, filter, pos);
-}
-
-GList *
-fsu_session_list_filters (FsuSession *self)
-{
-  return fsu_filter_manager_list_filters (self->priv->filters);
-}
-
-gboolean
-fsu_session_remove_filter (FsuSession *self, FsuFilter *filter, guint pos)
-{
-  return fsu_filter_manager_remove_filter (self->priv->filters, filter, pos);
 }
