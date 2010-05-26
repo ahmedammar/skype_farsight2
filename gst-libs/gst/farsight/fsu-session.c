@@ -47,6 +47,7 @@ struct _FsuSessionPrivate
   FsSession *session;
   GstElement *source;
   FsuFilterManager *filters;
+  guint sending;
 };
 
 static void
@@ -156,67 +157,24 @@ fsu_session_constructed (GObject *object)
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
-  GstPad *filter_pad = NULL;
-  GstPad *srcpad = NULL;
-  GstPad *sinkpad = NULL;
-  gchar *error;
 
   if (chain_up != NULL)
     chain_up (object);
 
-  g_object_get (priv->conference,
-      "pipeline", &pipeline,
-      NULL);
+  if (priv->source != NULL) {
+    g_object_get (priv->conference,
+        "pipeline", &pipeline,
+        NULL);
 
-  if (priv->source == NULL)
-    goto no_source;
-
-  if (gst_bin_add (GST_BIN (pipeline), priv->source) == FALSE) {
-    error = "Couldn't add audio_source to pipeline";
-    goto no_source;
+    if (gst_bin_add (GST_BIN (pipeline), priv->source) == FALSE) {
+      /* TODO: signal/other error */
+      gst_object_unref (priv->source);
+      priv->source = NULL;
+    }
   }
-
-  srcpad = gst_element_get_static_pad (priv->source, "src");
-  if (srcpad == NULL)
-    srcpad = gst_element_get_request_pad (priv->source, "src%d");
-  /* TODO: keep track if we requested a pad or not, so we can release it */
-
-  if (srcpad == NULL) {
-    error = "Couldn't request pad from Source";
-    goto no_source;
-  }
-
-  filter_pad = fsu_filter_manager_apply (priv->filters,
-      GST_BIN (pipeline), srcpad, NULL);
-  if (filter_pad == NULL) {
-    error = "Couldn't add filter manager";
-    goto no_source;
-  }
-  gst_object_unref (srcpad);
-
-  g_object_get (priv->session,
-      "sink-pad", &sinkpad,
-      NULL);
-
-  if (gst_pad_link (filter_pad, sinkpad) != GST_PAD_LINK_OK) {
-    gst_object_unref (sinkpad);
-    gst_object_unref (filter_pad);
-    error = "Couldn't link the volume/level/src to fsrtpconference";
-    goto no_source;
-  }
-
-  gst_object_unref (sinkpad);
-
-  //fsu_source_start (priv->source);
-
-  return;
- no_source:
-  /* TODO: signal/other error */
-  if (priv->source != NULL)
-    gst_object_unref (priv->source);
-  priv->source = NULL;
 
 }
+
 static void
 fsu_session_dispose (GObject *object)
 {
@@ -276,4 +234,101 @@ FsuStream *
 fsu_session_handle_stream (FsuSession *self, FsStream *stream, GstElement *sink)
 {
   return fsu_stream_new (self->priv->conference, self, stream, sink);
+}
+
+
+gboolean
+fsu_session_start_sending (FsuSession *self)
+{
+  FsuSessionPrivate *priv = self->priv;
+  GstElement *pipeline = NULL;
+  GstPad *filter_pad = NULL;
+  GstPad *srcpad = NULL;
+  GstPad *sinkpad = NULL;
+  gchar *error;
+
+  if (priv->source == NULL)
+    goto no_source;
+
+  if (priv->sending > 0)
+    return TRUE;
+
+  g_object_get (priv->conference,
+      "pipeline", &pipeline,
+      NULL);
+
+  srcpad = gst_element_get_static_pad (priv->source, "src");
+  if (srcpad == NULL)
+    srcpad = gst_element_get_request_pad (priv->source, "src%d");
+  /* TODO: keep track if we requested a pad or not, so we can release it */
+
+  if (srcpad == NULL) {
+    error = "Couldn't request pad from Source";
+    gst_bin_remove (GST_BIN (pipeline), priv->source);
+    goto no_source;
+  }
+
+  filter_pad = fsu_filter_manager_apply (priv->filters,
+      GST_BIN (pipeline), srcpad, NULL);
+  if (filter_pad == NULL) {
+    error = "Couldn't add filter manager";
+    gst_bin_remove (GST_BIN (pipeline), priv->source);
+    /* TODO: release pad if requested */
+    goto no_source;
+  }
+  gst_object_unref (srcpad);
+
+  g_object_get (priv->session,
+      "sink-pad", &sinkpad,
+      NULL);
+
+  if (gst_pad_link (filter_pad, sinkpad) != GST_PAD_LINK_OK) {
+    gst_object_unref (sinkpad);
+    gst_object_unref (filter_pad);
+    gst_bin_remove (GST_BIN (pipeline), priv->source);
+    error = "Couldn't link the volume/level/src to fsrtpconference";
+    goto no_source;
+  }
+
+  gst_object_unref (sinkpad);
+
+  if (gst_element_set_state (priv->source, GST_STATE_READY) !=
+      GST_STATE_CHANGE_SUCCESS) {
+    error = "Couldn't set source to READY";
+    goto no_source;
+  }
+  if (GST_STATE (pipeline) > GST_STATE_NULL)
+    gst_element_sync_state_with_parent (priv->source);
+
+  priv->sending++;
+
+  return TRUE;
+ no_source:
+  /* TODO: signal/other error */
+  return FALSE;
+}
+
+void
+fsu_session_stop_sending (FsuSession *self)
+{
+  FsuSessionPrivate *priv = self->priv;
+  GstElement *pipeline = NULL;
+  GstPad *filter_pad = NULL;
+  GstPad *srcpad = NULL;
+  GstPad *sinkpad = NULL;
+
+  if (priv->sending > 0) {
+    priv->sending--;
+    if (priv->sending == 0) {
+      g_object_get (priv->session,
+          "sink-pad", &sinkpad,
+          NULL);
+      filter_pad = gst_pad_get_peer (sinkpad);
+      gst_pad_unlink (filter_pad, sinkpad);
+      srcpad = fsu_filter_manager_revert (priv->filters,
+          GST_BIN (pipeline), filter_pad);
+      /* TODO: release request pad */
+      gst_element_set_state (priv->source, GST_STATE_NULL);
+    }
+  }
 }
