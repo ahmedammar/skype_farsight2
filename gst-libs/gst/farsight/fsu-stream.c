@@ -313,19 +313,43 @@ src_pad_added (FsStream *stream, GstPad *pad,
 gboolean
 fsu_stream_start_sending (FsuStream *self)
 {
-  return fsu_session_start_sending (self->priv->session);
+  FsuStreamPrivate *priv = self->priv;
+  FsStreamDirection direction;
+  FsStreamDirection new_direction;
+
+  g_object_get (priv->stream, "direction", &direction, NULL);
+
+  new_direction = (FsStreamDirection)(direction  | FS_DIRECTION_SEND);
+
+  if (new_direction != direction)
+    g_object_set (priv->stream, "direction", new_direction, NULL);
+
+  return fsu_session_start_sending (priv->session);
 }
 
 void
 fsu_stream_stop_sending (FsuStream *self)
 {
-  return fsu_session_stop_sending (self->priv->session);
+  FsuStreamPrivate *priv = self->priv;
+  FsStreamDirection direction;
+  FsStreamDirection new_direction;
+
+  g_object_get (priv->stream, "direction", &direction, NULL);
+
+  new_direction = (FsStreamDirection)(direction & ~FS_DIRECTION_SEND);
+
+  if (new_direction != direction)
+    g_object_set (priv->stream, "direction", new_direction, NULL);
+
+  fsu_session_stop_sending (priv->session);
 }
 
 gboolean
 fsu_stream_start_receiving (FsuStream *self)
 {
   FsuStreamPrivate *priv = self->priv;
+  FsStreamDirection direction;
+  FsStreamDirection new_direction;
   gboolean ret = TRUE;
 
   if (priv->receiving == FALSE) {
@@ -359,6 +383,14 @@ fsu_stream_start_receiving (FsuStream *self)
     gst_iterator_free (iter);
   }
 
+
+  g_object_get (priv->stream, "direction", &direction, NULL);
+
+  new_direction = (FsStreamDirection)(direction | FS_DIRECTION_RECV);
+
+  if (new_direction != direction)
+    g_object_set (priv->stream, "direction", new_direction, NULL);
+
   return ret;
 }
 
@@ -366,6 +398,8 @@ void
 fsu_stream_stop_receiving (FsuStream *self)
 {
   FsuStreamPrivate *priv = self->priv;
+  FsStreamDirection direction;
+  FsStreamDirection new_direction;
   GstIterator *iter = NULL;
   gboolean done = FALSE;
 
@@ -396,5 +430,13 @@ fsu_stream_stop_receiving (FsuStream *self)
         break;
     }
   }
+
+  g_object_get (priv->stream, "direction", &direction, NULL);
+
+  new_direction = (FsStreamDirection)(direction & ~FS_DIRECTION_RECV);
+
+  if (new_direction != direction)
+    g_object_set (priv->stream, "direction", new_direction, NULL);
+
   gst_iterator_free (iter);
 }
