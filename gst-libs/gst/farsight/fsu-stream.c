@@ -52,6 +52,7 @@ struct _FsuStreamPrivate
   FsStream *stream;
   GstElement *sink;
   gboolean receiving;
+  gboolean sending;
 };
 
 static void
@@ -317,6 +318,10 @@ fsu_stream_start_sending (FsuStream *self)
   FsStreamDirection direction;
   FsStreamDirection new_direction;
 
+  if (priv->sending == TRUE)
+    return TRUE;
+
+  priv->sending = TRUE;
   g_object_get (priv->stream, "direction", &direction, NULL);
 
   new_direction = (FsStreamDirection)(direction  | FS_DIRECTION_SEND);
@@ -334,6 +339,10 @@ fsu_stream_stop_sending (FsuStream *self)
   FsStreamDirection direction;
   FsStreamDirection new_direction;
 
+  if (priv->sending == FALSE)
+    return;
+
+  priv->sending = FALSE;
   g_object_get (priv->stream, "direction", &direction, NULL);
 
   new_direction = (FsStreamDirection)(direction & ~FS_DIRECTION_SEND);
