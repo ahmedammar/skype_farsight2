@@ -73,6 +73,11 @@ GType fsu_stream_get_type (void) G_GNUC_CONST;
 FsuStream *fsu_stream_new (FsuConference *conference, FsuSession *session,
     FsStream *stream, GstElement *sink);
 
+gboolean fsu_stream_start_sending (FsuStream *self);
+void fsu_stream_stop_sending (FsuStream *self);
+gboolean fsu_stream_start_receiving (FsuStream *self);
+void fsu_stream_stop_receiving (FsuStream *self);
+
 G_END_DECLS
 
 #endif /* __FSU_STREAM_H__ */

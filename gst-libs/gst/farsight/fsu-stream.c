@@ -2,7 +2,7 @@
  * fsu-stream.c - Source for FsuStream
  *
  * Copyright (C) 2010 Collabora Ltd.
-
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -19,6 +19,7 @@
  */
 
 #include "fsu-stream.h"
+#include "fsu-session-priv.h"
 
 
 G_DEFINE_TYPE (FsuStream, fsu_stream, G_TYPE_OBJECT);
@@ -50,6 +51,7 @@ struct _FsuStreamPrivate
   FsuSession *session;
   FsStream *stream;
   GstElement *sink;
+  gboolean receiving;
 };
 
 static void
@@ -306,4 +308,93 @@ src_pad_added (FsStream *stream, GstPad *pad,
  error:
   /* TODO: signal error*/
   return;
+}
+
+gboolean
+fsu_stream_start_sending (FsuStream *self)
+{
+  return fsu_session_start_sending (self->priv->session);
+}
+
+void
+fsu_stream_stop_sending (FsuStream *self)
+{
+  return fsu_session_stop_sending (self->priv->session);
+}
+
+gboolean
+fsu_stream_start_receiving (FsuStream *self)
+{
+  FsuStreamPrivate *priv = self->priv;
+  gboolean ret = TRUE;
+
+  if (priv->receiving == FALSE) {
+    GstIterator *iter = NULL;
+    gboolean done = FALSE;
+
+    priv->receiving = TRUE;
+    iter = fs_stream_get_src_pads_iterator (priv->stream);
+    while (!done) {
+      gpointer pad;
+      switch (gst_iterator_next (iter, &pad)) {
+        case GST_ITERATOR_OK:
+          src_pad_added (priv->stream, pad, NULL, self);
+          /* TODO: check for errors */
+          gst_object_unref (pad);
+          break;
+        case GST_ITERATOR_RESYNC:
+          fsu_stream_start_receiving (self);
+          priv->receiving = TRUE;
+          gst_iterator_resync (iter);
+          break;
+        case GST_ITERATOR_ERROR:
+          done = TRUE;
+          ret = FALSE;
+          break;
+        case GST_ITERATOR_DONE:
+          done = TRUE;
+          break;
+      }
+    }
+    gst_iterator_free (iter);
+  }
+
+  return ret;
+}
+
+void
+fsu_stream_stop_receiving (FsuStream *self)
+{
+  FsuStreamPrivate *priv = self->priv;
+  GstIterator *iter = NULL;
+  gboolean done = FALSE;
+
+  priv->receiving = FALSE;
+  iter = fs_stream_get_src_pads_iterator (priv->stream);
+  while (!done) {
+    gpointer pad;
+    switch (gst_iterator_next (iter, &pad)) {
+      case GST_ITERATOR_OK:
+        {
+          GstPad *peer_pad = gst_pad_get_peer (pad);
+          if (peer_pad != NULL) {
+            gst_pad_unlink (pad, peer_pad);
+            gst_object_unref (peer_pad);
+          }
+
+          gst_object_unref (pad);
+        }
+        break;
+      case GST_ITERATOR_RESYNC:
+        gst_iterator_resync (iter);
+        break;
+      case GST_ITERATOR_ERROR:
+        done = TRUE;
+        break;
+      case GST_ITERATOR_DONE:
+        done = TRUE;
+        break;
+    }
+  }
+  gst_iterator_free (iter);
 }
