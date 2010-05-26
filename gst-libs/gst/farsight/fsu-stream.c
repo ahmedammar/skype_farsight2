@@ -305,6 +305,9 @@ src_pad_added (FsStream *stream, GstPad *pad,
     goto error;
   }
 
+  /* TODO: signal_connect("unlinked") on the pad to destroy the pipeline if the
+     src pad gets unlinked (to be removed) */
+
   return;
  error:
   /* TODO: signal error*/
@@ -376,7 +379,7 @@ fsu_stream_start_receiving (FsuStream *self)
           gst_object_unref (pad);
           break;
         case GST_ITERATOR_RESYNC:
-          fsu_stream_start_receiving (self);
+          fsu_stream_stop_receiving (self);
           priv->receiving = TRUE;
           gst_iterator_resync (iter);
           break;
