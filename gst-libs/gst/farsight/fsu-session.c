@@ -317,9 +317,13 @@ fsu_session_stop_sending (FsuSession *self)
   if (priv->sending > 0) {
     priv->sending--;
     if (priv->sending == 0) {
+      g_object_get (priv->conference,
+          "pipeline", &pipeline,
+          NULL);
       g_object_get (priv->session,
           "sink-pad", &sinkpad,
           NULL);
+
       filter_pad = gst_pad_get_peer (sinkpad);
       gst_pad_unlink (filter_pad, sinkpad);
       srcpad = fsu_filter_manager_revert (priv->filters,
