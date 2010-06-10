@@ -29,6 +29,8 @@ typedef struct _FsuSession      FsuSession;
 #include "fsu-conference.h"
 #include "fsu-stream.h"
 #include "fsu-filter.h"
+#include "fsu-source.h"
+#include "fsu-sink.h"
 
 
 G_BEGIN_DECLS
@@ -71,9 +73,9 @@ struct _FsuSession
 GType fsu_session_get_type (void) G_GNUC_CONST;
 
 FsuSession *fsu_session_new (FsuConference *conference,
-    FsSession *session, GstElement *source);
+    FsSession *session, FsuSource *source);
 FsuStream *fsu_session_handle_stream (FsuSession *self,
-    FsStream *stream, GstElement *sink);
+    FsStream *stream, FsuSink *sink);
 
 G_END_DECLS
 

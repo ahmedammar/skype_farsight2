@@ -53,21 +53,6 @@ typedef struct _FsuSink      FsuSink;
 typedef struct _FsuSinkClass FsuSinkClass;
 typedef struct _FsuSinkPrivate FsuSinkPrivate;
 
-struct _FsuSinkClass
-{
-  GstBinClass parent_class;
-  gchar *auto_sink_name;
-  GstElement *(*create_auto_sink) (FsuSink *self);
-  gchar *(*need_mixer) (FsuSink *self, GstElement *sink);
-  void (*add_filters) (FsuSink *self, FsuFilterManager *manager);
-};
-
-struct _FsuSink
-{
-  GstBin parent;
-  FsuSinkPrivate *priv;
-};
-
 GType fsu_sink_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS

@@ -50,7 +50,7 @@ struct _FsuStreamPrivate
   FsuConference *conference;
   FsuSession *session;
   FsStream *stream;
-  GstElement *sink;
+  FsuSink *sink;
   gboolean receiving;
   gboolean sending;
 };
@@ -87,9 +87,9 @@ fsu_stream_class_init (FsuStreamClass *klass)
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_SINK,
-      g_param_spec_object ("sink", "Gstreamer sink",
-          "The sink to use with the stream.",
-          GST_TYPE_ELEMENT,
+      g_param_spec_object ("sink", "Fsu Sink",
+          "The Fsu sink to use with the stream.",
+          FSU_TYPE_SINK,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
@@ -177,9 +177,9 @@ fsu_stream_constructed (GObject *object)
     g_object_get (priv->conference,
         "pipeline", &pipeline,
         NULL);
-    if (gst_bin_add (GST_BIN (pipeline), priv->sink) == FALSE)  {
+    if (gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->sink)) == FALSE)  {
       error = "Could not add sink to pipeline";
-      gst_object_unref (priv->sink);
+      gst_object_unref (GST_OBJECT (priv->sink));
       priv->sink = NULL;
       goto error;
     }
@@ -217,7 +217,7 @@ fsu_stream_dispose (GObject *object)
 
   /* TODO: release requested pads */
   if (priv->sink)
-    gst_object_unref (priv->sink);
+    gst_object_unref (GST_OBJECT (priv->sink));
   priv->sink = NULL;
 
   G_OBJECT_CLASS (fsu_stream_parent_class)->dispose (object);
@@ -236,7 +236,7 @@ fsu_stream_finalize (GObject *object)
 
 FsuStream *
 fsu_stream_new (FsuConference *conference, FsuSession *session,
-    FsStream *stream, GstElement *sink)
+    FsStream *stream, FsuSink *sink)
 {
   g_return_val_if_fail (conference != NULL, NULL);
   g_return_val_if_fail (session != NULL, NULL);
@@ -259,7 +259,7 @@ src_pad_added (FsStream *stream, GstPad *pad,
   FsuStream *self = user_data;
   FsuStreamPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
-  GstElement *sink = priv->sink;
+  GstElement *sink = GST_ELEMENT (priv->sink);
   GstPad *sinkpad = NULL;
   GstPadLinkReturn ret;
   gchar *error = NULL;
@@ -279,12 +279,10 @@ src_pad_added (FsStream *stream, GstPad *pad,
       gst_object_unref (sink);
       goto error;
     }
-  }
-
-  sinkpad = gst_element_get_static_pad (sink, "sink");
-  if (sinkpad == NULL)
+    sinkpad = gst_element_get_static_pad (sink, "sink");
+  } else {
     sinkpad = gst_element_get_request_pad (sink, "sink%d");
-  /* TODO: keep track if we requested a pad or not, so we can release it */
+  }
 
   if (sinkpad == NULL) {
     error = "Could not request sink pad from Sink";
@@ -425,6 +423,10 @@ fsu_stream_stop_receiving (FsuStream *self)
           GstPad *peer_pad = gst_pad_get_peer (pad);
           if (peer_pad != NULL) {
             gst_pad_unlink (pad, peer_pad);
+            if (priv->sink != NULL) {
+              gst_element_release_request_pad (GST_ELEMENT (priv->sink),
+                  peer_pad);
+            }
             gst_object_unref (peer_pad);
           }
 

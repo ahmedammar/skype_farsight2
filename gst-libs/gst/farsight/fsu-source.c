@@ -21,7 +21,7 @@
 #include <string.h>
 #include <gst/interfaces/propertyprobe.h>
 
-#include "fsu-source.h"
+#include "fsu-source-class.h"
 #include "fsu-common.h"
 
 

@@ -53,21 +53,6 @@ typedef struct _FsuSource      FsuSource;
 typedef struct _FsuSourceClass FsuSourceClass;
 typedef struct _FsuSourcePrivate FsuSourcePrivate;
 
-struct _FsuSourceClass
-{
-  GstBinClass parent_class;
-  const gchar **priority_sources;
-  const gchar **blacklisted_sources;
-  klass_check klass_check;
-  void (*add_filters) (FsuSource *self, FsuFilterManager *manager);
-};
-
-struct _FsuSource
-{
-  GstBin parent;
-  FsuSourcePrivate *priv;
-};
-
 GType fsu_source_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS

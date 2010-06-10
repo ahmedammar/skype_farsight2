@@ -45,7 +45,7 @@ struct _FsuSessionPrivate
   gboolean dispose_has_run;
   FsuConference *conference;
   FsSession *session;
-  GstElement *source;
+  FsuSource *source;
   FsuFilterManager *filters;
   guint sending;
 };
@@ -78,7 +78,7 @@ fsu_session_class_init (FsuSessionClass *klass)
   g_object_class_install_property (gobject_class, PROP_SOURCE,
       g_param_spec_object ("source", "Gstreamer source",
           "The source to use with the session.",
-          GST_TYPE_ELEMENT,
+          FSU_TYPE_SOURCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_FILTER_MANAGER,
@@ -166,9 +166,9 @@ fsu_session_constructed (GObject *object)
         "pipeline", &pipeline,
         NULL);
 
-    if (gst_bin_add (GST_BIN (pipeline), priv->source) == FALSE) {
+    if (gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source)) == FALSE) {
       /* TODO: signal/other error */
-      gst_object_unref (priv->source);
+      gst_object_unref (GST_OBJECT (priv->source));
       priv->source = NULL;
     }
   }
@@ -198,7 +198,7 @@ fsu_session_dispose (GObject *object)
 
   if (priv->source) {
     //fsu_source_stop (priv->source);
-    gst_object_unref (priv->source);
+    gst_object_unref (GST_OBJECT (priv->source));
   }
   priv->source = NULL;
 
@@ -217,7 +217,7 @@ fsu_session_finalize (GObject *object)
 
 FsuSession *
 fsu_session_new (FsuConference *conference,
-    FsSession *session, GstElement *source)
+    FsSession *session, FsuSource *source)
 {
 
   g_return_val_if_fail (conference != NULL, NULL);
@@ -231,7 +231,7 @@ fsu_session_new (FsuConference *conference,
 }
 
 FsuStream *
-fsu_session_handle_stream (FsuSession *self, FsStream *stream, GstElement *sink)
+fsu_session_handle_stream (FsuSession *self, FsStream *stream, FsuSink *sink)
 {
   return fsu_stream_new (self->priv->conference, self, stream, sink);
 }
@@ -257,14 +257,11 @@ fsu_session_start_sending (FsuSession *self)
       "pipeline", &pipeline,
       NULL);
 
-  srcpad = gst_element_get_static_pad (priv->source, "src");
-  if (srcpad == NULL)
-    srcpad = gst_element_get_request_pad (priv->source, "src%d");
-  /* TODO: keep track if we requested a pad or not, so we can release it */
+  srcpad = gst_element_get_request_pad (GST_ELEMENT (priv->source), "src%d");
 
   if (srcpad == NULL) {
     error = "Couldn't request pad from Source";
-    gst_bin_remove (GST_BIN (pipeline), priv->source);
+    gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
     goto no_source;
   }
 
@@ -272,7 +269,7 @@ fsu_session_start_sending (FsuSession *self)
       GST_BIN (pipeline), srcpad, NULL);
   if (filter_pad == NULL) {
     error = "Couldn't add filter manager";
-    gst_bin_remove (GST_BIN (pipeline), priv->source);
+    gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
     /* TODO: release pad if requested */
     goto no_source;
   }
@@ -285,20 +282,20 @@ fsu_session_start_sending (FsuSession *self)
   if (gst_pad_link (filter_pad, sinkpad) != GST_PAD_LINK_OK) {
     gst_object_unref (sinkpad);
     gst_object_unref (filter_pad);
-    gst_bin_remove (GST_BIN (pipeline), priv->source);
+    gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
     error = "Couldn't link the volume/level/src to fsrtpconference";
     goto no_source;
   }
 
   gst_object_unref (sinkpad);
 
-  if (gst_element_set_state (priv->source, GST_STATE_READY) !=
+  if (gst_element_set_state (GST_ELEMENT (priv->source), GST_STATE_READY) !=
       GST_STATE_CHANGE_SUCCESS) {
     error = "Couldn't set source to READY";
     goto no_source;
   }
   if (GST_STATE (pipeline) > GST_STATE_NULL)
-    gst_element_sync_state_with_parent (priv->source);
+    gst_element_sync_state_with_parent (GST_ELEMENT (priv->source));
 
   priv->sending++;
 
@@ -328,7 +325,7 @@ fsu_session_stop_sending (FsuSession *self)
       srcpad = fsu_filter_manager_revert (priv->filters,
           GST_BIN (pipeline), filter_pad);
       /* TODO: release request pad */
-      gst_element_set_state (priv->source, GST_STATE_NULL);
+      gst_element_set_state (GST_ELEMENT (priv->source), GST_STATE_NULL);
     }
   }
 }

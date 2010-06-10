@@ -22,6 +22,7 @@
   #include "config.h"
 #endif
 
+#include "fsu.h"
 #include "fsu-audio-sink.h"
 #include <gst/farsight/fsu-audioconverter-filter.h>
 #include <string.h>

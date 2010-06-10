@@ -212,7 +212,7 @@ fsu_conference_new (GstElement *conference, GstElement *pipeline)
 
 FsuSession *
 fsu_conference_handle_session (FsuConference *self,
-    FsSession *session, GstElement *source)
+    FsSession *session, FsuSource *source)
 {
   return fsu_session_new (self, session, source);
 }

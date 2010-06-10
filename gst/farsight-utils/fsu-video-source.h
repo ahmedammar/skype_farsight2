@@ -21,7 +21,7 @@
 #ifndef __FSU_VIDEO_SOURCE_H__
 #define __FSU_VIDEO_SOURCE_H__
 
-#include "fsu-source.h"
+#include <gst/farsight/fsu-source-class.h>
 
 
 G_BEGIN_DECLS

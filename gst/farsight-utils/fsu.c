@@ -23,24 +23,14 @@
 #  include "config.h"
 #endif
 
-#include "fsu-common.h"
-
-#include <string.h>
+#include <gst/gst.h>
 
 #include "fsu-audio-source.h"
 #include "fsu-video-source.h"
 #include "fsu-audio-sink.h"
 #include "fsu-video-sink.h"
 
-
-gboolean
-g_object_has_property (GObject *object, const gchar *property)
-{
-  GObjectClass *klass;
-
-  klass = G_OBJECT_GET_CLASS (object);
-  return NULL != g_object_class_find_property (klass, property);
-}
+#include <string.h>
 
 static gboolean
 klass_contains (const gchar *klass, const gchar *needle)
@@ -92,52 +82,6 @@ is_video_sink (GstElementFactory *factory)
   return (klass_contains (klass, "Video") &&
           klass_contains (klass, "Sink"));
 }
-
-/* function used to sort element features */
-/* Copy-pasted from decodebin */
-static gint
-compare_ranks (GstPluginFeature * f1, GstPluginFeature * f2)
-{
-  gint diff;
-  const gchar *rname1, *rname2;
-
-  diff =  gst_plugin_feature_get_rank (f2) - gst_plugin_feature_get_rank (f1);
-  if (diff != 0)
-    return diff;
-
-  rname1 = gst_plugin_feature_get_name (f1);
-  rname2 = gst_plugin_feature_get_name (f2);
-
-  diff = strcmp (rname2, rname1);
-
-  return diff;
-}
-
-GList *
-get_plugins_filtered (klass_check check)
-{
-  GList *walk, *registry, *result = NULL;
-  GstElementFactory *factory;
-
-  registry = gst_registry_get_feature_list (gst_registry_get_default (),
-          GST_TYPE_ELEMENT_FACTORY);
-
-  registry = g_list_sort (registry, (GCompareFunc) compare_ranks);
-
-  for (walk = registry; walk; walk = g_list_next (walk)) {
-    factory = GST_ELEMENT_FACTORY (walk->data);
-
-    if (check (factory)) {
-      result = g_list_append (result, factory);
-      gst_object_ref (factory);
-    }
-  }
-
-  gst_plugin_feature_list_free (registry);
-
-  return result;
-}
-
 
 static gboolean plugin_init (GstPlugin * plugin)
 {

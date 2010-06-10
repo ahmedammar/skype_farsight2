@@ -13,6 +13,11 @@ libgstfarsightinclude_HEADERS = \
 		fs-plugin.h \
 		fs-element-added-notifier.h \
 		fs-interfaces.h \
+		fsu-common.h \
+		fsu-sink.h \
+		fsu-sink-class.h \
+		fsu-source.h \
+		fsu-source-class.h \
 		fsu-conference.h \
 		fsu-session.h \
 		fsu-stream.h \
@@ -51,6 +56,9 @@ libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fs-element-added-notifier.c \
 		fs-interfaces.c \
 		fs-private.h \
+		fsu-common.c \
+		fsu-sink.c \
+		fsu-source.c \
 		fsu-conference.c \
 		fsu-session.c \
 		fsu-stream.c \
@@ -85,14 +93,16 @@ libgstfarsight_@GST_MAJORMINOR@_la_CFLAGS = \
 	$(FS2_INTERNAL_CFLAGS) $(FS2_CFLAGS) \
 	$(GST_PLUGINS_BASE_CFLAGS) \
 	$(GST_BASE_CFLAGS) \
-	$(GST_CFLAGS)
+	$(GST_CFLAGS) \
+	$(GST_INTERFACES_CFLAGS)
 libgstfarsight_@GST_MAJORMINOR@_la_LIBADD = \
 	$(GST_BASE_LIBS) \
-	$(GST_LIBS)
+	$(GST_LIBS)  \
+	$(GST_INTERFACES_LIBS)
 libgstfarsight_@GST_MAJORMINOR@_la_LDFLAGS = \
 	$(FS2_LIB_LDFLAGS) \
 	$(FS2_ALL_LDFLAGS) \
-	$(FS2_LT_LDFLAGS) 
+	$(FS2_LT_LDFLAGS)
 
 
 public_headers = fs-candidate.h \
@@ -101,6 +111,8 @@ public_headers = fs-candidate.h \
 		fs-session.h \
 		fs-stream.h \
 		fs-conference-iface.h \
+		fsu-sink.h \
+		fsu-source.h \
 		fsu-conference.h \
 		fsu-session.h \
 		fsu-stream.h \

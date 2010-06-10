@@ -26,7 +26,7 @@
 #include <string.h>
 #include <gst/interfaces/propertyprobe.h>
 
-#include "fsu-sink.h"
+#include "fsu-sink-class.h"
 #include "fsu-common.h"
 
 

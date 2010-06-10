@@ -2,7 +2,7 @@
  * fsu-stream.h - Header for FsuStream
  *
  * Copyright (C) 2010 Collabora Ltd.
-
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -29,6 +29,7 @@ typedef struct _FsuStream      FsuStream;
 
 #include "fsu-conference.h"
 #include "fsu-session.h"
+#include "fsu-sink.h"
 
 G_BEGIN_DECLS
 
@@ -71,7 +72,7 @@ GType fsu_stream_get_type (void) G_GNUC_CONST;
 
 
 FsuStream *fsu_stream_new (FsuConference *conference, FsuSession *session,
-    FsStream *stream, GstElement *sink);
+    FsStream *stream, FsuSink *sink);
 
 gboolean fsu_stream_start_sending (FsuStream *self);
 void fsu_stream_stop_sending (FsuStream *self);

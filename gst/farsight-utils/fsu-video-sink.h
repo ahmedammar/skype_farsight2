@@ -21,7 +21,7 @@
 #ifndef __FSU_VIDEO_SINK_H__
 #define __FSU_VIDEO_SINK_H__
 
-#include "fsu-sink.h"
+#include <gst/farsight/fsu-sink-class.h>
 
 
 G_BEGIN_DECLS
