@@ -51,7 +51,6 @@ GST_BOILERPLATE_FULL (FsuVideoSource, fsu_video_source,
 
 static const gchar *video_priority_sources[] = {"dshowvideosrc",
                                                 "ksvideosrc",
-                                                "gconfvideosrc",
                                                 "v4l2src",
                                                 "v4lsrc",
                                                 NULL};
