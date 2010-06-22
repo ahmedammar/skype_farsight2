@@ -45,6 +45,8 @@
  * |[
  * "session"          #FsSession          The session that emits the message
  * "codec"            #FsCodec            The new send codec
+ * "secondary-codecs" #GList              A #GList of #FsCodec (to be freed
+ *                                        with fs_codec_list_destroy())
  * ]|
  * <para>
  * This message is sent on the bus when the value of the
@@ -80,7 +82,7 @@
 #include "fs-conference-iface.h"
 #include "fs-codec.h"
 #include "fs-marshal.h"
-#include "fs-enum-types.h"
+#include "fs-enumtypes.h"
 #include "fs-private.h"
 
 #define GST_CAT_DEFAULT fs_base_conference_debug
