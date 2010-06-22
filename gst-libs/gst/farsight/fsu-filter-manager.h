@@ -52,6 +52,7 @@ G_BEGIN_DECLS
 typedef struct _FsuFilterManager      FsuFilterManager;
 typedef struct _FsuFilterManagerClass FsuFilterManagerClass;
 typedef struct _FsuFilterManagerPrivate FsuFilterManagerPrivate;
+typedef struct _FsuFilterId FsuFilterId;
 
 struct _FsuFilterManagerClass
 {
@@ -67,11 +68,23 @@ struct _FsuFilterManager
 GType fsu_filter_manager_get_type (void) G_GNUC_CONST;
 
 FsuFilterManager *fsu_filter_manager_new (void);
-gboolean fsu_filter_manager_insert_filter (FsuFilterManager *self,
-    FsuFilter *filter, gint position);
 GList *fsu_filter_manager_list_filters (FsuFilterManager *self);
+FsuFilterId *fsu_filter_manager_prepend_filter (FsuFilterManager *self,
+    FsuFilter *filter);
+FsuFilterId *fsu_filter_manager_append_filter (FsuFilterManager *self,
+    FsuFilter *filter);
+FsuFilterId *fsu_filter_manager_insert_filter_before (FsuFilterManager *self,
+    FsuFilter *filter, FsuFilterId *before);
+FsuFilterId *fsu_filter_manager_insert_filter_after (FsuFilterManager *self,
+    FsuFilter *filter, FsuFilterId *after);
+FsuFilterId *fsu_filter_manager_replace_filter (FsuFilterManager *self,
+    FsuFilter *filter, FsuFilterId *replace);
+FsuFilterId *fsu_filter_manager_insert_filter (FsuFilterManager *self,
+    FsuFilter *filter, gint position);
 gboolean fsu_filter_manager_remove_filter (FsuFilterManager *self,
-    FsuFilter *filter, guint position);
+    FsuFilterId *id);
+FsuFilter *fsu_filter_manager_get_filter_by_id (FsuFilterManager *self,
+    FsuFilterId *id);
 
 GstPad *fsu_filter_manager_apply (FsuFilterManager *self,
     GstBin *bin, GstPad *pad, FsuFilter **failing_filter);
