@@ -434,25 +434,24 @@ fsu_filter_manager_get_filter_by_id (FsuFilterManager *self, FsuFilterId *id)
 
 GstPad *
 fsu_filter_manager_apply (FsuFilterManager *self,
-    GstBin *bin, GstPad *pad, FsuFilter **failing_filter)
+    GstBin *bin, GstPad *pad)
 {
   FsuFilterManagerPrivate *priv = self->priv;
   GList *i = NULL;
 
   if (priv->applied_bin != NULL) {
     g_debug ("Can only apply the filters once");
-    *failing_filter = NULL;
     return NULL;
   }
   if (bin == NULL || pad == NULL) {
     g_debug ("Bin and/or pad NULL. Cannot apply");
-    *failing_filter = NULL;
     return NULL;
   }
 
   g_debug ("Applying on filter manager %p", self);
 
   priv->applied_pad = pad;
+
   if (GST_PAD_IS_SRC (pad))
     i = priv->filters;
   else
@@ -463,14 +462,6 @@ fsu_filter_manager_apply (FsuFilterManager *self,
     GstPad *out_pad = fsu_filter_apply (id->filter, bin, pad);
 
     if (out_pad != NULL) {
-      gboolean can_fail = FALSE;
-      g_object_get (filter, "can-fail", &can_fail, NULL);
-      if (can_fail == FALSE) {
-        g_debug ("Failable filter failed to apply");
-        priv->applied_pad = NULL;
-        *failing_filter = filter;
-        return NULL;
-      }
       id->in_pad = gst_pad_get_peer (pad);
       id->out_pad = out_pad;
       pad = out_pad;

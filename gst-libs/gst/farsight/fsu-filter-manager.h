@@ -87,7 +87,7 @@ FsuFilter *fsu_filter_manager_get_filter_by_id (FsuFilterManager *self,
     FsuFilterId *id);
 
 GstPad *fsu_filter_manager_apply (FsuFilterManager *self,
-    GstBin *bin, GstPad *pad, FsuFilter **failing_filter);
+    GstBin *bin, GstPad *pad);
 GstPad *fsu_filter_manager_revert (FsuFilterManager *self,
     GstBin *bin, GstPad *pad);
 

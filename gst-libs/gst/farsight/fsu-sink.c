@@ -442,7 +442,7 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
   add_filters (self, filter);
   priv->filters = g_list_prepend (priv->filters, filter);
 
-  filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad, NULL);
+  filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad);
 
   if (filter_pad == NULL) {
     WARNING ("Could not add filters to sink pad");

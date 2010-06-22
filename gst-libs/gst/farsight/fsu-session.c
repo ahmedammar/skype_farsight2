@@ -266,7 +266,7 @@ fsu_session_start_sending (FsuSession *self)
   }
 
   filter_pad = fsu_filter_manager_apply (priv->filters,
-      GST_BIN (pipeline), srcpad, NULL);
+      GST_BIN (pipeline), srcpad);
   if (filter_pad == NULL) {
     error = "Couldn't add filter manager";
     gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
