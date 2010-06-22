@@ -380,7 +380,6 @@ fsu_videoconverter_filter_get_type
 fsu_videoconverter_filter_new
 fsu_volume_filter_get_type
 fsu_volume_filter_new
-fsu_filter_update_link
 FSU_EFFECTV_FILTER
 FSU_EFFECTV_FILTER_CLASS
 FSU_EFFECTV_FILTER_GET_CLASS
@@ -422,10 +421,6 @@ fsu_sink_get_type
 fsu_source_get_type
 g_object_has_property
 get_plugins_filtered
-is_audio_sink
-is_audio_source
-is_video_sink
-is_video_source
 klass_check
 FSU_FRAMERATE_FILTER
 FSU_FRAMERATE_FILTER_CLASS
