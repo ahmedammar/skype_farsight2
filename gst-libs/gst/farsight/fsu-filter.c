@@ -144,9 +144,8 @@ fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad)
   g_debug ("Applied filter %p : %p", self, out_pad);
 
   if (out_pad != NULL) {
-    gst_object_ref (pad);
     gst_object_ref (out_pad);
-    g_hash_table_insert (priv->pads, out_pad, pad);
+    g_hash_table_insert (priv->pads, out_pad, gst_pad_get_peer (pad));
   }
 
   return out_pad;
@@ -164,6 +163,7 @@ fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
   g_assert (func != NULL);
 
   expected = GST_PAD (g_hash_table_lookup (priv->pads, pad));
+  expected = gst_pad_get_peer (expected);
 
   if (expected == NULL) {
     g_debug ("Can't revert, never got applied on this pad");
@@ -186,24 +186,8 @@ fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
   return expected;
 }
 
-gboolean
-fsu_filter_update_link (FsuFilter *self, GstPad *pad,
-    GstPad *old_pad, GstPad *new_pad)
-{
-  FsuFilterPrivate *priv = self->priv;
-  GstPad *expected = GST_PAD (g_hash_table_lookup (priv->pads, pad));
-
-  if (expected == old_pad) {
-    gst_object_ref (new_pad);
-    gst_object_ref (pad);
-    g_hash_table_replace (priv->pads, pad, new_pad);
-    return TRUE;
-  }
-  return FALSE;
-}
-
 GstPad *
 fsu_filter_follow (FsuFilter *self, GstPad *pad)
 {
-  return GST_PAD (g_hash_table_lookup (self->priv->pads, pad));
+  return gst_pad_get_peer (g_hash_table_lookup (self->priv->pads, pad));
 }
