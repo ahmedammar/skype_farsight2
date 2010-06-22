@@ -412,6 +412,7 @@ tests/rtp/Makefile
 examples/Makefile
 examples/gui/Makefile
 examples/commandline/Makefile
+examples/filter-manager/Makefile
 docs/Makefile
 docs/libs/Makefile
 docs/plugins/Makefile

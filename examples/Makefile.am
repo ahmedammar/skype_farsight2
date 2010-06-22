@@ -1,2 +1,2 @@
 
-SUBDIRS = gui commandline
+SUBDIRS = gui commandline filter-manager
