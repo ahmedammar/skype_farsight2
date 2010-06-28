@@ -193,3 +193,14 @@ fsu_filter_follow (FsuFilter *self, GstPad *pad)
   else
     return NULL;
 }
+
+gboolean
+fsu_filter_handle_message (FsuFilter *self, GstMessage *message)
+{
+  FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
+
+  if (klass->handle_message != NULL)
+    return klass->handle_message (self, message);
+
+  return FALSE;
+}

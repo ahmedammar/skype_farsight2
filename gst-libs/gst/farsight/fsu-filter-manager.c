@@ -591,3 +591,21 @@ fsu_filter_manager_revert (FsuFilterManager *self,
   return pad;
 }
 
+gboolean
+fsu_filter_manager_handle_message (FsuFilterManager *self, GstMessage *message)
+{
+  FsuFilterManagerPrivate *priv = self->priv;
+  GList *i = NULL;
+  gboolean drop = FALSE;
+
+  for (i = priv->applied_filters; i != NULL && drop == FALSE; i = i->next)
+  {
+    FsuFilterId *id = i->data;
+
+    /* Only handle messages to successfully applied filters */
+    if (id->in_pad != NULL)
+      drop = fsu_filter_handle_message (id->filter, message);
+  }
+
+  return drop;
+}

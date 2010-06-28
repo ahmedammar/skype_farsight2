@@ -91,6 +91,9 @@ GstPad *fsu_filter_manager_apply (FsuFilterManager *self,
 GstPad *fsu_filter_manager_revert (FsuFilterManager *self,
     GstBin *bin, GstPad *pad);
 
+gboolean fsu_filter_manager_handle_message (FsuFilterManager *self,
+    GstMessage *message);
+
 G_END_DECLS
 
 #endif /* __FSU_FILTER_MANAGER_H__ */
