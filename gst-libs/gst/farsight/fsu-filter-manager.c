@@ -148,7 +148,6 @@ apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
   FsuFilterManager *self = user_data;
   FsuFilterManagerPrivate *priv = self->priv;
 
-  /* TODO: rewrite */
   g_debug ("Pad blocked, now modifying pipeline with %d modifications",
       g_queue_get_length (priv->modifications));
 
@@ -161,34 +160,42 @@ apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
     GstPad *current_pad = NULL;
     GstPad *out_pad = NULL;
     GstPad *srcpad, *sinkpad;
-    gboolean remove = FALSE;
-    gboolean insert = FALSE;
     GList *current_pos = NULL;
-    FsuFilterId *to_remove = NULL;
     FsuFilterId *current_id = NULL;
+    gboolean remove = FALSE;
+    FsuFilterId *to_remove = NULL;
+    gboolean insert = FALSE;
     gint insert_position = -1;
 
-    if (modif->action == REMOVE)
-      to_remove = modif->id;
-    else
-      to_remove = modif->replace_id;
-
-    if (modif->action == INSERT)
+    /* Set initial values representing the current action */
+    if (modif->action == INSERT) {
       current_pos = g_list_nth (priv->applied_filters, modif->insert_position);
-    else if (modif->action == REPLACE)
+      insert = TRUE;
+    } else if (modif->action == REMOVE) {
+      to_remove = modif->id;
+      /* Do not set remove to TRUE because we don't know yet if the filter
+         to remove had failed or not */
+    } else if (modif->action == REPLACE) {
       current_pos = g_list_find (priv->applied_filters, modif->replace_id);
+      to_remove = modif->replace_id;
+      insert = TRUE;
+      /* Do not set remove to TRUE because we don't know yet if the filter
+         to remove had failed or not */
+    }
+
 
     /* Find the last successfully applied filter after the current one if
-       the one at our position failed to apply */
+       the one at our position had failed to apply */
     for (; current_pos != NULL; current_pos = current_pos->next) {
       current_id = current_pos->data;
       if (current_id->in_pad != NULL)
         break;
     }
 
+    /* If we want to insert or to replace a failed filter, then find the correct
+       pads to unlink/link */
     if (modif->action == INSERT ||
         (modif->action == REPLACE && to_remove->in_pad == NULL)) {
-      insert = TRUE;
       if (current_pos == NULL) {
         if (GST_PAD_IS_SRC (priv->applied_pad) == TRUE) {
           srcpad = current_pad = priv->out_pad;
@@ -207,6 +214,8 @@ apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
         }
       }
     } else {
+      /* If the action is REMOVE or REPLACE and the filter to remove had been
+         applied successfully */
       if (to_remove->in_pad != NULL) {
         remove = TRUE;
         current_pad = to_remove->out_pad;
@@ -218,20 +227,27 @@ apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
           srcpad = gst_pad_get_peer (sinkpad);
         }
       }
-      if (modif->action == REPLACE)
-        insert = TRUE;
     }
 
+    /* We may have nothing to do and no need to unlink if we want to REMOVE a
+       filter which had failed to apply previously */
     if (insert || remove) {
       // unlink
       gst_pad_unlink (srcpad, sinkpad);
+
       if (remove)
-        out_pad = fsu_filter_revert (to_remove->filter, priv->applied_bin, current_pad);
+        out_pad = fsu_filter_revert (to_remove->filter, priv->applied_bin,
+            current_pad);
       else if (insert)
-        out_pad = fsu_filter_apply (modif->id->filter, priv->applied_bin, current_pad);
+        out_pad = fsu_filter_apply (modif->id->filter, priv->applied_bin,
+            current_pad);
+
       if (to_remove != NULL)
         to_remove->in_pad = to_remove->out_pad = NULL;
+
       if (out_pad != NULL) {
+
+        /* If we want to replace, we need to apply after the revert */
         if (remove && insert) {
           GstPad *out_pad2 = NULL;
           out_pad2 = fsu_filter_apply (modif->id->filter,
@@ -250,6 +266,7 @@ apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
         else
           sinkpad = out_pad;
 
+        /* Update the out pad*/
         if (current_pad == priv->out_pad) {
           g_debug ("out pad changed from %p to %p", priv->out_pad, out_pad);
           priv->out_pad = out_pad;
@@ -261,19 +278,22 @@ apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
       // Link
       /* TODO: handle unable to link */
       gst_pad_link (srcpad, sinkpad);
-
-      if (modif->action == REPLACE)
-        insert_position = g_list_index (priv->applied_filters, to_remove);
-      else if (modif->action == INSERT)
-        insert_position = modif->insert_position;
-
-      if (insert_position != -1)
-        priv->applied_filters = g_list_insert (priv->applied_filters,
-            modif->id, insert_position);
-      if (to_remove != NULL)
-        priv->applied_filters = g_list_remove (priv->applied_filters, to_remove);
-
     }
+
+    /* Synchronize our applied_filters list with the filters list */
+    if (modif->action == REPLACE)
+      insert_position = g_list_index (priv->applied_filters, to_remove);
+    else if (modif->action == INSERT)
+      insert_position = modif->insert_position;
+
+    if (insert_position != -1)
+      priv->applied_filters = g_list_insert (priv->applied_filters,
+          modif->id, insert_position);
+    if (to_remove != NULL) {
+      priv->applied_filters = g_list_remove (priv->applied_filters, to_remove);
+      free_filter_id (to_remove);
+    }
+
 
     g_slice_free (FilterModification, modif);
   }
