@@ -21,24 +21,7 @@
 #include "fsu-videoconverter-filter.h"
 #include <gst/farsight/fsu-filter-helper.h>
 
-G_DEFINE_TYPE (FsuVideoconverterFilter, fsu_videoconverter_filter,
-    FSU_TYPE_FILTER);
-
-static GstPad *fsu_videoconverter_filter_apply (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
-static GstPad *fsu_videoconverter_filter_revert (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
-
-
-static void
-fsu_videoconverter_filter_class_init (FsuVideoconverterFilterClass *klass)
-{
-  FsuFilterClass *fsufilter_class = FSU_FILTER_CLASS (klass);
-
-  fsufilter_class->apply = fsu_videoconverter_filter_apply;
-  fsufilter_class->revert = fsu_videoconverter_filter_revert;
-
-}
+FSU_DEFINE_FILTER (FsuVideoconverterFilter, videoconverter);
 
 static void
 fsu_videoconverter_filter_init (FsuVideoconverterFilter *self)

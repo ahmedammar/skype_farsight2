@@ -62,6 +62,7 @@ fsu_effectv_filter_class_init (FsuEffectvFilterClass *klass)
 
   fsufilter_class->apply = fsu_effectv_filter_apply;
   fsufilter_class->revert = fsu_effectv_filter_revert;
+  fsufilter_class->name = "effectv";
 
   g_object_class_install_property (gobject_class, PROP_EFFECT,
       g_param_spec_string ("effect", "The effect to use",

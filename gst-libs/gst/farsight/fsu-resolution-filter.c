@@ -69,6 +69,7 @@ fsu_resolution_filter_class_init (FsuResolutionFilterClass *klass)
 
   fsufilter_class->apply = fsu_resolution_filter_apply;
   fsufilter_class->revert = fsu_resolution_filter_revert;
+  fsufilter_class->name = "resolution";
 
   g_object_class_install_property (gobject_class, PROP_WIDTH,
       g_param_spec_uint ("width", "The width",

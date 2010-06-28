@@ -32,7 +32,7 @@ static void fsu_filter_set_property (GObject *object,
 
 /* properties */
 enum {
-  PROP_CAN_FAIL = 1,
+  PROP_NAME = 1,
   LAST_PROPERTY
 };
 
@@ -54,11 +54,11 @@ fsu_filter_class_init (FsuFilterClass *klass)
   gobject_class->set_property = fsu_filter_set_property;
   gobject_class->dispose = fsu_filter_dispose;
 
-  g_object_class_install_property (gobject_class, PROP_CAN_FAIL,
-      g_param_spec_boolean ("can-fail", "whether the filter can fail",
-          "Set to TRUE if the filter can fail applying",
-          FALSE,
-          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_NAME,
+      g_param_spec_string ("name", "The name of the filter",
+          "The name of the filter",
+          NULL,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -80,12 +80,11 @@ fsu_filter_get_property (GObject *object,
     guint property_id, GValue *value, GParamSpec *pspec)
 {
   FsuFilter *self = FSU_FILTER (object);
-  FsuFilterPrivate *priv = self->priv;
-
+  FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
 
   switch (property_id) {
-    case PROP_CAN_FAIL:
-      g_value_set_boolean (value, priv->can_fail);
+    case PROP_NAME:
+      g_value_set_string (value, klass->name);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -101,9 +100,6 @@ fsu_filter_set_property (GObject *object,
   FsuFilterPrivate *priv = self->priv;
 
   switch (property_id) {
-    case PROP_CAN_FAIL:
-      priv->can_fail = g_value_get_boolean (value);
-      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;

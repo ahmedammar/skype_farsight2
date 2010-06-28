@@ -21,24 +21,7 @@
 #include "fsu-audioconverter-filter.h"
 #include <gst/farsight/fsu-filter-helper.h>
 
-G_DEFINE_TYPE (FsuAudioconverterFilter, fsu_audioconverter_filter,
-    FSU_TYPE_FILTER);
-
-static GstPad *fsu_audioconverter_filter_apply (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
-static GstPad *fsu_audioconverter_filter_revert (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
-
-
-static void
-fsu_audioconverter_filter_class_init (FsuAudioconverterFilterClass *klass)
-{
-  FsuFilterClass *fsufilter_class = FSU_FILTER_CLASS (klass);
-
-  fsufilter_class->apply = fsu_audioconverter_filter_apply;
-  fsufilter_class->revert = fsu_audioconverter_filter_revert;
-
-}
+FSU_DEFINE_FILTER (FsuAudioconverterFilter, audioconverter);
 
 static void
 fsu_audioconverter_filter_init (FsuAudioconverterFilter *self)

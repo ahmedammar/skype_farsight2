@@ -57,6 +57,7 @@ struct _FsuFilterClass
   GObjectClass parent_class;
   GstPad *(*apply) (FsuFilter *self, GstBin *bin, GstPad *pad);
   GstPad *(*revert) (FsuFilter *self, GstBin *bin, GstPad *pad);
+  gchar *name;
 };
 
 struct _FsuFilter
@@ -67,6 +68,24 @@ struct _FsuFilter
 
 GType fsu_filter_get_type (void) G_GNUC_CONST;
 
+
+#define FSU_DEFINE_FILTER(type, filter_name) \
+  G_DEFINE_TYPE (type, fsu_##filter_name##_filter, FSU_TYPE_FILTER);   \
+                                                                        \
+  static GstPad *fsu_##filter_name##_filter_apply (FsuFilter *filter,   \
+      GstBin *bin, GstPad *pad);                                        \
+  static GstPad *fsu_##filter_name##_filter_revert (FsuFilter *filter,  \
+      GstBin *bin, GstPad *pad);                                        \
+                                                                        \
+  static void                                                           \
+  fsu_##filter_name##_filter_class_init (type##Class *klass)            \
+  {                                                                     \
+    FsuFilterClass *fsufilter_class = FSU_FILTER_CLASS (klass);         \
+                                                                        \
+    fsufilter_class->apply = fsu_##filter_name##_filter_apply;          \
+    fsufilter_class->revert = fsu_##filter_name##_filter_revert;        \
+    fsufilter_class->name = #filter_name;                               \
+  }
 
 GstPad *fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad);
 GstPad *fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad);

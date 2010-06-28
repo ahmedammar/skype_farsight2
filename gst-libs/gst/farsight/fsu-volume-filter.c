@@ -63,8 +63,10 @@ fsu_volume_filter_class_init (FsuVolumeFilterClass *klass)
   gobject_class->get_property = fsu_volume_filter_get_property;
   gobject_class->set_property = fsu_volume_filter_set_property;
   gobject_class->dispose = fsu_volume_filter_dispose;
+
   fsufilter_class->apply = fsu_volume_filter_apply;
   fsufilter_class->revert = fsu_volume_filter_revert;
+  fsufilter_class->name = "volume";
 
   g_object_class_install_property (gobject_class, PROP_VOLUME,
       g_param_spec_double ("volume", "Volume",
@@ -160,9 +162,7 @@ fsu_volume_filter_dispose (GObject *object)
 FsuVolumeFilter *
 fsu_volume_filter_new (void)
 {
-  return g_object_new (FSU_TYPE_VOLUME_FILTER,
-      "can-fail", TRUE,
-      NULL);
+  return g_object_new (FSU_TYPE_VOLUME_FILTER, NULL);
 }
 
 static GstPad *
