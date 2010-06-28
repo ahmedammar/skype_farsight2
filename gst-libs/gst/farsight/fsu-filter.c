@@ -158,17 +158,18 @@ fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
   FsuFilterPrivate *priv = self->priv;
   GstPad *(*func) (FsuFilter *self, GstBin *bin, GstPad *pad) = klass->revert;
   GstPad *expected = NULL;
+  GstPad *in_pad = NULL;
   GstPad *out_pad = NULL;
 
   g_assert (func != NULL);
 
-  expected = GST_PAD (g_hash_table_lookup (priv->pads, pad));
-  expected = gst_pad_get_peer (expected);
+  in_pad = GST_PAD (g_hash_table_lookup (priv->pads, pad));
 
-  if (expected == NULL) {
+  if (in_pad == NULL) {
     g_debug ("Can't revert, never got applied on this pad");
     return NULL;
   }
+  expected = gst_pad_get_peer (in_pad);
 
   g_debug ("Reverting on filter %p : %p", self, pad);
   out_pad = func (self, bin, pad);
@@ -189,5 +190,10 @@ fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
 GstPad *
 fsu_filter_follow (FsuFilter *self, GstPad *pad)
 {
-  return gst_pad_get_peer (g_hash_table_lookup (self->priv->pads, pad));
+  GstPad *in_pad = g_hash_table_lookup (self->priv->pads, pad);
+
+  if (in_pad != NULL)
+    return gst_pad_get_peer (in_pad);
+  else
+    return NULL;
 }
