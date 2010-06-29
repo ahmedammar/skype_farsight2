@@ -330,7 +330,7 @@ fsu_stream_start_sending (FsuStream *self)
   if (new_direction != direction)
     g_object_set (priv->stream, "direction", new_direction, NULL);
 
-  return fsu_session_start_sending (priv->session);
+  return _fsu_session_start_sending (priv->session);
 }
 
 void
@@ -351,7 +351,7 @@ fsu_stream_stop_sending (FsuStream *self)
   if (new_direction != direction)
     g_object_set (priv->stream, "direction", new_direction, NULL);
 
-  fsu_session_stop_sending (priv->session);
+  _fsu_session_stop_sending (priv->session);
 }
 
 gboolean

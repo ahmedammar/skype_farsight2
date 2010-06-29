@@ -25,8 +25,8 @@
 
 G_BEGIN_DECLS
 
-gboolean fsu_session_start_sending (FsuSession *self);
-void fsu_session_stop_sending (FsuSession *self);
+gboolean _fsu_session_start_sending (FsuSession *self);
+void _fsu_session_stop_sending (FsuSession *self);
 
 G_END_DECLS
 

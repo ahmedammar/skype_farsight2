@@ -20,6 +20,7 @@ libgstfarsightinclude_HEADERS = \
 		fsu-source-class.h \
 		fsu-conference.h \
 		fsu-session.h \
+		fsu-session-priv.h \
 		fsu-stream.h \
 		fsu-filter-manager.h \
 		fsu-filter.h \

@@ -19,6 +19,7 @@
  */
 
 #include "fsu-session.h"
+#include "fsu-session-priv.h"
 #include "fsu-filter-manager.h"
 
 G_DEFINE_TYPE (FsuSession, fsu_session, G_TYPE_OBJECT);
@@ -238,7 +239,7 @@ fsu_session_handle_stream (FsuSession *self, FsStream *stream, FsuSink *sink)
 
 
 gboolean
-fsu_session_start_sending (FsuSession *self)
+_fsu_session_start_sending (FsuSession *self)
 {
   FsuSessionPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
@@ -306,7 +307,7 @@ fsu_session_start_sending (FsuSession *self)
 }
 
 void
-fsu_session_stop_sending (FsuSession *self)
+_fsu_session_stop_sending (FsuSession *self)
 {
   FsuSessionPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
