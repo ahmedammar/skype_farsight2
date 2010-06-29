@@ -196,7 +196,6 @@ fsu_resolution_filter_new (guint width, guint height)
 static GstPad *
 fsu_resolution_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 {
-
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (filter);
   FsuResolutionFilterPrivate *priv = self->priv;
   GstElement *capsfilter = NULL;

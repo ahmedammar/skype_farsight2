@@ -28,8 +28,10 @@ fsu_filter_add_element (GstBin *bin, GstPad *pad,
 
   g_return_val_if_fail (element != NULL, FALSE);
   g_return_val_if_fail (element_pad != NULL, FALSE);
-  g_return_val_if_fail ((GST_PAD_IS_SRC (pad) && GST_PAD_IS_SINK (element_pad)) ||
-      (GST_PAD_IS_SINK (pad) && GST_PAD_IS_SRC (element_pad)), FALSE);
+  g_return_val_if_fail (
+      (GST_PAD_IS_SRC (pad) && GST_PAD_IS_SINK (element_pad)) ||
+      (GST_PAD_IS_SINK (pad) && GST_PAD_IS_SRC (element_pad)),
+      FALSE);
 
   if (gst_bin_add (bin, element) == FALSE) {
     return FALSE;
