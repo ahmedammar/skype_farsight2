@@ -2,7 +2,8 @@
  * fsu-video-sink.h - Header for FsuVideoSink
  *
  * Copyright (C) 2010 Collabora Ltd.
-
+ *  @author: Youness Alaoui <youness.alaoui@collabora.co.uk>
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
