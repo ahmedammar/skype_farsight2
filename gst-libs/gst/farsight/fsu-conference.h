@@ -43,10 +43,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_CONFERENCE,                      \
       FsuConferenceClass))
-#define IS_FSU_CONFERENCE(obj)                  \
+#define FSU_IS_CONFERENCE(obj)                  \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_CONFERENCE))
-#define IS_FSU_CONFERENCE_CLASS(klass)          \
+#define FSU_IS_CONFERENCE_CLASS(klass)          \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_CONFERENCE))
 #define FSU_CONFERENCE_GET_CLASS(obj)           \

@@ -39,10 +39,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_SINK,                            \
       FsuSinkClass))
-#define IS_FSU_SINK(obj)                        \
+#define FSU_IS_SINK(obj)                        \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_SINK))
-#define IS_FSU_SINK_CLASS(klass)                \
+#define FSU_IS_SINK_CLASS(klass)                \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_SINK))
 #define FSU_SINK_GET_CLASS(obj)                 \

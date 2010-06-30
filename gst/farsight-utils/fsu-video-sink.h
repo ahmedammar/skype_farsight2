@@ -37,10 +37,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_VIDEO_SINK,                    \
       FsuVideoSinkClass))
-#define IS_FSU_VIDEO_SINK(obj)                \
+#define FSU_IS_VIDEO_SINK(obj)                \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_VIDEO_SINK))
-#define IS_FSU_VIDEO_SINK_CLASS(klass)        \
+#define FSU_IS_VIDEO_SINK_CLASS(klass)        \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_VIDEO_SINK))
 #define FSU_VIDEO_SINK_GET_CLASS(obj)         \

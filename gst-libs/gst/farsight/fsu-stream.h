@@ -44,10 +44,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_STREAM,                          \
       FsuStreamClass))
-#define IS_FSU_STREAM(obj)                      \
+#define FSU_IS_STREAM(obj)                      \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_STREAM))
-#define IS_FSU_STREAM_CLASS(klass)              \
+#define FSU_IS_STREAM_CLASS(klass)              \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_STREAM))
 #define FSU_STREAM_GET_CLASS(obj)               \

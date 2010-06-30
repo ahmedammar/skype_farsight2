@@ -37,10 +37,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_AUDIOCONVERTER_FILTER,           \
       FsuAudioconverterFilterClass))
-#define IS_FSU_AUDIOCONVERTER_FILTER(obj)       \
+#define FSU_IS_AUDIOCONVERTER_FILTER(obj)       \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_AUDIOCONVERTER_FILTER))
-#define IS_FSU_AUDIOCONVERTER_FILTER_CLASS(klass)       \
+#define FSU_IS_AUDIOCONVERTER_FILTER_CLASS(klass)       \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),                    \
       FSU_TYPE_AUDIOCONVERTER_FILTER))
 #define FSU_AUDIOCONVERTER_FILTER_GET_CLASS(obj)        \

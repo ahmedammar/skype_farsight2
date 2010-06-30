@@ -37,10 +37,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_AUDIO_SOURCE,                    \
       FsuAudioSourceClass))
-#define IS_FSU_AUDIO_SOURCE(obj)                \
+#define FSU_IS_AUDIO_SOURCE(obj)                \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_AUDIO_SOURCE))
-#define IS_FSU_AUDIO_SOURCE_CLASS(klass)        \
+#define FSU_IS_AUDIO_SOURCE_CLASS(klass)        \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_AUDIO_SOURCE))
 #define FSU_AUDIO_SOURCE_GET_CLASS(obj)         \

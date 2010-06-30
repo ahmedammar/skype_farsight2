@@ -37,10 +37,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_EFFECTV_FILTER,                  \
       FsuEffectvFilterClass))
-#define IS_FSU_EFFECTV_FILTER(obj)              \
+#define FSU_IS_EFFECTV_FILTER(obj)              \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_EFFECTV_FILTER))
-#define IS_FSU_EFFECTV_FILTER_CLASS(klass)      \
+#define FSU_IS_EFFECTV_FILTER_CLASS(klass)      \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_EFFECTV_FILTER))
 #define FSU_EFFECTV_FILTER_GET_CLASS(obj)       \

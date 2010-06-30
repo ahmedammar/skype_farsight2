@@ -37,10 +37,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_VIDEO_SOURCE,                    \
       FsuVideoSourceClass))
-#define IS_FSU_VIDEO_SOURCE(obj)                \
+#define FSU_IS_VIDEO_SOURCE(obj)                \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_VIDEO_SOURCE))
-#define IS_FSU_VIDEO_SOURCE_CLASS(klass)        \
+#define FSU_IS_VIDEO_SOURCE_CLASS(klass)        \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_VIDEO_SOURCE))
 #define FSU_VIDEO_SOURCE_GET_CLASS(obj)         \

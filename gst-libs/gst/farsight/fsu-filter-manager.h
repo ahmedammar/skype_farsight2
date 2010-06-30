@@ -39,10 +39,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_FILTER_MANAGER,                  \
       FsuFilterManagerClass))
-#define IS_FSU_FILTER_MANAGER(obj)              \
+#define FSU_IS_FILTER_MANAGER(obj)              \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_FILTER_MANAGER))
-#define IS_FSU_FILTER_MANAGER_CLASS(klass)      \
+#define FSU_IS_FILTER_MANAGER_CLASS(klass)      \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_FILTER_MANAGER))
 #define FSU_FILTER_MANAGER_GET_CLASS(obj)       \

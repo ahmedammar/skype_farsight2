@@ -46,10 +46,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
       FSU_TYPE_SESSION,                         \
       FsuSessionClass))
-#define IS_FSU_SESSION(obj)                     \
+#define FSU_IS_SESSION(obj)                     \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_SESSION))
-#define IS_FSU_SESSION_CLASS(klass)             \
+#define FSU_IS_SESSION_CLASS(klass)             \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
       FSU_TYPE_SESSION))
 #define FSU_SESSION_GET_CLASS(obj)              \
