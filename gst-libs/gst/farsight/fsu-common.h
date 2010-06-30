@@ -22,7 +22,6 @@
 #ifndef __FSU_COMMON_H__
 #define __FSU_COMMON_H__
 
-#include <glib-object.h>
 #include <gst/gst.h>
 
 

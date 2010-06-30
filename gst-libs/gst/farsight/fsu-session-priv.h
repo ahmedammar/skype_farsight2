@@ -22,7 +22,7 @@
 #ifndef __FSU_SESSION_PRIV_H__
 #define __FSU_SESSION_PRIV_H__
 
-#include "fsu-session.h"
+#include <gst/farsight/fsu-session.h>
 
 G_BEGIN_DECLS
 

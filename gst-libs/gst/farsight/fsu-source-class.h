@@ -22,7 +22,7 @@
 #ifndef __FSU_SOURCE_CLASS_H__
 #define __FSU_SOURCE_CLASS_H__
 
-#include "fsu-source.h"
+#include <gst/farsight/fsu-source.h>
 
 G_BEGIN_DECLS
 

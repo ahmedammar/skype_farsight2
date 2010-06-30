@@ -19,9 +19,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "fsu-session.h"
-#include "fsu-session-priv.h"
-#include "fsu-filter-manager.h"
+#include <gst/farsight/fsu-session.h>
+#include <gst/farsight/fsu-session-priv.h>
+#include <gst/farsight/fsu-filter-manager.h>
 
 G_DEFINE_TYPE (FsuSession, fsu_session, G_TYPE_OBJECT);
 

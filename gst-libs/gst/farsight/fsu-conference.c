@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "fsu-conference.h"
+#include <gst/farsight/fsu-conference.h>
 
 #include <gst/gst.h>
 

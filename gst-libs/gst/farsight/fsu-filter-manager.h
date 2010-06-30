@@ -22,7 +22,6 @@
 #ifndef __FSU_FILTER_MANAGER_H__
 #define __FSU_FILTER_MANAGER_H__
 
-#include <glib-object.h>
 #include <gst/gst.h>
 #include <gst/farsight/fsu-filter.h>
 

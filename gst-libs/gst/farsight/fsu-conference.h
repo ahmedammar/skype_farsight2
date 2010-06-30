@@ -22,14 +22,13 @@
 #ifndef __FSU_CONFERENCE_H__
 #define __FSU_CONFERENCE_H__
 
-#include <glib-object.h>
 #include <gst/gst.h>
 #include <gst/farsight/fs-conference-iface.h>
 
 typedef struct _FsuConference      FsuConference;
 
-#include "fsu-session.h"
-#include "fsu-source.h"
+#include <gst/farsight/fsu-session.h>
+#include <gst/farsight/fsu-source.h>
 
 G_BEGIN_DECLS
 

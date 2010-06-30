@@ -27,11 +27,11 @@
 
 typedef struct _FsuSession      FsuSession;
 
-#include "fsu-conference.h"
-#include "fsu-stream.h"
-#include "fsu-filter.h"
-#include "fsu-source.h"
-#include "fsu-sink.h"
+#include <gst/farsight/fsu-conference.h>
+#include <gst/farsight/fsu-stream.h>
+#include <gst/farsight/fsu-filter.h>
+#include <gst/farsight/fsu-source.h>
+#include <gst/farsight/fsu-sink.h>
 
 
 G_BEGIN_DECLS

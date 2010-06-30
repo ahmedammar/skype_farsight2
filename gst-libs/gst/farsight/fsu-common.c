@@ -24,7 +24,7 @@
 #  include "config.h"
 #endif
 
-#include "fsu-common.h"
+#include <gst/farsight/fsu-common.h>
 
 #include <string.h>
 

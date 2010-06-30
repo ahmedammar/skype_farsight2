@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "fsu-framerate-filter.h"
+#include <gst/farsight/fsu-framerate-filter.h>
 #include <gst/farsight/fsu-filter-helper.h>
 
 G_DEFINE_TYPE (FsuFramerateFilter, fsu_framerate_filter, FSU_TYPE_FILTER);

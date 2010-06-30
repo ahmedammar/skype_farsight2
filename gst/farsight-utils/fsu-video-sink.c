@@ -23,8 +23,8 @@
   #include "config.h"
 #endif
 
-#include "fsu.h"
 #include "fsu-video-sink.h"
+#include "fsu.h"
 #include <gst/farsight/fsu-videoconverter-filter.h>
 
 

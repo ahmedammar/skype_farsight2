@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "fsu-effectv-filter.h"
+#include <gst/farsight/fsu-effectv-filter.h>
 #include <gst/farsight/fsu-filter-helper.h>
 
 

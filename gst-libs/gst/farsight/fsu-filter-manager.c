@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "fsu-filter-manager.h"
+#include <gst/farsight/fsu-filter-manager.h>
 
 
 G_DEFINE_TYPE (FsuFilterManager, fsu_filter_manager, G_TYPE_OBJECT);

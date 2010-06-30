@@ -24,7 +24,7 @@
 
 #include <gst/gst.h>
 
-#include "fsu-common.h"
+#include <gst/farsight/fsu-common.h>
 #include <gst/farsight/fsu-filter-manager.h>
 
 G_BEGIN_DECLS

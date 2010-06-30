@@ -28,9 +28,9 @@
 
 typedef struct _FsuStream      FsuStream;
 
-#include "fsu-conference.h"
-#include "fsu-session.h"
-#include "fsu-sink.h"
+#include <gst/farsight/fsu-conference.h>
+#include <gst/farsight/fsu-session.h>
+#include <gst/farsight/fsu-sink.h>
 
 G_BEGIN_DECLS
 

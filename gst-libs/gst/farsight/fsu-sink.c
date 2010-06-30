@@ -27,8 +27,8 @@
 #include <string.h>
 #include <gst/interfaces/propertyprobe.h>
 
+#include <gst/farsight/fsu-common.h>
 #include "fsu-sink-class.h"
-#include "fsu-common.h"
 
 
 GST_DEBUG_CATEGORY_STATIC (fsu_sink_debug);

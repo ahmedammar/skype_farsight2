@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "fsu-resolution-filter.h"
+#include <gst/farsight/fsu-resolution-filter.h>
 #include <gst/farsight/fsu-filter-helper.h>
 
 G_DEFINE_TYPE (FsuResolutionFilter, fsu_resolution_filter, FSU_TYPE_FILTER);

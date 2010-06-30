@@ -22,8 +22,8 @@
 #include <string.h>
 #include <gst/interfaces/propertyprobe.h>
 
-#include "fsu-source-class.h"
-#include "fsu-common.h"
+#include <gst/farsight/fsu-source-class.h>
+#include <gst/farsight/fsu-common.h>
 
 
 GST_DEBUG_CATEGORY_STATIC (fsu_source_debug);

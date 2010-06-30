@@ -22,7 +22,7 @@
 #ifndef __FSU_SINK_CLASS_H__
 #define __FSU_SINK_CLASS_H__
 
-#include "fsu-sink.h"
+#include <gst/farsight/fsu-sink.h>
 
 struct _FsuSinkClass
 {

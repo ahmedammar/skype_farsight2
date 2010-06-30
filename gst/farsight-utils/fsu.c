@@ -24,12 +24,11 @@
 #  include "config.h"
 #endif
 
-#include <gst/gst.h>
-
-#include "fsu-audio-source.h"
-#include "fsu-video-source.h"
+#include "fsu.h"
 #include "fsu-audio-sink.h"
+#include "fsu-audio-source.h"
 #include "fsu-video-sink.h"
+#include "fsu-video-source.h"
 
 #include <string.h>
 
