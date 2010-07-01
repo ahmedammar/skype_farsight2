@@ -24,9 +24,6 @@
 
 #include <gst/gst.h>
 #include <gst/farsight/fs-conference-iface.h>
-
-typedef struct _FsuConference      FsuConference;
-
 #include <gst/farsight/fsu-session.h>
 #include <gst/farsight/fsu-source.h>
 
@@ -53,6 +50,7 @@ G_BEGIN_DECLS
       FSU_TYPE_CONFERENCE,                      \
       FsuConferenceClass))
 
+typedef struct _FsuConference      FsuConference;
 typedef struct _FsuConferenceClass FsuConferenceClass;
 typedef struct _FsuConferencePrivate FsuConferencePrivate;
 

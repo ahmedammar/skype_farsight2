@@ -21,6 +21,7 @@
 
 #include <gst/farsight/fsu-session.h>
 #include <gst/farsight/fsu-session-priv.h>
+#include <gst/farsight/fsu-stream-priv.h>
 #include <gst/farsight/fsu-filter-manager.h>
 
 G_DEFINE_TYPE (FsuSession, fsu_session, G_TYPE_OBJECT);
@@ -232,7 +233,7 @@ fsu_session_finalize (GObject *object)
 
 
 FsuSession *
-fsu_session_new (FsuConference *conference,
+_fsu_session_new (FsuConference *conference,
     FsSession *session,
     FsuSource *source)
 {
@@ -252,7 +253,7 @@ fsu_session_handle_stream (FsuSession *self,
     FsStream *stream,
     FsuSink *sink)
 {
-  return fsu_stream_new (self->priv->conference, self, stream, sink);
+  return _fsu_stream_new (self->priv->conference, self, stream, sink);
 }
 
 

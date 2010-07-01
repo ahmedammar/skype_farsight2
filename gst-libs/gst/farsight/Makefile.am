@@ -22,6 +22,7 @@ libgstfarsightinclude_HEADERS = \
 		fsu-session.h \
 		fsu-session-priv.h \
 		fsu-stream.h \
+		fsu-stream-priv.h \
 		fsu-filter-manager.h \
 		fsu-filter.h \
 		fsu-filter-helper.h \

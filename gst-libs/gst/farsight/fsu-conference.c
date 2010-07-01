@@ -20,6 +20,7 @@
  */
 
 #include <gst/farsight/fsu-conference.h>
+#include <gst/farsight/fsu-session-priv.h>
 
 #include <gst/gst.h>
 
@@ -227,6 +228,6 @@ fsu_conference_handle_session (FsuConference *self,
     FsSession *session,
     FsuSource *source)
 {
-  return fsu_session_new (self, session, source);
+  return _fsu_session_new (self, session, source);
 }
 

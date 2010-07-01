@@ -23,15 +23,9 @@
 #define __FSU_SESSION_H__
 
 #include <glib-object.h>
-#include <gst/farsight/fs-conference-iface.h>
-
-typedef struct _FsuSession      FsuSession;
-
-#include <gst/farsight/fsu-conference.h>
-#include <gst/farsight/fsu-stream.h>
-#include <gst/farsight/fsu-filter.h>
-#include <gst/farsight/fsu-source.h>
 #include <gst/farsight/fsu-sink.h>
+#include <gst/farsight/fsu-stream.h>
+#include <gst/farsight/fs-stream.h>
 
 
 G_BEGIN_DECLS
@@ -57,6 +51,7 @@ G_BEGIN_DECLS
       FSU_TYPE_SESSION,                         \
       FsuSessionClass))
 
+typedef struct _FsuSession      FsuSession;
 typedef struct _FsuSessionClass FsuSessionClass;
 typedef struct _FsuSessionPrivate FsuSessionPrivate;
 
@@ -74,9 +69,6 @@ struct _FsuSession
 
 GType fsu_session_get_type (void) G_GNUC_CONST;
 
-FsuSession *fsu_session_new (FsuConference *conference,
-    FsSession *session,
-    FsuSource *source);
 FsuStream *fsu_session_handle_stream (FsuSession *self,
     FsStream *stream,
     FsuSink *sink);

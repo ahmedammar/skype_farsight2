@@ -23,14 +23,6 @@
 #define __FSU_STREAM_H__
 
 #include <glib-object.h>
-#include <gst/farsight/fs-conference-iface.h>
-
-
-typedef struct _FsuStream      FsuStream;
-
-#include <gst/farsight/fsu-conference.h>
-#include <gst/farsight/fsu-session.h>
-#include <gst/farsight/fsu-sink.h>
 
 G_BEGIN_DECLS
 
@@ -55,6 +47,7 @@ G_BEGIN_DECLS
       FSU_TYPE_STREAM,                          \
       FsuStreamClass))
 
+typedef struct _FsuStream      FsuStream;
 typedef struct _FsuStreamClass FsuStreamClass;
 typedef struct _FsuStreamPrivate FsuStreamPrivate;
 
@@ -71,12 +64,6 @@ struct _FsuStream
 };
 
 GType fsu_stream_get_type (void) G_GNUC_CONST;
-
-
-FsuStream *fsu_stream_new (FsuConference *conference,
-    FsuSession *session,
-    FsStream *stream,
-    FsuSink *sink);
 
 gboolean fsu_stream_start_sending (FsuStream *self);
 void fsu_stream_stop_sending (FsuStream *self);

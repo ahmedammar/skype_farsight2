@@ -251,7 +251,7 @@ fsu_stream_finalize (GObject *object)
 
 
 FsuStream *
-fsu_stream_new (FsuConference *conference,
+_fsu_stream_new (FsuConference *conference,
     FsuSession *session,
     FsStream *stream,
     FsuSink *sink)

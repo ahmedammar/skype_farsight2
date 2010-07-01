@@ -1,5 +1,5 @@
 /*
- * fsu-session-priv.h - Header for private FsuSession API
+ * fsu-stream-priv.h - Header for private FsuStream API
  *
  * Copyright (C) 2010 Collabora Ltd.
  *  @author: Youness Alaoui <youness.alaoui@collabora.co.uk>
@@ -19,23 +19,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __FSU_SESSION_PRIV_H__
-#define __FSU_SESSION_PRIV_H__
+#ifndef __FSU_STREAM_PRIV_H__
+#define __FSU_STREAM_PRIV_H__
 
-#include <gst/farsight/fsu-session.h>
-#include <gst/farsight/fsu-conference.h>
 #include <gst/farsight/fsu-stream.h>
-#include <gst/farsight/fsu-source.h>
+#include <gst/farsight/fsu-conference.h>
+#include <gst/farsight/fsu-session.h>
+#include <gst/farsight/fsu-sink.h>
 
 G_BEGIN_DECLS
 
-FsuSession *_fsu_session_new (FsuConference *conference,
-    FsSession *session,
-    FsuSource *source);
+FsuStream *_fsu_stream_new (FsuConference *conference,
+    FsuSession *session,
+    FsStream *stream,
+    FsuSink *sink);
 
-gboolean _fsu_session_start_sending (FsuSession *self);
-void _fsu_session_stop_sending (FsuSession *self);
 
 G_END_DECLS
 
-#endif /* __FSU_SESSION_PRIV_H__ */
+#endif /* __FSU_STREAM_PRIV_H__ */
