@@ -41,7 +41,8 @@ static void fsu_conference_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec);
-
+static void remove_weakref (gpointer data,
+    gpointer user_data);
 
 /* properties */
 enum
@@ -55,6 +56,7 @@ struct _FsuConferencePrivate
 {
   GstElement *pipeline;
   GstElement *conference;
+  GList *sessions;
 };
 
 static void
@@ -192,6 +194,12 @@ fsu_conference_dispose (GObject *object)
     gst_object_unref (priv->pipeline);
   priv->pipeline = NULL;
 
+  if (priv->sessions)
+  {
+    g_list_foreach (priv->sessions, remove_weakref, self);
+    g_list_free (priv->sessions);
+  }
+  priv->sessions = NULL;
 
   G_OBJECT_CLASS (fsu_conference_parent_class)->dispose (object);
 }
@@ -210,11 +218,39 @@ fsu_conference_new (FsConference *conference,
       NULL);
 }
 
+
+static void
+session_destroyed (gpointer data,
+    GObject *destroyed_session)
+{
+  FsuConference *self = FSU_CONFERENCE (data);
+  FsuConferencePrivate *priv = self->priv;
+
+  priv->sessions = g_list_remove (priv->sessions, destroyed_session);
+}
+
+static void
+remove_weakref (gpointer data,
+    gpointer user_data)
+{
+  g_object_weak_unref (G_OBJECT (data), session_destroyed, user_data);
+}
+
+
 FsuSession *
 fsu_conference_handle_session (FsuConference *self,
     FsSession *session,
     FsuSource *source)
 {
-  return _fsu_session_new (self, session, source);
+  FsuConferencePrivate *priv = self->priv;
+  FsuSession *sess = _fsu_session_new (self, session, source);
+
+  if (sess)
+  {
+    priv->sessions = g_list_prepend (priv->sessions, sess);
+    g_object_weak_ref (G_OBJECT (sess), session_destroyed, self);
+  }
+
+  return sess;
 }
 
