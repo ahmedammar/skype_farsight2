@@ -250,8 +250,11 @@ _fsu_stream_new (FsuConference *conference,
     FsuSink *sink)
 {
   g_return_val_if_fail (conference, NULL);
+  g_return_val_if_fail (FSU_IS_CONFERENCE (conference), NULL);
   g_return_val_if_fail (session, NULL);
+  g_return_val_if_fail (FSU_IS_SESSION (session), NULL);
   g_return_val_if_fail (stream, NULL);
+  g_return_val_if_fail (FS_IS_STREAM (stream), NULL);
 
   return g_object_new (FSU_TYPE_STREAM,
       "fsu-conference", conference,

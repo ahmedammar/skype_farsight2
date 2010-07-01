@@ -234,7 +234,9 @@ _fsu_session_new (FsuConference *conference,
 {
 
   g_return_val_if_fail (conference, NULL);
+  g_return_val_if_fail (FSU_IS_CONFERENCE (conference), NULL);
   g_return_val_if_fail (session, NULL);
+  g_return_val_if_fail (FS_IS_SESSION (session), NULL);
 
   return g_object_new (FSU_TYPE_SESSION,
       "fsu-conference", conference,
