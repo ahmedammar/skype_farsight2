@@ -30,9 +30,7 @@
 
 G_DEFINE_TYPE (FsuFilterManager, fsu_filter_manager, G_TYPE_OBJECT);
 
-static void fsu_filter_manager_constructed (GObject *object);
 static void fsu_filter_manager_dispose (GObject *object);
-static void fsu_filter_manager_finalize (GObject *object);
 
 typedef enum {INSERT, REMOVE, REPLACE} ModificationAction;
 
@@ -70,9 +68,7 @@ fsu_filter_manager_class_init (FsuFilterManagerClass *klass)
 
   g_type_class_add_private (klass, sizeof (FsuFilterManagerPrivate));
 
-  gobject_class->constructed = fsu_filter_manager_constructed;
   gobject_class->dispose = fsu_filter_manager_dispose;
-  gobject_class->finalize = fsu_filter_manager_finalize;
 
 }
 
@@ -90,22 +86,6 @@ fsu_filter_manager_init (FsuFilterManager *self)
 
 
 static void
-fsu_filter_manager_constructed (GObject *object)
-{
-  void (*chain_up) (GObject *) =
-      G_OBJECT_CLASS (fsu_filter_manager_parent_class)->constructed;
-  FsuFilterManager *self = FSU_FILTER_MANAGER (object);
-  FsuFilterManagerPrivate *priv = self->priv;
-
-  /* Make compiler happy */
-  (void)priv;
-
-  if (chain_up)
-    chain_up (object);
-
-}
-
-static void
 fsu_filter_manager_dispose (GObject *object)
 {
   FsuFilterManager *self = (FsuFilterManager *)object;
@@ -117,17 +97,6 @@ fsu_filter_manager_dispose (GObject *object)
   priv->dispose_has_run = TRUE;
 
   G_OBJECT_CLASS (fsu_filter_manager_parent_class)->dispose (object);
-}
-
-static void
-fsu_filter_manager_finalize (GObject *object)
-{
-  FsuFilterManager *self = (FsuFilterManager *)object;
-
-  /* Make compiler happy */
-  (void)self;
-
-  G_OBJECT_CLASS (fsu_filter_manager_parent_class)->finalize (object);
 }
 
 

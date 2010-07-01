@@ -33,7 +33,6 @@ G_DEFINE_TYPE (FsuStream, fsu_stream, G_TYPE_OBJECT);
 
 static void fsu_stream_constructed (GObject *object);
 static void fsu_stream_dispose (GObject *object);
-static void fsu_stream_finalize (GObject *object);
 static void fsu_stream_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -80,7 +79,6 @@ fsu_stream_class_init (FsuStreamClass *klass)
   gobject_class->set_property = fsu_stream_set_property;
   gobject_class->constructed = fsu_stream_constructed;
   gobject_class->dispose = fsu_stream_dispose;
-  gobject_class->finalize = fsu_stream_finalize;
 
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
       g_param_spec_object ("fsu-conference", "Farsight-utils conference",
@@ -244,17 +242,6 @@ fsu_stream_dispose (GObject *object)
 
   G_OBJECT_CLASS (fsu_stream_parent_class)->dispose (object);
 }
-
-static void
-fsu_stream_finalize (GObject *object)
-{
-  FsuStream *self = (FsuStream *)object;
-
-  (void)self;
-
-  G_OBJECT_CLASS (fsu_stream_parent_class)->finalize (object);
-}
-
 
 FsuStream *
 _fsu_stream_new (FsuConference *conference,

@@ -34,7 +34,6 @@ G_DEFINE_TYPE (FsuSession, fsu_session, G_TYPE_OBJECT);
 
 static void fsu_session_constructed (GObject *object);
 static void fsu_session_dispose (GObject *object);
-static void fsu_session_finalize (GObject *object);
 static void fsu_session_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -75,7 +74,6 @@ fsu_session_class_init (FsuSessionClass *klass)
   gobject_class->set_property = fsu_session_set_property;
   gobject_class->constructed = fsu_session_constructed;
   gobject_class->dispose = fsu_session_dispose;
-  gobject_class->finalize = fsu_session_finalize;
 
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
       g_param_spec_object ("fsu-conference", "Farsight-utils conference",
@@ -226,15 +224,6 @@ fsu_session_dispose (GObject *object)
   priv->source = NULL;
 
   G_OBJECT_CLASS (fsu_session_parent_class)->dispose (object);
-}
-
-static void
-fsu_session_finalize (GObject *object)
-{
-  FsuSession *self = (FsuSession *)object;
-
-  (void)self;
-  G_OBJECT_CLASS (fsu_session_parent_class)->finalize (object);
 }
 
 
