@@ -36,14 +36,16 @@ fsu_filter_add_element (GstBin *bin,
       (GST_PAD_IS_SINK (pad) && GST_PAD_IS_SRC (element_pad)),
       FALSE);
 
-  if (!gst_bin_add (bin, element)) {
+  if (!gst_bin_add (bin, element))
+  {
     return FALSE;
   }
 
   if ((GST_PAD_IS_SRC (pad) &&
           gst_pad_link(pad, element_pad) != GST_PAD_LINK_OK) ||
       (GST_PAD_IS_SINK (pad) &&
-          gst_pad_link(element_pad, pad) != GST_PAD_LINK_OK)) {
+          gst_pad_link(element_pad, pad) != GST_PAD_LINK_OK))
+  {
     gst_object_ref (element);
     gst_bin_remove (bin, element);
     if (floating)
@@ -76,12 +78,14 @@ fsu_filter_add_element_by_name (GstBin *bin,
   if (out_pad)
     *out_pad = gst_element_get_static_pad (element, out_pad_name);
 
-  if (!element_pad || (out_pad && !*out_pad)) {
+  if (!element_pad || (out_pad && !*out_pad))
+  {
     if (element)
       gst_object_unref (element);
     if (element_pad)
       gst_object_unref (element_pad);
-    if (out_pad && *out_pad) {
+    if (out_pad && *out_pad)
+    {
       gst_object_unref (*out_pad);
       *out_pad = NULL;
       g_debug ("****Failed trying to add element %s", element_name);
@@ -89,10 +93,12 @@ fsu_filter_add_element_by_name (GstBin *bin,
     return NULL;
   }
 
-  if (!fsu_filter_add_element (bin, pad, element, element_pad)) {
+  if (!fsu_filter_add_element (bin, pad, element, element_pad))
+  {
     gst_object_unref (element);
     gst_object_unref (element_pad);
-    if (out_pad) {
+    if (out_pad)
+    {
       gst_object_unref (*out_pad);
       g_debug ("****Failed trying to add element %s", element_name);
       *out_pad = NULL;
@@ -170,8 +176,10 @@ fsu_filter_add_standard_element (GstBin *bin,
       element_name, GST_PAD_IS_SRC (pad) ? "sink" : "src",
       &out_pad, GST_PAD_IS_SRC (pad) ? "src" : "sink");
 
-  if (elem)  {
-    if (elements) {
+  if (elem)
+  {
+    if (elements)
+    {
       *elements = g_list_prepend (*elements, elem);
       gst_object_ref (elem);
     }
@@ -193,7 +201,8 @@ fsu_filter_revert_standard_element (GstBin *bin,
   GstPad *other_pad = NULL;
   GstPad *out_pad = NULL;
 
-  if (elements && g_list_find (*elements, element)) {
+  if (elements && g_list_find (*elements, element))
+  {
     *elements = g_list_remove (*elements, element);
     gst_object_unref (element);
   }

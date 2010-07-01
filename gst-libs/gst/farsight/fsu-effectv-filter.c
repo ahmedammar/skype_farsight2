@@ -43,7 +43,8 @@ static GstPad *fsu_effectv_filter_revert (FsuFilter *filter,
 
 
 /* properties */
-enum {
+enum
+{
   PROP_EFFECT = 1,
   LAST_PROPERTY
 };
@@ -98,8 +99,8 @@ fsu_effectv_filter_get_property (GObject *object,
   FsuEffectvFilter *self = FSU_EFFECTV_FILTER (object);
   FsuEffectvFilterPrivate *priv = self->priv;
 
-
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_EFFECT:
       g_value_set_string (value, priv->effect);
       break;
@@ -118,7 +119,8 @@ fsu_effectv_filter_set_property (GObject *object,
   FsuEffectvFilter *self = FSU_EFFECTV_FILTER (object);
   FsuEffectvFilterPrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_EFFECT:
       priv->effect = g_value_dup_string (value);
       break;

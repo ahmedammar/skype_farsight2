@@ -36,7 +36,8 @@ static void fsu_filter_set_property (GObject *object,
 
 
 /* properties */
-enum {
+enum
+{
   PROP_NAME = 1,
   LAST_PROPERTY
 };
@@ -89,7 +90,8 @@ fsu_filter_get_property (GObject *object,
   FsuFilter *self = FSU_FILTER (object);
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_NAME:
       g_value_set_string (value, klass->name);
       break;
@@ -108,7 +110,8 @@ fsu_filter_set_property (GObject *object,
   FsuFilter *self = FSU_FILTER (object);
   FsuFilterPrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -149,7 +152,8 @@ fsu_filter_apply (FsuFilter *self,
   out_pad = klass->apply (self, bin, pad);
   g_debug ("Applied filter %p : %p", self, out_pad);
 
-  if (out_pad) {
+  if (out_pad)
+  {
     gst_object_ref (out_pad);
     g_hash_table_insert (priv->pads, out_pad, gst_pad_get_peer (pad));
   }
@@ -172,7 +176,8 @@ fsu_filter_revert (FsuFilter *self,
 
   in_pad = GST_PAD (g_hash_table_lookup (priv->pads, pad));
 
-  if (!in_pad) {
+  if (!in_pad)
+  {
     g_debug ("Can't revert, never got applied on this pad");
     return NULL;
   }
@@ -182,7 +187,8 @@ fsu_filter_revert (FsuFilter *self,
   out_pad = klass->revert (self, bin, pad);
   g_debug ("Reverted filter %p : %p", self, out_pad);
 
-  if (out_pad != expected) {
+  if (out_pad != expected)
+  {
     g_warning ("Reverted pad not as expected");
     if (out_pad)
       gst_object_unref (out_pad);

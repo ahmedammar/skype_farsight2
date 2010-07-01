@@ -43,7 +43,8 @@ static void src_pad_added (FsStream *self,
     gpointer user_data);
 
 /* properties */
-enum {
+enum
+{
   PROP_CONFERENCE = 1,
   PROP_SESSION,
   PROP_STREAM,
@@ -121,7 +122,8 @@ fsu_stream_get_property (GObject *object,
   FsuStream *self = FSU_STREAM (object);
   FsuStreamPrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_CONFERENCE:
       g_value_set_object (value, priv->conference);
       break;
@@ -149,7 +151,8 @@ fsu_stream_set_property (GObject *object,
   FsuStream *self = FSU_STREAM (object);
   FsuStreamPrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_CONFERENCE:
       priv->conference = g_value_dup_object (value);
       break;
@@ -184,11 +187,13 @@ fsu_stream_constructed (GObject *object)
   g_signal_connect (priv->stream, "src-pad-added",
         G_CALLBACK (src_pad_added), self);
 
-  if (priv->sink) {
+  if (priv->sink)
+  {
     g_object_get (priv->conference,
         "pipeline", &pipeline,
         NULL);
-    if (!gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->sink))) {
+    if (!gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->sink)))
+    {
       error = "Could not add sink to pipeline";
       gst_object_unref (GST_OBJECT (priv->sink));
       priv->sink = NULL;
@@ -279,27 +284,33 @@ src_pad_added (FsStream *stream,
   GstPadLinkReturn ret;
   gchar *error = NULL;
 
-  if (!sink) {
+  if (!sink)
+  {
     g_object_get (priv->conference,
         "pipeline", &pipeline,
         NULL);
 
     sink = gst_element_factory_make ("fakesink", NULL);
-    if (!sink) {
+    if (!sink)
+    {
       error = "No sink selected, and can't create fakesink";
       goto error;
     }
-    if (!gst_bin_add (GST_BIN (pipeline), sink)) {
+    if (!gst_bin_add (GST_BIN (pipeline), sink))
+    {
       error = "Could not add fakesink to pipeline";
       gst_object_unref (sink);
       goto error;
     }
     sinkpad = gst_element_get_static_pad (sink, "sink");
-  } else {
+  }
+  else
+  {
     sinkpad = gst_element_get_request_pad (sink, "sink%d");
   }
 
-  if (!sinkpad) {
+  if (!sinkpad)
+  {
     error = "Could not request sink pad from Sink";
     goto error;
   }
@@ -307,13 +318,15 @@ src_pad_added (FsStream *stream,
   ret = gst_pad_link (pad, sinkpad);
   gst_object_unref (sinkpad);
 
-  if (ret != GST_PAD_LINK_OK)  {
+  if (ret != GST_PAD_LINK_OK)
+  {
     error = "Could not link colorspace to fsrtpconference sink pad";
     goto error;
   }
 
   if (gst_element_set_state (sink, GST_STATE_PLAYING) ==
-      GST_STATE_CHANGE_FAILURE) {
+      GST_STATE_CHANGE_FAILURE)
+  {
     error = "Unable to set audio_sink to PLAYING";
     goto error;
   }
@@ -377,15 +390,18 @@ fsu_stream_start_receiving (FsuStream *self)
   FsStreamDirection new_direction;
   gboolean ret = TRUE;
 
-  if (!priv->receiving) {
+  if (!priv->receiving)
+  {
     GstIterator *iter = NULL;
     gboolean done = FALSE;
 
     priv->receiving = TRUE;
     iter = fs_stream_get_src_pads_iterator (priv->stream);
-    while (!done) {
+    while (!done)
+    {
       gpointer pad;
-      switch (gst_iterator_next (iter, &pad)) {
+      switch (gst_iterator_next (iter, &pad))
+      {
         case GST_ITERATOR_OK:
           src_pad_added (priv->stream, pad, NULL, self);
           /* TODO: check for errors */
@@ -430,15 +446,19 @@ fsu_stream_stop_receiving (FsuStream *self)
 
   priv->receiving = FALSE;
   iter = fs_stream_get_src_pads_iterator (priv->stream);
-  while (!done) {
+  while (!done)
+  {
     gpointer pad;
-    switch (gst_iterator_next (iter, &pad)) {
+    switch (gst_iterator_next (iter, &pad))
+    {
       case GST_ITERATOR_OK:
         {
           GstPad *peer_pad = gst_pad_get_peer (pad);
-          if (peer_pad) {
+          if (peer_pad)
+          {
             gst_pad_unlink (pad, peer_pad);
-            if (priv->sink) {
+            if (priv->sink)
+            {
               gst_element_release_request_pad (GST_ELEMENT (priv->sink),
                   peer_pad);
             }

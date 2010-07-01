@@ -43,7 +43,8 @@ static GstPad *fsu_volume_filter_revert (FsuFilter *filter,
 
 
 /* properties */
-enum {
+enum
+{
   PROP_VOLUME = 1,
   PROP_MUTE,
   LAST_PROPERTY
@@ -111,7 +112,8 @@ fsu_volume_filter_get_property (GObject *object,
   FsuVolumeFilterPrivate *priv = self->priv;
 
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_VOLUME:
       g_value_set_double (value, priv->volume);
       break;
@@ -134,17 +136,20 @@ fsu_volume_filter_set_property (GObject *object,
   FsuVolumeFilterPrivate *priv = self->priv;
   GList *i = NULL;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_VOLUME:
       priv->volume = g_value_get_double (value);
-      for (i = priv->elements; i; i = i->next) {
+      for (i = priv->elements; i; i = i->next)
+      {
         GstElement *element = i->data;
         g_object_set (element, "volume", priv->volume, NULL);
       }
       break;
     case PROP_MUTE:
       priv->mute = g_value_get_boolean (value);
-      for (i = priv->elements; i; i = i->next) {
+      for (i = priv->elements; i; i = i->next)
+      {
         GstElement *element = i->data;
         g_object_set (element, "mute", priv->mute, NULL);
       }
@@ -188,7 +193,8 @@ fsu_volume_filter_apply (FsuFilter *filter,
   ret = fsu_filter_add_standard_element (bin, pad, "volume",
       &volume, &self->priv->elements);
 
-  if (volume) {
+  if (volume)
+  {
     g_object_set (volume,
         "volume", self->priv->volume,
         "mute", self->priv->mute, NULL);

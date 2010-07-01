@@ -45,7 +45,8 @@ static GstPad *fsu_resolution_filter_revert (FsuFilter *filter,
 #define DEFAULT_HEIGHT 240
 
 /* properties */
-enum {
+enum
+{
   PROP_WIDTH = 1,
   PROP_HEIGHT,
   LAST_PROPERTY
@@ -117,7 +118,8 @@ fsu_resolution_filter_get_property (GObject *object,
   FsuResolutionFilterPrivate *priv = self->priv;
 
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_WIDTH:
       g_value_set_uint (value, priv->width);
       break;
@@ -139,7 +141,8 @@ fsu_resolution_filter_set_property (GObject *object,
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_WIDTH:
       priv->width = g_value_get_uint (value);
       break;
@@ -219,10 +222,12 @@ fsu_resolution_filter_apply (FsuFilter *filter,
   filter_bin = fsu_filter_add_element_by_description (bin, pad,
       "videoscale ! capsfilter name=capsfilter", &out_pad);
 
-  if (filter_bin) {
+  if (filter_bin)
+  {
     capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
 
-    if (capsfilter) {
+    if (capsfilter)
+    {
       priv->elements = g_list_prepend (priv->elements, capsfilter);
       gst_object_ref (capsfilter);
 
@@ -246,7 +251,8 @@ fsu_resolution_filter_revert (FsuFilter *filter,
   GstElement *capsfilter = NULL;
 
   capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
-  if (g_list_find (priv->elements, capsfilter)) {
+  if (g_list_find (priv->elements, capsfilter))
+  {
     priv->elements = g_list_remove (priv->elements, capsfilter);
     gst_object_unref (capsfilter);
   }

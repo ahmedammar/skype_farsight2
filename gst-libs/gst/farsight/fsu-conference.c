@@ -40,7 +40,8 @@ static void fsu_conference_set_property (GObject *object,
 
 
 /* properties */
-enum {
+enum
+{
   PROP_CONFERENCE = 1,
   PROP_PIPELINE,
   LAST_PROPERTY
@@ -99,7 +100,8 @@ fsu_conference_get_property (GObject *object,
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_CONFERENCE:
       g_value_set_object (value, priv->conference);
       break;
@@ -121,7 +123,8 @@ fsu_conference_set_property (GObject *object,
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_PIPELINE:
       priv->pipeline = g_value_dup_object (value);
       break;
@@ -149,18 +152,21 @@ fsu_conference_constructed (GObject *object)
   if (!priv->pipeline)
     priv->pipeline = gst_pipeline_new ("fsu_pipeline");
 
-  if (!priv->pipeline) {
+  if (!priv->pipeline)
+  {
      error = "Couldn't create gstreamer pipeline";
      goto error;
   }
 
-  if (!gst_bin_add (GST_BIN (priv->pipeline), priv->conference)) {
+  if (!gst_bin_add (GST_BIN (priv->pipeline), priv->conference))
+  {
     error = "Couldn't add fsrtpconference to the pipeline";
     goto error;
   }
 
   if (gst_element_set_state (priv->pipeline, GST_STATE_PLAYING) ==
-      GST_STATE_CHANGE_FAILURE) {
+      GST_STATE_CHANGE_FAILURE)
+  {
     error = "Unable to set pipeline to PLAYING";
     goto error;
   }

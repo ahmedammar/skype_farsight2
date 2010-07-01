@@ -43,7 +43,8 @@ static GstPad *fsu_preview_filter_revert (FsuFilter *filter,
 
 
 /* properties */
-enum {
+enum
+{
   PROP_ID = 1,
   LAST_PROPERTY
 };
@@ -99,7 +100,8 @@ fsu_preview_filter_get_property (GObject *object,
   FsuPreviewFilterPrivate *priv = self->priv;
 
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_ID:
       g_value_set_pointer (value, priv->id);
       break;
@@ -118,7 +120,8 @@ fsu_preview_filter_set_property (GObject *object,
   FsuPreviewFilter *self = FSU_PREVIEW_FILTER (object);
   FsuPreviewFilterPrivate *priv = self->priv;
 
-  switch (property_id) {
+  switch (property_id)
+  {
     case PROP_ID:
       priv->id = g_value_get_pointer (value);
       if (priv->sink)
@@ -161,7 +164,8 @@ fsu_preview_filter_apply (FsuFilter *filter,
   tee = gst_element_factory_make ("tee", NULL);
   sink = gst_element_factory_make ("fsuvideosink", NULL);
 
-  if (!tee || !sink) {
+  if (!tee || !sink)
+  {
     if (tee)
       gst_object_unref (tee);
     if (sink)
@@ -170,12 +174,15 @@ fsu_preview_filter_apply (FsuFilter *filter,
     return NULL;
   }
 
-  if (GST_PAD_IS_SRC (pad)) {
+  if (GST_PAD_IS_SRC (pad))
+  {
     tee_pad = gst_element_get_static_pad (tee, "sink");
     out_pad = gst_element_get_request_pad (tee, "src%d");
     if (out_pad)
       g_object_set (tee, "alloc-pad", out_pad, NULL);
-  } else {
+  }
+  else
+  {
     out_pad = gst_element_get_static_pad (tee, "sink");
     tee_pad = gst_element_get_request_pad (tee, "src%d");
     if (tee_pad)
@@ -186,7 +193,8 @@ fsu_preview_filter_apply (FsuFilter *filter,
 
 
   if (!tee_pad || !out_pad ||
-      !preview_pad || !sink_pad) {
+      !preview_pad || !sink_pad)
+  {
     gst_object_unref (tee);
     gst_object_unref (sink);
     if (GST_PAD_IS_SRC (pad) && out_pad)
@@ -197,11 +205,13 @@ fsu_preview_filter_apply (FsuFilter *filter,
       gst_object_unref (tee_pad);
     if (out_pad)
       gst_object_unref (out_pad);
-    if (preview_pad) {
+    if (preview_pad)
+    {
       gst_element_release_request_pad (tee, preview_pad);
       gst_object_unref (preview_pad);
     }
-    if (sink_pad) {
+    if (sink_pad)
+    {
       gst_element_release_request_pad (sink, sink_pad);
       gst_object_unref (sink_pad);
     }
@@ -209,7 +219,8 @@ fsu_preview_filter_apply (FsuFilter *filter,
     return NULL;
   }
 
-  if (!fsu_filter_add_element (bin, pad, tee, tee_pad)) {
+  if (!fsu_filter_add_element (bin, pad, tee, tee_pad))
+  {
     gst_object_unref (tee);
     gst_object_unref (sink);
     if (GST_PAD_IS_SRC (pad) && out_pad)
@@ -228,7 +239,8 @@ fsu_preview_filter_apply (FsuFilter *filter,
 
 
 
-  if (!fsu_filter_add_element (bin, preview_pad, sink, sink_pad)) {
+  if (!fsu_filter_add_element (bin, preview_pad, sink, sink_pad))
+  {
     gst_bin_remove (bin, tee);
     gst_object_unref (sink);
     if (GST_PAD_IS_SRC (pad) && out_pad)
@@ -265,13 +277,16 @@ fsu_preview_filter_revert (FsuFilter *filter,
   GstPad *tee_pad = NULL;
   GstPad *out_pad = NULL;
 
-  if (GST_PAD_IS_SRC (pad)) {
+  if (GST_PAD_IS_SRC (pad))
+  {
     GstPad *other_pad = NULL;
     other_pad = gst_element_get_static_pad (tee, "sink");
     out_pad = gst_pad_get_peer (other_pad);
     gst_object_unref (other_pad);
     tee_pad = gst_object_ref (pad);
-  } else {
+  }
+  else
+  {
     g_object_get (tee, "alloc-pad", &tee_pad, NULL);
     out_pad = gst_pad_get_peer (tee_pad);
   }

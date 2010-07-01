@@ -94,7 +94,8 @@ need_mixer (FsuSink *self,
   gchar **ptr;
 
   /* TODO: better list of sinks */
-  for (ptr = no_mixer; *ptr; ptr++) {
+  for (ptr = no_mixer; *ptr; ptr++)
+  {
     if (!strcmp (name, *ptr))
       return NULL;
   }

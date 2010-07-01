@@ -71,10 +71,12 @@ get_plugins_filtered (klass_check check)
 
   registry = g_list_sort (registry, (GCompareFunc) compare_ranks);
 
-  for (walk = registry; walk; walk = g_list_next (walk)) {
+  for (walk = registry; walk; walk = g_list_next (walk))
+  {
     factory = GST_ELEMENT_FACTORY (walk->data);
 
-    if (check (factory)) {
+    if (check (factory))
+    {
       result = g_list_append (result, factory);
       gst_object_ref (factory);
     }
