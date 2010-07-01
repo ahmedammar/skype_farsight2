@@ -73,6 +73,8 @@ FsuConference *fsu_conference_new (FsConference *conference,
 FsuSession *fsu_conference_handle_session (FsuConference *self,
     FsSession *session,
     FsuSource *source);
+gboolean fsu_conference_handle_message (FsuConference *self,
+    GstMessage *message);
 
 G_END_DECLS
 

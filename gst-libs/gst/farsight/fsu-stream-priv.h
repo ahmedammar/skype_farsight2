@@ -33,6 +33,8 @@ FsuStream *_fsu_stream_new (FsuConference *conference,
     FsuSession *session,
     FsStream *stream,
     FsuSink *sink);
+gboolean _fsu_stream_handle_message (FsuStream *self,
+    GstMessage *message);
 
 
 G_END_DECLS

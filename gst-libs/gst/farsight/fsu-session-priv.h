@@ -35,6 +35,8 @@ FsuSession *_fsu_session_new (FsuConference *conference,
 
 gboolean _fsu_session_start_sending (FsuSession *self);
 void _fsu_session_stop_sending (FsuSession *self);
+gboolean _fsu_session_handle_message (FsuSession *self,
+    GstMessage *message);
 
 G_END_DECLS
 

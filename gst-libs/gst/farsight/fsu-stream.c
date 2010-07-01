@@ -485,3 +485,13 @@ fsu_stream_stop_receiving (FsuStream *self)
 
   gst_iterator_free (iter);
 }
+
+gboolean
+_fsu_stream_handle_message (FsuStream *self,
+    GstMessage *message)
+{
+  FsuStreamPrivate *priv = self->priv;
+  /* TODO: uncomment line once the stream has a filter manager */
+  //return fsu_filter_manager_handle_message (priv->filters, message);
+  return FALSE;
+}

@@ -254,3 +254,20 @@ fsu_conference_handle_session (FsuConference *self,
   return sess;
 }
 
+
+gboolean
+fsu_conference_handle_message (FsuConference *self,
+    GstMessage *message)
+{
+  FsuConferencePrivate *priv = self->priv;
+  GList *i;
+  gboolean drop = FALSE;
+
+  for (i = priv->sessions; i && !drop; i = i->next)
+  {
+    FsuSession *session = i->data;
+    drop = _fsu_session_handle_message (session, message);
+  }
+
+  return drop;
+}

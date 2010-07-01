@@ -393,3 +393,22 @@ _fsu_session_stop_sending (FsuSession *self)
     }
   }
 }
+
+gboolean
+_fsu_session_handle_message (FsuSession *self,
+    GstMessage *message)
+{
+  FsuSessionPrivate *priv = self->priv;
+  GList *i;
+  gboolean drop = FALSE;
+
+  drop = fsu_filter_manager_handle_message (priv->filters, message);
+
+  for (i = priv->streams; i && !drop; i = i->next)
+  {
+    FsuStream *stream = i->data;
+    drop = _fsu_stream_handle_message (stream, message);
+  }
+
+  return drop;
+}
