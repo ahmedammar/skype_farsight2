@@ -78,20 +78,20 @@ fsu_session_class_init (FsuSessionClass *klass)
   gobject_class->finalize = fsu_session_finalize;
 
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
-      g_param_spec_object ("conference", "Farsight-utils conference",
+      g_param_spec_object ("fsu-conference", "Farsight-utils conference",
           "The FSU conference handling this session.",
           FSU_TYPE_CONFERENCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_SESSION,
-      g_param_spec_object ("session", "Farsight session",
+      g_param_spec_object ("fs-session", "Farsight session",
           "Farsight session object.",
           FS_TYPE_SESSION,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_SOURCE,
-      g_param_spec_object ("source", "Gstreamer source",
-          "The source to use with the session.",
+      g_param_spec_object ("source", "FsuSource",
+          "The Farsight-utils source to use with the session.",
           FSU_TYPE_SOURCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
@@ -248,8 +248,8 @@ _fsu_session_new (FsuConference *conference,
   g_return_val_if_fail (session, NULL);
 
   return g_object_new (FSU_TYPE_SESSION,
-      "conference", conference,
-      "session", session,
+      "fsu-conference", conference,
+      "fs-session", session,
       "source", source,
       NULL);
 }

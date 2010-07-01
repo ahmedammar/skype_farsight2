@@ -83,26 +83,26 @@ fsu_stream_class_init (FsuStreamClass *klass)
   gobject_class->finalize = fsu_stream_finalize;
 
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
-      g_param_spec_object ("conference", "Farsight-utils conference",
+      g_param_spec_object ("fsu-conference", "Farsight-utils conference",
           "The FSU conference handling this session.",
           FSU_TYPE_CONFERENCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_SESSION,
-      g_param_spec_object ("session", "Farsight-utils session",
+      g_param_spec_object ("fsu-session", "Farsight-utils session",
           "The FSU session containing this stream.",
           FSU_TYPE_SESSION,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_STREAM,
-      g_param_spec_object ("stream", "Farsight stream",
+      g_param_spec_object ("fs-stream", "Farsight stream",
           "Farsight stream object.",
           FS_TYPE_STREAM,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_SINK,
-      g_param_spec_object ("sink", "Fsu Sink",
-          "The Fsu sink to use with the stream.",
+      g_param_spec_object ("sink", "FsuSink",
+          "The Farsight-utils sink to use with the stream.",
           FSU_TYPE_SINK,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
@@ -267,9 +267,9 @@ _fsu_stream_new (FsuConference *conference,
   g_return_val_if_fail (stream, NULL);
 
   return g_object_new (FSU_TYPE_STREAM,
-      "conference", conference,
-      "session", session,
-      "stream", stream,
+      "fsu-conference", conference,
+      "fsu-session", session,
+      "fs-stream", stream,
       "sink", sink,
       NULL);
 }

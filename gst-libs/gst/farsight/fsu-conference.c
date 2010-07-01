@@ -72,7 +72,7 @@ fsu_conference_class_init (FsuConferenceClass *klass)
   gobject_class->dispose = fsu_conference_dispose;
 
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
-      g_param_spec_object ("conference", "The farsight conference",
+      g_param_spec_object ("fs-conference", "The farsight conference",
           "The farsight conference element",
           FS_TYPE_CONFERENCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
@@ -214,7 +214,7 @@ fsu_conference_new (FsConference *conference,
 
   return g_object_new (FSU_TYPE_CONFERENCE,
       "pipeline", pipeline,
-      "conference", conference,
+      "fs-conference", conference,
       NULL);
 }
 
