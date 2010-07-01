@@ -50,7 +50,6 @@ G_BEGIN_DECLS
 
 typedef struct _FsuAudioSink      FsuAudioSink;
 typedef struct _FsuAudioSinkClass FsuAudioSinkClass;
-typedef struct _FsuAudioSinkPrivate FsuAudioSinkPrivate;
 
 struct _FsuAudioSinkClass
 {
@@ -60,7 +59,6 @@ struct _FsuAudioSinkClass
 struct _FsuAudioSink
 {
   FsuSink parent;
-  FsuAudioSinkPrivate *priv;
 };
 
 GType fsu_audio_sink_get_type (void) G_GNUC_CONST;

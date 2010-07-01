@@ -24,10 +24,13 @@
 
 #include <gst/gst.h>
 
+G_BEGIN_DECLS
+
 gboolean is_audio_source (GstElementFactory *factory);
 gboolean is_video_source (GstElementFactory *factory);
 gboolean is_audio_sink (GstElementFactory *factory);
 gboolean is_video_sink (GstElementFactory *factory);
+
 G_END_DECLS
 
 #endif /* __FSU_H__ */

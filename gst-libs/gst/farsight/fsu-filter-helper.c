@@ -88,8 +88,8 @@ fsu_filter_add_element_by_name (GstBin *bin,
     {
       gst_object_unref (*out_pad);
       *out_pad = NULL;
-      g_debug ("****Failed trying to add element %s", element_name);
     }
+    g_debug ("Failed trying to add element %s", element_name);
     return NULL;
   }
 
@@ -100,9 +100,9 @@ fsu_filter_add_element_by_name (GstBin *bin,
     if (out_pad)
     {
       gst_object_unref (*out_pad);
-      g_debug ("****Failed trying to add element %s", element_name);
       *out_pad = NULL;
     }
+    g_debug ("Failed trying to add element %s", element_name);
     return NULL;
   }
 
@@ -123,42 +123,49 @@ fsu_filter_add_element_by_description (GstBin *bin,
 
   filter = gst_parse_bin_from_description (description, TRUE, &error);
 
-  if (filter == NULL) {
+  if (!filter)
     return NULL;
-  } else {
-    src_pad = gst_element_get_static_pad (filter, "src");
-    sink_pad = gst_element_get_static_pad (filter, "sink");
-    if (src_pad == NULL || sink_pad == NULL) {
-      if (src_pad)
+
+  src_pad = gst_element_get_static_pad (filter, "src");
+  sink_pad = gst_element_get_static_pad (filter, "sink");
+  if (!src_pad || !sink_pad)
+  {
+    if (src_pad)
+      gst_object_unref (src_pad);
+    if (sink_pad)
+      gst_object_unref (sink_pad);
+    gst_object_unref (filter);
+    return NULL;
+  }
+  else
+  {
+    if (GST_PAD_IS_SRC (pad) &&
+        fsu_filter_add_element (bin, pad, filter, sink_pad))
+    {
+      gst_object_unref (sink_pad);
+      if (out_pad)
+        *out_pad = src_pad;
+      else
         gst_object_unref (src_pad);
-      if (sink_pad)
+    }
+    else if (GST_PAD_IS_SINK (pad) &&
+        fsu_filter_add_element (bin, pad, filter, src_pad))
+    {
+      gst_object_unref (src_pad);
+      if (out_pad)
+        *out_pad = sink_pad;
+      else
         gst_object_unref (sink_pad);
+    }
+    else
+    {
+      gst_object_unref (src_pad);
+      gst_object_unref (sink_pad);
       gst_object_unref (filter);
       return NULL;
-    } else {
-      if (GST_PAD_IS_SRC (pad) &&
-          fsu_filter_add_element (bin, pad, filter, sink_pad)) {
-        gst_object_unref (sink_pad);
-        if (out_pad != NULL)
-          *out_pad = src_pad;
-        else
-          gst_object_unref (src_pad);
-      } else if (GST_PAD_IS_SINK (pad) &&
-          fsu_filter_add_element (bin, pad, filter, src_pad)) {
-        gst_object_unref (src_pad);
-        if (out_pad != NULL)
-          *out_pad = sink_pad;
-        else
-          gst_object_unref (sink_pad);
-      } else {
-        gst_object_unref (src_pad);
-        gst_object_unref (sink_pad);
-        gst_object_unref (filter);
-        return NULL;
-      }
     }
-    return filter;
   }
+  return filter;
 }
 
 GstPad *
