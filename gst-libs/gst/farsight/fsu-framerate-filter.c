@@ -123,7 +123,7 @@ fsu_framerate_filter_set_property (GObject *object,
 
         priv->fps = g_value_get_uint (value);
 
-        if (priv->caps != NULL)
+        if (priv->caps)
           gst_caps_unref (priv->caps);
 
         priv->caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
@@ -174,10 +174,10 @@ fsu_framerate_filter_constructed (GObject *object)
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
   FsuFramerateFilterPrivate *priv = self->priv;
 
-  if (chain_up != NULL)
+  if (chain_up)
     chain_up (object);
 
-  if (priv->caps != NULL)
+  if (priv->caps)
     gst_caps_unref (priv->caps);
 
   priv->caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
@@ -215,10 +215,10 @@ fsu_framerate_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
   filter_bin = fsu_filter_add_element_by_description (bin, pad,
       "videomaxrate ! capsfilter name=capsfilter", &out_pad);
 
-  if (filter_bin != NULL) {
+  if (filter_bin) {
     capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
 
-    if (capsfilter != NULL) {
+    if (capsfilter) {
       priv->elements = g_list_prepend (priv->elements, capsfilter);
       gst_object_ref (capsfilter);
 
@@ -240,7 +240,7 @@ fsu_framerate_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
   GstElement *capsfilter = NULL;
 
   capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
-  if (g_list_find (priv->elements, capsfilter) != NULL) {
+  if (g_list_find (priv->elements, capsfilter)) {
     priv->elements = g_list_remove (priv->elements, capsfilter);
     gst_object_unref (capsfilter);
   }

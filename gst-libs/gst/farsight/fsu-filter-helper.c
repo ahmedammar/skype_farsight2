@@ -27,14 +27,14 @@ fsu_filter_add_element (GstBin *bin, GstPad *pad,
 {
   gboolean floating = GST_OBJECT_IS_FLOATING (GST_OBJECT (element));
 
-  g_return_val_if_fail (element != NULL, FALSE);
-  g_return_val_if_fail (element_pad != NULL, FALSE);
+  g_return_val_if_fail (element, FALSE);
+  g_return_val_if_fail (element_pad, FALSE);
   g_return_val_if_fail (
       (GST_PAD_IS_SRC (pad) && GST_PAD_IS_SINK (element_pad)) ||
       (GST_PAD_IS_SINK (pad) && GST_PAD_IS_SRC (element_pad)),
       FALSE);
 
-  if (gst_bin_add (bin, element) == FALSE) {
+  if (!gst_bin_add (bin, element)) {
     return FALSE;
   }
 
@@ -62,21 +62,21 @@ fsu_filter_add_element_by_name (GstBin *bin, GstPad *pad,
   GstElement *element = gst_element_factory_make (element_name, NULL);
   GstPad *element_pad = NULL;
 
-  if (element == NULL)
+  if (!element)
     return NULL;
 
 
   element_pad = gst_element_get_static_pad (element, pad_name);
 
-  if (out_pad != NULL)
+  if (out_pad)
     *out_pad = gst_element_get_static_pad (element, out_pad_name);
 
-  if (element_pad == NULL || (out_pad != NULL && *out_pad == NULL)) {
-    if (element != NULL)
+  if (!element_pad || (out_pad && !*out_pad)) {
+    if (element)
       gst_object_unref (element);
-    if (element_pad != NULL)
+    if (element_pad)
       gst_object_unref (element_pad);
-    if (out_pad != NULL && *out_pad != NULL) {
+    if (out_pad && *out_pad) {
       gst_object_unref (*out_pad);
       *out_pad = NULL;
       g_debug ("****Failed trying to add element %s", element_name);
@@ -84,10 +84,10 @@ fsu_filter_add_element_by_name (GstBin *bin, GstPad *pad,
     return NULL;
   }
 
-  if (fsu_filter_add_element (bin, pad, element, element_pad) == FALSE) {
+  if (!fsu_filter_add_element (bin, pad, element, element_pad)) {
     gst_object_unref (element);
     gst_object_unref (element_pad);
-    if (out_pad != NULL) {
+    if (out_pad) {
       gst_object_unref (*out_pad);
       g_debug ("****Failed trying to add element %s", element_name);
       *out_pad = NULL;
@@ -160,12 +160,12 @@ fsu_filter_add_standard_element (GstBin *bin, GstPad *pad,
       element_name, GST_PAD_IS_SRC (pad) ? "sink" : "src",
       &out_pad, GST_PAD_IS_SRC (pad) ? "src" : "sink");
 
-  if (elem != NULL) {
-    if (elements != NULL) {
+  if (elem)  {
+    if (elements) {
       *elements = g_list_prepend (*elements, elem);
       gst_object_ref (elem);
     }
-    if (element != NULL)
+    if (element)
       *element = elem;
     return out_pad;
   }
@@ -181,7 +181,7 @@ fsu_filter_revert_standard_element (GstBin *bin, GstPad *pad, GList **elements)
   GstPad *other_pad = NULL;
   GstPad *out_pad = NULL;
 
-  if (elements != NULL && g_list_find (*elements, element) != NULL) {
+  if (elements && g_list_find (*elements, element)) {
     *elements = g_list_remove (*elements, element);
     gst_object_unref (element);
   }

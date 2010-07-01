@@ -40,7 +40,7 @@ fsu_videoconverter_filter_get_singleton (void)
 {
   static FsuVideoconverterFilter *singleton = NULL;
 
-  if (singleton == NULL)
+  if (!singleton)
     singleton = fsu_videoconverter_filter_new ();
   return singleton;
 }

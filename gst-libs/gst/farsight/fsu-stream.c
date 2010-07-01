@@ -168,7 +168,7 @@ fsu_stream_constructed (GObject *object)
   GstElement *pipeline = NULL;
   gchar *error = NULL;
 
-  if (chain_up != NULL)
+  if (chain_up)
     chain_up (object);
 
   g_signal_connect (priv->stream, "src-pad-added",
@@ -178,7 +178,7 @@ fsu_stream_constructed (GObject *object)
     g_object_get (priv->conference,
         "pipeline", &pipeline,
         NULL);
-    if (gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->sink)) == FALSE)  {
+    if (!gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->sink))) {
       error = "Could not add sink to pipeline";
       gst_object_unref (GST_OBJECT (priv->sink));
       priv->sink = NULL;
@@ -239,9 +239,9 @@ FsuStream *
 fsu_stream_new (FsuConference *conference, FsuSession *session,
     FsStream *stream, FsuSink *sink)
 {
-  g_return_val_if_fail (conference != NULL, NULL);
-  g_return_val_if_fail (session != NULL, NULL);
-  g_return_val_if_fail (stream != NULL, NULL);
+  g_return_val_if_fail (conference, NULL);
+  g_return_val_if_fail (session, NULL);
+  g_return_val_if_fail (stream, NULL);
 
   return g_object_new (FSU_TYPE_STREAM,
       "conference", conference,
@@ -265,17 +265,17 @@ src_pad_added (FsStream *stream, GstPad *pad,
   GstPadLinkReturn ret;
   gchar *error = NULL;
 
-  if (sink == NULL) {
+  if (!sink) {
     g_object_get (priv->conference,
         "pipeline", &pipeline,
         NULL);
 
     sink = gst_element_factory_make ("fakesink", NULL);
-    if (sink == NULL) {
+    if (!sink) {
       error = "No sink selected, and can't create fakesink";
       goto error;
     }
-    if (gst_bin_add (GST_BIN (pipeline), sink) == FALSE)  {
+    if (!gst_bin_add (GST_BIN (pipeline), sink)) {
       error = "Could not add fakesink to pipeline";
       gst_object_unref (sink);
       goto error;
@@ -285,7 +285,7 @@ src_pad_added (FsStream *stream, GstPad *pad,
     sinkpad = gst_element_get_request_pad (sink, "sink%d");
   }
 
-  if (sinkpad == NULL) {
+  if (!sinkpad) {
     error = "Could not request sink pad from Sink";
     goto error;
   }
@@ -320,7 +320,7 @@ fsu_stream_start_sending (FsuStream *self)
   FsStreamDirection direction;
   FsStreamDirection new_direction;
 
-  if (priv->sending == TRUE)
+  if (priv->sending)
     return TRUE;
 
   priv->sending = TRUE;
@@ -341,7 +341,7 @@ fsu_stream_stop_sending (FsuStream *self)
   FsStreamDirection direction;
   FsStreamDirection new_direction;
 
-  if (priv->sending == FALSE)
+  if (!priv->sending)
     return;
 
   priv->sending = FALSE;
@@ -363,7 +363,7 @@ fsu_stream_start_receiving (FsuStream *self)
   FsStreamDirection new_direction;
   gboolean ret = TRUE;
 
-  if (priv->receiving == FALSE) {
+  if (!priv->receiving) {
     GstIterator *iter = NULL;
     gboolean done = FALSE;
 
@@ -422,9 +422,9 @@ fsu_stream_stop_receiving (FsuStream *self)
       case GST_ITERATOR_OK:
         {
           GstPad *peer_pad = gst_pad_get_peer (pad);
-          if (peer_pad != NULL) {
+          if (peer_pad) {
             gst_pad_unlink (pad, peer_pad);
-            if (priv->sink != NULL) {
+            if (priv->sink) {
               gst_element_release_request_pad (GST_ELEMENT (priv->sink),
                   peer_pad);
             }

@@ -40,7 +40,7 @@ fsu_audioconverter_filter_get_singleton (void)
 {
   static FsuAudioconverterFilter *singleton = NULL;
 
-  if (singleton == NULL)
+  if (!singleton)
     singleton = fsu_audioconverter_filter_new ();
 
   g_debug ("Getting audioconverter singleton %p", singleton);

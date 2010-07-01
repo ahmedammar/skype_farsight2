@@ -166,7 +166,7 @@ fsu_resolution_filter_constructed (GObject *object)
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
 
-  if (chain_up != NULL)
+  if (chain_up)
     chain_up (object);
 
   priv->caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
@@ -206,10 +206,10 @@ fsu_resolution_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
   filter_bin = fsu_filter_add_element_by_description (bin, pad,
       "videoscale ! capsfilter name=capsfilter", &out_pad);
 
-  if (filter_bin != NULL) {
+  if (filter_bin) {
     capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
 
-    if (capsfilter != NULL) {
+    if (capsfilter) {
       priv->elements = g_list_prepend (priv->elements, capsfilter);
       gst_object_ref (capsfilter);
 
@@ -231,7 +231,7 @@ fsu_resolution_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
   GstElement *capsfilter = NULL;
 
   capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
-  if (g_list_find (priv->elements, capsfilter) != NULL) {
+  if (g_list_find (priv->elements, capsfilter)) {
     priv->elements = g_list_remove (priv->elements, capsfilter);
     gst_object_unref (capsfilter);
   }

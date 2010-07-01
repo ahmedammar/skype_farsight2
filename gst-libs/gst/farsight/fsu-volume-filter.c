@@ -176,7 +176,7 @@ fsu_volume_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
   ret = fsu_filter_add_standard_element (bin, pad, "volume",
       &volume, &self->priv->elements);
 
-  if (volume != NULL) {
+  if (volume) {
     g_object_set (volume,
         "volume", self->priv->volume,
         "mute", self->priv->mute, NULL);

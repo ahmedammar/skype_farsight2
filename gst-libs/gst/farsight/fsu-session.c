@@ -160,15 +160,15 @@ fsu_session_constructed (GObject *object)
   FsuSessionPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
 
-  if (chain_up != NULL)
+  if (chain_up)
     chain_up (object);
 
-  if (priv->source != NULL) {
+  if (priv->source) {
     g_object_get (priv->conference,
         "pipeline", &pipeline,
         NULL);
 
-    if (gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source)) == FALSE) {
+    if (!gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source))) {
       /* TODO: signal/other error */
       gst_object_unref (GST_OBJECT (priv->source));
       priv->source = NULL;
@@ -222,8 +222,8 @@ fsu_session_new (FsuConference *conference,
     FsSession *session, FsuSource *source)
 {
 
-  g_return_val_if_fail (conference != NULL, NULL);
-  g_return_val_if_fail (session != NULL, NULL);
+  g_return_val_if_fail (conference, NULL);
+  g_return_val_if_fail (session, NULL);
 
   return g_object_new (FSU_TYPE_SESSION,
       "conference", conference,
@@ -249,7 +249,7 @@ _fsu_session_start_sending (FsuSession *self)
   GstPad *sinkpad = NULL;
   gchar *error;
 
-  if (priv->source == NULL)
+  if (!priv->source)
     goto no_source;
 
   if (priv->sending > 0)
@@ -261,7 +261,7 @@ _fsu_session_start_sending (FsuSession *self)
 
   srcpad = gst_element_get_request_pad (GST_ELEMENT (priv->source), "src%d");
 
-  if (srcpad == NULL) {
+  if (!srcpad) {
     error = "Couldn't request pad from Source";
     gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
     goto no_source;
@@ -269,7 +269,7 @@ _fsu_session_start_sending (FsuSession *self)
 
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), srcpad);
-  if (filter_pad == NULL) {
+  if (!filter_pad) {
     error = "Couldn't add filter manager";
     gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
     /* TODO: release pad if requested */

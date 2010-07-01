@@ -118,7 +118,7 @@ fsu_filter_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
-  if (priv->pads != NULL)
+  if (priv->pads)
     g_hash_table_destroy (priv->pads);
   priv->pads = NULL;
 
@@ -131,16 +131,15 @@ fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad)
 {
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
   FsuFilterPrivate *priv = self->priv;
-  GstPad *(*func) (FsuFilter *self, GstBin *bin, GstPad *pad) = klass->apply;
   GstPad *out_pad = NULL;
 
-  g_assert (func != NULL);
+  g_assert (klass->apply);
 
   g_debug ("Applying on filter %p : %p", self, pad);
-  out_pad = func (self, bin, pad);
+  out_pad = klass->apply (self, bin, pad);
   g_debug ("Applied filter %p : %p", self, out_pad);
 
-  if (out_pad != NULL) {
+  if (out_pad) {
     gst_object_ref (out_pad);
     g_hash_table_insert (priv->pads, out_pad, gst_pad_get_peer (pad));
   }
@@ -153,28 +152,27 @@ fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
 {
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
   FsuFilterPrivate *priv = self->priv;
-  GstPad *(*func) (FsuFilter *self, GstBin *bin, GstPad *pad) = klass->revert;
   GstPad *expected = NULL;
   GstPad *in_pad = NULL;
   GstPad *out_pad = NULL;
 
-  g_assert (func != NULL);
+  g_assert (klass->revert);
 
   in_pad = GST_PAD (g_hash_table_lookup (priv->pads, pad));
 
-  if (in_pad == NULL) {
+  if (!in_pad) {
     g_debug ("Can't revert, never got applied on this pad");
     return NULL;
   }
   expected = gst_pad_get_peer (in_pad);
 
   g_debug ("Reverting on filter %p : %p", self, pad);
-  out_pad = func (self, bin, pad);
+  out_pad = klass->revert (self, bin, pad);
   g_debug ("Reverted filter %p : %p", self, out_pad);
 
   if (out_pad != expected) {
     g_warning ("Reverted pad not as expected");
-    if (out_pad != NULL)
+    if (out_pad)
       gst_object_unref (out_pad);
     gst_object_ref (expected);
   }
@@ -189,7 +187,7 @@ fsu_filter_follow (FsuFilter *self, GstPad *pad)
 {
   GstPad *in_pad = g_hash_table_lookup (self->priv->pads, pad);
 
-  if (in_pad != NULL)
+  if (in_pad)
     return gst_pad_get_peer (in_pad);
   else
     return NULL;
@@ -200,7 +198,7 @@ fsu_filter_handle_message (FsuFilter *self, GstMessage *message)
 {
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
 
-  if (klass->handle_message != NULL)
+  if (klass->handle_message)
     return klass->handle_message (self, message);
 
   return FALSE;

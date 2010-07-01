@@ -91,7 +91,7 @@ need_mixer (FsuSink *self, GstElement *sink)
 
   /* TODO: better list of sinks */
   for (ptr = no_mixer; *ptr; ptr++) {
-    if (strcmp (name, *ptr) == 0)
+    if (!strcmp (name, *ptr))
       return NULL;
   }
 

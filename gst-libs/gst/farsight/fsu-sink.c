@@ -227,11 +227,9 @@ fsu_sink_dispose (GObject *object)
 static GstElement *
 create_auto_sink (FsuSink *self)
 {
-  GstElement *(*func)(FsuSink *self) = \
-      FSU_SINK_GET_CLASS (self)->create_auto_sink;
 
-  if (func != NULL)
-    return func (self);
+  if (FSU_SINK_GET_CLASS (self)->create_auto_sink)
+    return FSU_SINK_GET_CLASS (self)->create_auto_sink (self);
 
   return NULL;
 }
@@ -239,11 +237,9 @@ create_auto_sink (FsuSink *self)
 static gchar *
 need_mixer (FsuSink *self, GstElement *sink)
 {
-  gchar *(*func) (FsuSink *, GstElement *) = \
-      FSU_SINK_GET_CLASS (self)->need_mixer;
 
-  if (func != NULL)
-    return func (self, sink);
+  if (FSU_SINK_GET_CLASS (self)->need_mixer)
+    return FSU_SINK_GET_CLASS (self)->need_mixer (self, sink);
 
   return NULL;
 }
@@ -278,7 +274,7 @@ find_sink (GstElement *snk)
     }
     gst_iterator_free (it);
 
-    if (sink == NULL)
+    if (!sink)
       return snk;
   } else {
     return snk;
@@ -295,17 +291,17 @@ create_mixer (FsuSink *self, GstElement *sink)
   GstPad *mixer_pad = NULL;
   gchar *mixer_name = need_mixer (self, find_sink (sink));
 
-  if (mixer_name == NULL)
+  if (!mixer_name)
     return NULL;
 
   mixer = gst_element_factory_make (mixer_name, "sinkmixer");
 
-  if (mixer == NULL) {
+  if (!mixer) {
     WARNING ("Could not create sink mixer");
     return NULL;
   }
 
-  if (gst_bin_add (GST_BIN (self), mixer) == FALSE) {
+  if (!gst_bin_add (GST_BIN (self), mixer)) {
     WARNING ("Could not add sink mixer to Sink");
     gst_object_unref (mixer);
     return NULL;
@@ -313,12 +309,12 @@ create_mixer (FsuSink *self, GstElement *sink)
 
   sink_pad = gst_element_get_static_pad (sink, "sink");
   mixer_pad = gst_element_get_static_pad (mixer, "src");
-  if (sink_pad == NULL || mixer_pad == NULL) {
+  if (!sink_pad || !mixer_pad) {
     WARNING ("Could not get sink pad");
     gst_bin_remove (GST_BIN (self), mixer);
-    if (sink_pad != NULL)
+    if (sink_pad)
       gst_object_unref (sink_pad);
-    if (mixer_pad != NULL)
+    if (mixer_pad)
       gst_object_unref (mixer_pad);
     return NULL;
   } else {
@@ -338,11 +334,8 @@ create_mixer (FsuSink *self, GstElement *sink)
 static void
 add_filters (FsuSink *self, FsuFilterManager *manager)
 {
-  void (*func) (FsuSink *self, FsuFilterManager *manager) = \
-      FSU_SINK_GET_CLASS (self)->add_filters;
-
-  if (func != NULL)
-    func (self, manager);
+  if (FSU_SINK_GET_CLASS (self)->add_filters)
+    FSU_SINK_GET_CLASS (self)->add_filters (self, manager);
 }
 
 
@@ -361,16 +354,15 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
   DEBUG ("requesting pad");
 
   /* If this is our first sink or second sink with no mixer*/
-  if (priv->sinks == NULL ||
-      priv->mixer == NULL) {
+  if (!priv->sinks || !priv->mixer) {
     sink = create_sink (self);
-    if (sink == NULL) {
+    if (!sink) {
       sink = gst_element_factory_make ("fakesink", NULL);
-      if (sink == NULL) {
+      if (!sink) {
         WARNING ("Could not create sink or fakesink elements");
         return NULL;
       }
-      if (gst_bin_add (GST_BIN (self), sink) == FALSE) {
+      if (!gst_bin_add (GST_BIN (self), sink)) {
         WARNING ("Could not add sink element to Sink");
         gst_object_unref (sink);
         return NULL;
@@ -378,21 +370,21 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
 
       /* A fakesink never needs a mixer */
       sink_pad = gst_element_get_static_pad (sink, "sink");
-      if (sink_pad == NULL) {
+      if (!sink_pad) {
         WARNING ("Could not get sink pad from sink");
         gst_object_unref (sink);
         return NULL;
       }
     } else {
-      if (gst_bin_add (GST_BIN (self), sink) == FALSE) {
+      if (!gst_bin_add (GST_BIN (self), sink)) {
         WARNING ("Could not add sink element to Sink");
         gst_object_unref (sink);
         return NULL;
       }
-      /* If this isn't our first sink, then we don't need a mixer, get the pad */
-      if (priv->sinks != NULL) {
+      /* If this isn't our first sink then we don't need a mixer, get the pad */
+      if (priv->sinks) {
         sink_pad = gst_element_get_static_pad (sink, "sink");
-        if (sink_pad == NULL) {
+        if (!sink_pad) {
           WARNING ("Could not get sink pad from sink");
           gst_object_unref (sink);
           return NULL;
@@ -402,7 +394,7 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
   } else {
     /* This isn't our first sink and we already have a mixer */
     sink_pad = gst_element_get_request_pad (priv->mixer, "sink%d");
-    if (sink_pad == NULL) {
+    if (!sink_pad) {
       WARNING ("Couldn't get new request pad from mixer");
       return NULL;
     }
@@ -410,29 +402,29 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
 
   /* Set to READY so the auto*sink can create the underlying sink and the
      subclass can decide whether or not a mixer is needed for that sink */
-  if (sink != NULL && gst_element_set_state (sink, GST_STATE_READY) ==
+  if (sink && gst_element_set_state (sink, GST_STATE_READY) ==
       GST_STATE_CHANGE_FAILURE) {
     WARNING ("Unable to set sink to READY");
     gst_bin_remove (GST_BIN (self), sink);
-    if (sink_pad != NULL)
+    if (sink_pad)
       gst_object_unref (sink_pad);
     return NULL;
   }
 
   /* First sink, we don't know yet if we need a mixer */
-  if (sink_pad == NULL) {
+  if (!sink_pad) {
     priv->mixer = create_mixer (self, sink);
     /* Check if we need a mixer */
-    if (priv->mixer == NULL)
+    if (!priv->mixer)
       sink_pad = gst_element_get_static_pad (sink, "sink");
     else
       sink_pad = gst_element_get_request_pad (priv->mixer, "sink%d");
 
-    if (sink_pad == NULL) {
+    if (!sink_pad) {
       WARNING ("Couldn't get new request pad from mixer");
-      if (sink != NULL)
+      if (sink)
         gst_bin_remove (GST_BIN (self), sink);
-      if (priv->mixer != NULL)
+      if (priv->mixer)
         gst_bin_remove (GST_BIN (self), priv->mixer);
       priv->mixer = NULL;
       return NULL;
@@ -445,7 +437,7 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
 
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad);
 
-  if (filter_pad == NULL) {
+  if (!filter_pad) {
     WARNING ("Could not add filters to sink pad");
     filter_pad = sink_pad;
   }
@@ -453,11 +445,11 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
   pad = gst_ghost_pad_new (name, filter_pad);
   gst_object_unref (filter_pad);
 
-  if (pad == NULL) {
+  if (!pad) {
     WARNING ("Couldn't create ghost pad for tee");
-    if (sink != NULL)
+    if (sink)
       gst_bin_remove (GST_BIN (self), sink);
-    if (priv->mixer != NULL)
+    if (priv->mixer)
       gst_bin_remove (GST_BIN (self), priv->mixer);
     priv->mixer = NULL;
     return NULL;
@@ -467,12 +459,12 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
 
   gst_element_add_pad (element, pad);
 
-  if (sink != NULL)
+  if (sink)
     gst_element_sync_state_with_parent (sink);
-  if (priv->mixer != NULL)
+  if (priv->mixer)
     gst_element_sync_state_with_parent (priv->mixer);
 
-  if (sink != NULL)
+  if (sink)
     priv->sinks = g_list_prepend (priv->sinks, sink);
 
   return pad;
@@ -493,13 +485,13 @@ fsu_sink_release_pad (GstElement * element, GstPad * pad)
     GstPad *mixer_pad = NULL;
     GList *i = NULL;
 
-    for (i = priv->filters; i && mixer_pad == NULL; i = i->next) {
+    for (i = priv->filters; i && !mixer_pad; i = i->next) {
       FsuFilterManager *manager = i->data;
       mixer_pad = fsu_filter_manager_revert (manager,
           GST_BIN (self), filter_pad);
     }
     gst_object_unref (filter_pad);
-    if (priv->mixer != NULL && mixer_pad != NULL) {
+    if (priv->mixer && mixer_pad) {
       gst_element_release_request_pad (priv->mixer, mixer_pad);
       gst_object_unref (mixer_pad);
     }
@@ -517,13 +509,13 @@ create_sink (FsuSink *self)
 
   DEBUG ("Creating sink : %p - %s -- %s (%s)",
       priv->sink,
-      priv->sink_pipeline != NULL ? priv->sink_pipeline : "(null)",
-      priv->sink_name != NULL ? priv->sink_name : "(null)",
-      priv->sink_device != NULL ? priv->sink_device : "(null)");
+      priv->sink_pipeline ? priv->sink_pipeline : "(null)",
+      priv->sink_name ? priv->sink_name : "(null)",
+      priv->sink_device ? priv->sink_device : "(null)");
 
-  if (priv->sink != NULL) {
+  if (priv->sink) {
     return priv->sink;
-  } else if (priv->sink_pipeline != NULL) {
+  } else if (priv->sink_pipeline) {
     GstPad *pad = NULL;
     GstBin *bin = NULL;
     gchar *desc = NULL;
@@ -534,7 +526,7 @@ create_sink (FsuSink *self)
     bin = (GstBin *) gst_parse_launch (desc, &error);
     g_free (desc);
 
-    if (bin != NULL) {
+    if (bin) {
       /* find pads and ghost them if necessary */
       if ((pad = gst_bin_find_unlinked_pad (bin, GST_PAD_SINK))) {
         gst_element_add_pad (GST_ELEMENT (bin), gst_ghost_pad_new ("sink", pad));
@@ -543,15 +535,14 @@ create_sink (FsuSink *self)
     }
     if (error) {
       WARNING ("Error while creating sink-pipeline (%d): %s",
-          error->code, (error->message != NULL? error->message : "(null)"));
+          error->code, (error->message? error->message : "(null)"));
       return NULL;
     }
 
     return GST_ELEMENT (bin);
 
-  } else if (priv->sink_name != NULL &&
-      (auto_sink_name == NULL ||
-          strcmp (priv->sink_name, auto_sink_name) != 0)) {
+  } else if (priv->sink_name &&
+      (!auto_sink_name || strcmp (priv->sink_name, auto_sink_name))) {
     GstElement *sink = NULL;
 
     sink = gst_element_factory_make (priv->sink_name, NULL);

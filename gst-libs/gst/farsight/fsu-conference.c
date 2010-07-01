@@ -139,18 +139,18 @@ fsu_conference_constructed (GObject *object)
   FsuConferencePrivate *priv = self->priv;
   gchar *error = NULL;
 
-  if (chain_up != NULL)
+  if (chain_up)
     chain_up (object);
 
-  if (priv->pipeline == NULL)
+  if (!priv->pipeline)
     priv->pipeline = gst_pipeline_new ("fsu_pipeline");
 
-  if (priv->pipeline == NULL) {
+  if (!priv->pipeline) {
      error = "Couldn't create gstreamer pipeline";
      goto error;
   }
 
-  if (gst_bin_add (GST_BIN (priv->pipeline), priv->conference) == FALSE) {
+  if (!gst_bin_add (GST_BIN (priv->pipeline), priv->conference)) {
     error = "Couldn't add fsrtpconference to the pipeline";
     goto error;
   }
@@ -203,7 +203,7 @@ fsu_conference_finalize (GObject *object)
 FsuConference *
 fsu_conference_new (GstElement *conference, GstElement *pipeline)
 {
-  g_return_val_if_fail (conference != NULL, NULL);
+  g_return_val_if_fail (conference, NULL);
 
   return g_object_new (FSU_TYPE_CONFERENCE,
       "pipeline", pipeline,
