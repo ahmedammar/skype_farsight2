@@ -28,14 +28,11 @@
 #include <gst/farsight/fsu-conference.h>
 #include <gst/farsight/fsu-session-priv.h>
 
-#include <gst/gst.h>
-
 G_DEFINE_TYPE (FsuConference, fsu_conference, G_TYPE_OBJECT);
 
 
 static void fsu_conference_constructed (GObject *object);
 static void fsu_conference_dispose (GObject *object);
-static void fsu_conference_finalize (GObject *object);
 static void fsu_conference_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -56,7 +53,6 @@ enum
 
 struct _FsuConferencePrivate
 {
-  gboolean dispose_has_run;
   GstElement *pipeline;
   GstElement *conference;
 };
@@ -72,12 +68,11 @@ fsu_conference_class_init (FsuConferenceClass *klass)
   gobject_class->set_property = fsu_conference_set_property;
   gobject_class->constructed = fsu_conference_constructed;
   gobject_class->dispose = fsu_conference_dispose;
-  gobject_class->finalize = fsu_conference_finalize;
 
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
       g_param_spec_object ("conference", "The farsight conference",
           "The farsight conference element",
-          GST_TYPE_ELEMENT,
+          FS_TYPE_CONFERENCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_PIPELINE,
       g_param_spec_object ("pipeline", "The pipeline",
@@ -95,7 +90,6 @@ fsu_conference_init (FsuConference *self)
           FsuConferencePrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
 }
 
 static void
@@ -187,13 +181,8 @@ fsu_conference_constructed (GObject *object)
 static void
 fsu_conference_dispose (GObject *object)
 {
-  FsuConference *self = (FsuConference *)object;
+  FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
-
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   if (priv->conference)
     gst_object_unref (priv->conference);
@@ -203,25 +192,17 @@ fsu_conference_dispose (GObject *object)
     gst_object_unref (priv->pipeline);
   priv->pipeline = NULL;
 
+
   G_OBJECT_CLASS (fsu_conference_parent_class)->dispose (object);
 }
 
-static void
-fsu_conference_finalize (GObject *object)
-{
-  FsuConference *self = (FsuConference *)object;
-
-  (void)self;
-
-  G_OBJECT_CLASS (fsu_conference_parent_class)->finalize (object);
-}
-
-
 FsuConference *
-fsu_conference_new (GstElement *conference,
+fsu_conference_new (FsConference *conference,
     GstElement *pipeline)
 {
   g_return_val_if_fail (conference, NULL);
+  g_return_val_if_fail (FS_IS_CONFERENCE (conference), NULL);
+  g_return_val_if_fail (!pipeline || GST_IS_PIPELINE (pipeline), NULL);
 
   return g_object_new (FSU_TYPE_CONFERENCE,
       "pipeline", pipeline,

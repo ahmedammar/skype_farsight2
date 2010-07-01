@@ -68,7 +68,7 @@ struct _FsuConference
 
 GType fsu_conference_get_type (void) G_GNUC_CONST;
 
-FsuConference *fsu_conference_new (GstElement *conference,
+FsuConference *fsu_conference_new (FsConference *conference,
     GstElement *pipeline);
 FsuSession *fsu_conference_handle_session (FsuConference *self,
     FsSession *session,
