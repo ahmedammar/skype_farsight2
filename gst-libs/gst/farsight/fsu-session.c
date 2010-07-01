@@ -43,6 +43,9 @@ static void fsu_session_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec);
 
+static void remove_weakref (gpointer data,
+    gpointer user_data);
+
 /* properties */
 enum
 {
@@ -59,6 +62,7 @@ struct _FsuSessionPrivate
   FsuConference *conference;
   FsSession *session;
   FsuSource *source;
+  GList *streams;
   FsuFilterManager *filters;
   guint sending;
 };
@@ -214,6 +218,13 @@ fsu_session_dispose (GObject *object)
     gst_object_unref (priv->session);
   priv->session = NULL;
 
+  if (priv->streams)
+  {
+    g_list_foreach (priv->streams, remove_weakref, self);
+    g_list_free (priv->streams);
+  }
+  priv->streams = NULL;
+
   /* TODO: release requested pads */
 
   if (priv->source)
@@ -245,12 +256,38 @@ _fsu_session_new (FsuConference *conference,
       NULL);
 }
 
+static void
+stream_destroyed (gpointer data,
+    GObject *destroyed_stream)
+{
+  FsuSession *self = FSU_SESSION (data);
+  FsuSessionPrivate *priv = self->priv;
+
+  priv->streams = g_list_remove (priv->streams, destroyed_stream);
+}
+
+static void
+remove_weakref (gpointer data,
+    gpointer user_data)
+{
+  g_object_weak_unref (G_OBJECT (data), stream_destroyed, user_data);
+}
+
 FsuStream *
 fsu_session_handle_stream (FsuSession *self,
     FsStream *stream,
     FsuSink *sink)
 {
-  return _fsu_stream_new (self->priv->conference, self, stream, sink);
+  FsuSessionPrivate *priv = self->priv;
+  FsuStream *str = _fsu_stream_new (priv->conference, self, stream, sink);
+
+  if (str)
+  {
+    priv->streams = g_list_prepend (priv->streams, str);
+    g_object_weak_ref (G_OBJECT (str), stream_destroyed, self);
+  }
+
+  return str;
 }
 
 
