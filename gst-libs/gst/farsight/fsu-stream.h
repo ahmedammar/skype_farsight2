@@ -66,6 +66,7 @@ struct _FsuStreamClass
 struct _FsuStream
 {
   GObject parent;
+  /*< private >*/
   FsuStreamPrivate *priv;
 };
 

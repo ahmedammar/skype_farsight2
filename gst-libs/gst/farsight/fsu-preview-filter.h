@@ -60,6 +60,7 @@ struct _FsuPreviewFilterClass
 struct _FsuPreviewFilter
 {
   FsuFilter parent;
+  /*< private >*/
   FsuPreviewFilterPrivate *priv;
 };
 

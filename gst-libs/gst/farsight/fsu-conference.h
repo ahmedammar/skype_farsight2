@@ -64,6 +64,7 @@ struct _FsuConferenceClass
 struct _FsuConference
 {
   GObject parent;
+  /*< private >*/
   FsuConferencePrivate *priv;
 };
 

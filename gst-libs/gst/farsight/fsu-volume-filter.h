@@ -60,6 +60,7 @@ struct _FsuVolumeFilterClass
 struct _FsuVolumeFilter
 {
   FsuFilter parent;
+  /*< private >*/
   FsuVolumeFilterPrivate *priv;
 };
 

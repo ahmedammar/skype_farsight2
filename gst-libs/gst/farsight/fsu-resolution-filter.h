@@ -60,6 +60,7 @@ struct _FsuResolutionFilterClass
 struct _FsuResolutionFilter
 {
   FsuFilter parent;
+  /*< private >*/
   FsuResolutionFilterPrivate *priv;
 };
 

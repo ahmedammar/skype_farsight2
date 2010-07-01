@@ -69,6 +69,7 @@ struct _FsuFilterClass
 struct _FsuFilter
 {
   GObject parent;
+  /*< private >*/
   FsuFilterPrivate *priv;
 };
 

@@ -39,6 +39,7 @@ struct _FsuSourceClass
 struct _FsuSource
 {
   GstBin parent;
+  /*< private >*/
   FsuSourcePrivate *priv;
 };
 

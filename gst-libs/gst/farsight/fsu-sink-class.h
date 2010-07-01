@@ -38,6 +38,7 @@ struct _FsuSinkClass
 struct _FsuSink
 {
   GstBin parent;
+  /*< private >*/
   FsuSinkPrivate *priv;
 };
 

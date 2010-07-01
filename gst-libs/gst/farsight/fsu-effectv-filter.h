@@ -60,6 +60,7 @@ struct _FsuEffectvFilterClass
 struct _FsuEffectvFilter
 {
   FsuFilter parent;
+  /*< private >*/
   FsuEffectvFilterPrivate *priv;
 };
 

@@ -60,6 +60,7 @@ struct _FsuFramerateFilterClass
 struct _FsuFramerateFilter
 {
   FsuFilter parent;
+  /*< private >*/
   FsuFramerateFilterPrivate *priv;
 };
 
