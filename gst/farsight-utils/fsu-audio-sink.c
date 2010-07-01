@@ -51,7 +51,8 @@ GST_BOILERPLATE_FULL (FsuAudioSink, fsu_audio_sink,
     FsuSink, FSU_TYPE_SINK, _do_init)
 
 static void
-add_filters (FsuSink *self, FsuFilterManager *manager)
+add_filters (FsuSink *self,
+    FsuFilterManager *manager)
 {
   FsuAudioconverterFilter *filter = fsu_audioconverter_filter_get_singleton ();
 
@@ -60,7 +61,9 @@ add_filters (FsuSink *self, FsuFilterManager *manager)
 
 
 static void
-sink_element_added (GstBin *bin, GstElement *sink, gpointer user_data)
+sink_element_added (GstBin *bin,
+    GstElement *sink,
+    gpointer user_data)
 {
 
   /*g_object_set (sink, "async", FALSE, NULL);*/
@@ -78,7 +81,8 @@ create_auto_sink (FsuSink *self)
 }
 
 static gchar *
-need_mixer (FsuSink *self, GstElement *sink)
+need_mixer (FsuSink *self,
+    GstElement *sink)
 {
   GstElementFactory *factory = gst_element_get_factory (sink);
   gchar *name = GST_PLUGIN_FEATURE_NAME(factory);

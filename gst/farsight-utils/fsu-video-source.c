@@ -64,7 +64,8 @@ static const gchar *video_blacklisted_sources[] = {"videotestsrc",
                                                    NULL};
 
 static void
-add_filters (FsuSource *self, FsuFilterManager *manager)
+add_filters (FsuSource *self,
+    FsuFilterManager *manager)
 {
   FsuVideoconverterFilter *filter = fsu_videoconverter_filter_get_singleton ();
 
@@ -91,6 +92,7 @@ fsu_video_source_class_init (FsuVideoSourceClass *klass)
 }
 
 static void
-fsu_video_source_init (FsuVideoSource *self, FsuVideoSourceClass *klass)
+fsu_video_source_init (FsuVideoSource *self,
+    FsuVideoSourceClass *klass)
 {
 }

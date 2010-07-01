@@ -67,7 +67,8 @@ static const gchar *audio_blacklisted_sources[] = {"audiotestsrc",
                                                    NULL};
 
 static void
-add_filters (FsuSource *self, FsuFilterManager *manager)
+add_filters (FsuSource *self,
+    FsuFilterManager *manager)
 {
   FsuAudioconverterFilter *filter = fsu_audioconverter_filter_get_singleton ();
 
@@ -94,6 +95,7 @@ fsu_audio_source_class_init (FsuAudioSourceClass *klass)
 }
 
 static void
-fsu_audio_source_init (FsuAudioSource *self, FsuAudioSourceClass *klass)
+fsu_audio_source_init (FsuAudioSource *self,
+    FsuAudioSourceClass *klass)
 {
 }

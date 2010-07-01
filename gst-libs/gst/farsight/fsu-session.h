@@ -68,15 +68,18 @@ struct _FsuSessionClass
 struct _FsuSession
 {
   GObject parent;
+  /*< private >*/
   FsuSessionPrivate *priv;
 };
 
 GType fsu_session_get_type (void) G_GNUC_CONST;
 
 FsuSession *fsu_session_new (FsuConference *conference,
-    FsSession *session, FsuSource *source);
+    FsSession *session,
+    FsuSource *source);
 FsuStream *fsu_session_handle_stream (FsuSession *self,
-    FsStream *stream, FsuSink *sink);
+    FsStream *stream,
+    FsuSink *sink);
 
 G_END_DECLS
 

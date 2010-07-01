@@ -130,7 +130,9 @@ FsuFilterManager *fsu_filter_manager_new (void)
 }
 
 static void
-pad_block_do_nothing (GstPad *pad, gboolean blocked, gpointer user_data)
+pad_block_do_nothing (GstPad *pad,
+    gboolean blocked,
+    gpointer user_data)
 {
   g_debug ("Pad unblocked");
 }
@@ -144,7 +146,9 @@ free_filter_id (FsuFilterId *id)
 
 
 static void
-apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
+apply_modifs (GstPad *pad,
+    gboolean blocked,
+    gpointer user_data)
 {
   FsuFilterManager *self = user_data;
   FsuFilterManagerPrivate *priv = self->priv;
@@ -303,8 +307,11 @@ apply_modifs (GstPad *pad, gboolean blocked, gpointer user_data)
 }
 
 static void
-new_modification (FsuFilterManager *self, ModificationAction action,
-    FsuFilterId *id, gint insert_position, FsuFilterId *replace_id)
+new_modification (FsuFilterManager *self,
+    ModificationAction action,
+    FsuFilterId *id,
+    gint insert_position,
+    FsuFilterId *replace_id)
 {
   FsuFilterManagerPrivate *priv = self->priv;
   FilterModification *modif = g_slice_new0 (FilterModification);
@@ -332,20 +339,23 @@ new_modification (FsuFilterManager *self, ModificationAction action,
 }
 
 FsuFilterId *
-fsu_filter_manager_prepend_filter (FsuFilterManager *self, FsuFilter *filter)
+fsu_filter_manager_prepend_filter (FsuFilterManager *self,
+    FsuFilter *filter)
 {
   return fsu_filter_manager_insert_filter (self, filter, 0);
 }
 
 FsuFilterId *
-fsu_filter_manager_append_filter (FsuFilterManager *self, FsuFilter *filter)
+fsu_filter_manager_append_filter (FsuFilterManager *self,
+    FsuFilter *filter)
 {
   return fsu_filter_manager_insert_filter (self, filter, -1);
 }
 
 FsuFilterId *
 fsu_filter_manager_insert_filter_before (FsuFilterManager *self,
-    FsuFilter *filter, FsuFilterId *before)
+    FsuFilter *filter,
+    FsuFilterId *before)
 {
   gint index = g_list_index (self->priv->filters, before);
 
@@ -357,7 +367,8 @@ fsu_filter_manager_insert_filter_before (FsuFilterManager *self,
 
 FsuFilterId *
 fsu_filter_manager_insert_filter_after (FsuFilterManager *self,
-    FsuFilter *filter, FsuFilterId *after)
+    FsuFilter *filter,
+    FsuFilterId *after)
 {
   gint index = g_list_index (self->priv->filters, after);
 
@@ -369,7 +380,8 @@ fsu_filter_manager_insert_filter_after (FsuFilterManager *self,
 
 FsuFilterId *
 fsu_filter_manager_replace_filter (FsuFilterManager *self,
-    FsuFilter *filter, FsuFilterId *replace)
+    FsuFilter *filter,
+    FsuFilterId *replace)
 {
   FsuFilterManagerPrivate *priv = self->priv;
   gint index = g_list_index (priv->filters, replace);
@@ -394,7 +406,8 @@ fsu_filter_manager_replace_filter (FsuFilterManager *self,
 
 FsuFilterId *
 fsu_filter_manager_insert_filter (FsuFilterManager *self,
-    FsuFilter *filter, gint position)
+    FsuFilter *filter,
+    gint position)
 {
   FsuFilterManagerPrivate *priv = self->priv;
   FsuFilterId *id = g_slice_new0 (FsuFilterId);
@@ -454,7 +467,8 @@ fsu_filter_manager_get_filter_by_id (FsuFilterManager *self, FsuFilterId *id)
 
 GstPad *
 fsu_filter_manager_apply (FsuFilterManager *self,
-    GstBin *bin, GstPad *pad)
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuFilterManagerPrivate *priv = self->priv;
   GList *i = NULL;
@@ -506,7 +520,8 @@ fsu_filter_manager_apply (FsuFilterManager *self,
 
 GstPad *
 fsu_filter_manager_revert (FsuFilterManager *self,
-    GstBin *bin, GstPad *pad)
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuFilterManagerPrivate *priv = self->priv;
   GList *i = NULL;
@@ -592,7 +607,8 @@ fsu_filter_manager_revert (FsuFilterManager *self,
 }
 
 gboolean
-fsu_filter_manager_handle_message (FsuFilterManager *self, GstMessage *message)
+fsu_filter_manager_handle_message (FsuFilterManager *self,
+    GstMessage *message)
 {
   FsuFilterManagerPrivate *priv = self->priv;
   GList *i = NULL;

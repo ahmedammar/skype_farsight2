@@ -47,7 +47,9 @@ fsu_videoconverter_filter_get_singleton (void)
 
 
 static GstPad *
-fsu_videoconverter_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_videoconverter_filter_apply (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   GstPad *out = fsu_filter_add_standard_element (bin, pad, "ffmpegcolorspace",
       NULL, NULL);
@@ -56,7 +58,9 @@ fsu_videoconverter_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 }
 
 static GstPad *
-fsu_videoconverter_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_videoconverter_filter_revert (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   return fsu_filter_revert_standard_element (bin, pad, NULL);
 }

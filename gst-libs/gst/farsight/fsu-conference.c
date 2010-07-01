@@ -30,9 +30,13 @@ static void fsu_conference_constructed (GObject *object);
 static void fsu_conference_dispose (GObject *object);
 static void fsu_conference_finalize (GObject *object);
 static void fsu_conference_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_conference_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 
 
 /* properties */
@@ -201,7 +205,8 @@ fsu_conference_finalize (GObject *object)
 
 
 FsuConference *
-fsu_conference_new (GstElement *conference, GstElement *pipeline)
+fsu_conference_new (GstElement *conference,
+    GstElement *pipeline)
 {
   g_return_val_if_fail (conference, NULL);
 
@@ -213,7 +218,8 @@ fsu_conference_new (GstElement *conference, GstElement *pipeline)
 
 FsuSession *
 fsu_conference_handle_session (FsuConference *self,
-    FsSession *session, FsuSource *source)
+    FsSession *session,
+    FsuSource *source)
 {
   return fsu_session_new (self, session, source);
 }

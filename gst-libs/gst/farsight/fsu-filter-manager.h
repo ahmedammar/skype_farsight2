@@ -74,22 +74,28 @@ FsuFilterId *fsu_filter_manager_prepend_filter (FsuFilterManager *self,
 FsuFilterId *fsu_filter_manager_append_filter (FsuFilterManager *self,
     FsuFilter *filter);
 FsuFilterId *fsu_filter_manager_insert_filter_before (FsuFilterManager *self,
-    FsuFilter *filter, FsuFilterId *before);
+    FsuFilter *filter,
+    FsuFilterId *before);
 FsuFilterId *fsu_filter_manager_insert_filter_after (FsuFilterManager *self,
-    FsuFilter *filter, FsuFilterId *after);
+    FsuFilter *filter,
+    FsuFilterId *after);
 FsuFilterId *fsu_filter_manager_replace_filter (FsuFilterManager *self,
-    FsuFilter *filter, FsuFilterId *replace);
+    FsuFilter *filter,
+    FsuFilterId *replace);
 FsuFilterId *fsu_filter_manager_insert_filter (FsuFilterManager *self,
-    FsuFilter *filter, gint position);
+    FsuFilter *filter,
+    gint position);
 gboolean fsu_filter_manager_remove_filter (FsuFilterManager *self,
     FsuFilterId *id);
 FsuFilter *fsu_filter_manager_get_filter_by_id (FsuFilterManager *self,
     FsuFilterId *id);
 
 GstPad *fsu_filter_manager_apply (FsuFilterManager *self,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 GstPad *fsu_filter_manager_revert (FsuFilterManager *self,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 
 gboolean fsu_filter_manager_handle_message (FsuFilterManager *self,
     GstMessage *message);

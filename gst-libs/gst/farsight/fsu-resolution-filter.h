@@ -65,7 +65,8 @@ struct _FsuResolutionFilter
 
 GType fsu_resolution_filter_get_type (void) G_GNUC_CONST;
 
-FsuResolutionFilter *fsu_resolution_filter_new (guint width, guint height);
+FsuResolutionFilter *fsu_resolution_filter_new (guint width,
+    guint height);
 
 G_END_DECLS
 

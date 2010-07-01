@@ -27,13 +27,19 @@ G_DEFINE_TYPE (FsuEffectvFilter, fsu_effectv_filter, FSU_TYPE_FILTER);
 
 static void fsu_effectv_filter_dispose (GObject *object);
 static void fsu_effectv_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_effectv_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 static GstPad *fsu_effectv_filter_apply (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 static GstPad *fsu_effectv_filter_revert (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 
 
 /* properties */
@@ -85,7 +91,9 @@ fsu_effectv_filter_init (FsuEffectvFilter *self)
 
 static void
 fsu_effectv_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuEffectvFilter *self = FSU_EFFECTV_FILTER (object);
   FsuEffectvFilterPrivate *priv = self->priv;
@@ -103,7 +111,9 @@ fsu_effectv_filter_get_property (GObject *object,
 
 static void
 fsu_effectv_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuEffectvFilter *self = FSU_EFFECTV_FILTER (object);
   FsuEffectvFilterPrivate *priv = self->priv;
@@ -141,7 +151,9 @@ fsu_effectv_filter_new (const gchar *effect)
 
 
 static GstPad *
-fsu_effectv_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_effectv_filter_apply (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuEffectvFilter *self = FSU_EFFECTV_FILTER (filter);
   return fsu_filter_add_standard_element (bin, pad, self->priv->effect,
@@ -149,7 +161,9 @@ fsu_effectv_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 }
 
 static GstPad *
-fsu_effectv_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_effectv_filter_revert (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   return fsu_filter_revert_standard_element (bin, pad, NULL);
 }

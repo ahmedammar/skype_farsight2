@@ -26,14 +26,20 @@ G_DEFINE_TYPE (FsuResolutionFilter, fsu_resolution_filter, FSU_TYPE_FILTER);
 
 static void fsu_resolution_filter_constructed (GObject *object);
 static void fsu_resolution_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_resolution_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 static void fsu_resolution_filter_dispose (GObject *object);
 static GstPad *fsu_resolution_filter_apply (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 static GstPad *fsu_resolution_filter_revert (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 
 #define DEFAULT_WIDTH 320
 #define DEFAULT_HEIGHT 240
@@ -103,7 +109,9 @@ fsu_resolution_filter_init (FsuResolutionFilter *self)
 
 static void
 fsu_resolution_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
@@ -124,7 +132,9 @@ fsu_resolution_filter_get_property (GObject *object,
 
 static void
 fsu_resolution_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
@@ -185,7 +195,8 @@ fsu_resolution_filter_constructed (GObject *object)
 }
 
 FsuResolutionFilter *
-fsu_resolution_filter_new (guint width, guint height)
+fsu_resolution_filter_new (guint width,
+    guint height)
 {
   return g_object_new (FSU_TYPE_RESOLUTION_FILTER,
       "width", width,
@@ -195,7 +206,9 @@ fsu_resolution_filter_new (guint width, guint height)
 
 
 static GstPad *
-fsu_resolution_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_resolution_filter_apply (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (filter);
   FsuResolutionFilterPrivate *priv = self->priv;
@@ -223,7 +236,9 @@ fsu_resolution_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 }
 
 static GstPad *
-fsu_resolution_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_resolution_filter_revert (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (filter);
   FsuResolutionFilterPrivate *priv = self->priv;

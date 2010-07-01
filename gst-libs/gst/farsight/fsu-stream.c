@@ -29,12 +29,18 @@ static void fsu_stream_constructed (GObject *object);
 static void fsu_stream_dispose (GObject *object);
 static void fsu_stream_finalize (GObject *object);
 static void fsu_stream_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_stream_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 
-static void src_pad_added (FsStream *self, GstPad *pad,
-    FsCodec *codec, gpointer user_data);
+static void src_pad_added (FsStream *self,
+    GstPad *pad,
+    FsCodec *codec,
+    gpointer user_data);
 
 /* properties */
 enum {
@@ -108,7 +114,9 @@ fsu_stream_init (FsuStream *self)
 
 static void
 fsu_stream_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuStream *self = FSU_STREAM (object);
   FsuStreamPrivate *priv = self->priv;
@@ -134,7 +142,9 @@ fsu_stream_get_property (GObject *object,
 
 static void
 fsu_stream_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuStream *self = FSU_STREAM (object);
   FsuStreamPrivate *priv = self->priv;
@@ -236,8 +246,10 @@ fsu_stream_finalize (GObject *object)
 
 
 FsuStream *
-fsu_stream_new (FsuConference *conference, FsuSession *session,
-    FsStream *stream, FsuSink *sink)
+fsu_stream_new (FsuConference *conference,
+    FsuSession *session,
+    FsStream *stream,
+    FsuSink *sink)
 {
   g_return_val_if_fail (conference, NULL);
   g_return_val_if_fail (session, NULL);
@@ -254,8 +266,10 @@ fsu_stream_new (FsuConference *conference, FsuSession *session,
 
 
 static void
-src_pad_added (FsStream *stream, GstPad *pad,
-    FsCodec *codec, gpointer user_data)
+src_pad_added (FsStream *stream,
+    GstPad *pad,
+    FsCodec *codec,
+    gpointer user_data)
 {
   FsuStream *self = user_data;
   FsuStreamPrivate *priv = self->priv;

@@ -26,14 +26,20 @@ G_DEFINE_TYPE (FsuFramerateFilter, fsu_framerate_filter, FSU_TYPE_FILTER);
 
 static void fsu_framerate_filter_constructed (GObject *object);
 static void fsu_framerate_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_framerate_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 static void fsu_framerate_filter_dispose (GObject *object);
 static GstPad *fsu_framerate_filter_apply (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 static GstPad *fsu_framerate_filter_revert (FsuFilter *filter,
-    GstBin *bin, GstPad *pad);
+    GstBin *bin,
+    GstPad *pad);
 
 #define DEFAULT_FRAMERATE 30
 
@@ -93,7 +99,9 @@ fsu_framerate_filter_init (FsuFramerateFilter *self)
 
 static void
 fsu_framerate_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
   FsuFramerateFilterPrivate *priv = self->priv;
@@ -111,7 +119,9 @@ fsu_framerate_filter_get_property (GObject *object,
 
 static void
 fsu_framerate_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
   FsuFramerateFilterPrivate *priv = self->priv;
@@ -203,7 +213,9 @@ fsu_framerate_filter_new (guint fps)
 
 
 static GstPad *
-fsu_framerate_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_framerate_filter_apply (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
 
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (filter);
@@ -232,7 +244,9 @@ fsu_framerate_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 }
 
 static GstPad *
-fsu_framerate_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_framerate_filter_revert (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (filter);
   FsuFramerateFilterPrivate *priv = self->priv;

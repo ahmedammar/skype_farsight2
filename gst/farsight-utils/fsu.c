@@ -33,7 +33,8 @@
 #include <string.h>
 
 static gboolean
-klass_contains (const gchar *klass, const gchar *needle)
+klass_contains (const gchar *klass,
+    const gchar *needle)
 {
   gchar *found = strstr (klass, needle);
 

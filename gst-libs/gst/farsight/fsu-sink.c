@@ -62,13 +62,19 @@ GST_BOILERPLATE_FULL (FsuSink, fsu_sink,
 
 static void fsu_sink_dispose (GObject *object);
 static void fsu_sink_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_sink_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 
 static GstPad *fsu_sink_request_new_pad (GstElement * element,
-  GstPadTemplate * templ, const gchar * name);
-static void fsu_sink_release_pad (GstElement * element, GstPad * pad);
+    GstPadTemplate * templ,
+    const gchar * name);
+static void fsu_sink_release_pad (GstElement * element,
+    GstPad * pad);
 static GstElement *create_sink (FsuSink *self);
 
 /* properties */
@@ -154,7 +160,9 @@ fsu_sink_init (FsuSink *self, FsuSinkClass *klass)
 
 static void
 fsu_sink_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuSink *self = FSU_SINK (object);
   FsuSinkPrivate *priv = self->priv;
@@ -177,7 +185,9 @@ fsu_sink_get_property (GObject *object,
 
 static void
 fsu_sink_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuSink *self = FSU_SINK (object);
   FsuSinkPrivate *priv = self->priv;
@@ -235,7 +245,8 @@ create_auto_sink (FsuSink *self)
 }
 
 static gchar *
-need_mixer (FsuSink *self, GstElement *sink)
+need_mixer (FsuSink *self,
+    GstElement *sink)
 {
 
   if (FSU_SINK_GET_CLASS (self)->need_mixer)
@@ -284,7 +295,8 @@ find_sink (GstElement *snk)
 
 
 static GstElement *
-create_mixer (FsuSink *self, GstElement *sink)
+create_mixer (FsuSink *self,
+    GstElement *sink)
 {
   GstElement *mixer = NULL;
   GstPad *sink_pad = NULL;
@@ -332,7 +344,8 @@ create_mixer (FsuSink *self, GstElement *sink)
 }
 
 static void
-add_filters (FsuSink *self, FsuFilterManager *manager)
+add_filters (FsuSink *self,
+    FsuFilterManager *manager)
 {
   if (FSU_SINK_GET_CLASS (self)->add_filters)
     FSU_SINK_GET_CLASS (self)->add_filters (self, manager);
@@ -340,7 +353,8 @@ add_filters (FsuSink *self, FsuFilterManager *manager)
 
 
 static GstPad *
-fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
+fsu_sink_request_new_pad (GstElement * element,
+    GstPadTemplate * templ,
   const gchar * name)
 {
   FsuSink *self = FSU_SINK (element);
@@ -471,7 +485,8 @@ fsu_sink_request_new_pad (GstElement * element, GstPadTemplate * templ,
 }
 
 static void
-fsu_sink_release_pad (GstElement * element, GstPad * pad)
+fsu_sink_release_pad (GstElement * element,
+    GstPad * pad)
 {
   FsuSink *self = FSU_SINK (element);
   FsuSinkPrivate *priv = self->priv;

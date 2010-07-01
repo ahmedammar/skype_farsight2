@@ -55,9 +55,14 @@ typedef struct _FsuFilterPrivate FsuFilterPrivate;
 struct _FsuFilterClass
 {
   GObjectClass parent_class;
-  GstPad *(*apply) (FsuFilter *self, GstBin *bin, GstPad *pad);
-  GstPad *(*revert) (FsuFilter *self, GstBin *bin, GstPad *pad);
-  gboolean (*handle_message) (FsuFilter *self, GstMessage *message);
+  GstPad *(*apply) (FsuFilter *self,
+      GstBin *bin,
+      GstPad *pad);
+  GstPad *(*revert) (FsuFilter *self,
+      GstBin *bin,
+      GstPad *pad);
+  gboolean (*handle_message) (FsuFilter *self,
+      GstMessage *message);
   gchar *name;
 };
 
@@ -71,12 +76,14 @@ GType fsu_filter_get_type (void) G_GNUC_CONST;
 
 
 #define FSU_DEFINE_FILTER(type, filter_name) \
-  G_DEFINE_TYPE (type, fsu_##filter_name##_filter, FSU_TYPE_FILTER);   \
+  G_DEFINE_TYPE (type, fsu_##filter_name##_filter, FSU_TYPE_FILTER);    \
                                                                         \
   static GstPad *fsu_##filter_name##_filter_apply (FsuFilter *filter,   \
-      GstBin *bin, GstPad *pad);                                        \
+      GstBin *bin,                                                      \
+      GstPad *pad);                                                     \
   static GstPad *fsu_##filter_name##_filter_revert (FsuFilter *filter,  \
-      GstBin *bin, GstPad *pad);                                        \
+      GstBin *bin,                                                      \
+      GstPad *pad);                                                     \
                                                                         \
   static void                                                           \
   fsu_##filter_name##_filter_class_init (type##Class *klass)            \
@@ -88,10 +95,16 @@ GType fsu_filter_get_type (void) G_GNUC_CONST;
     fsufilter_class->name = #filter_name;                               \
   }
 
-GstPad *fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad);
-GstPad *fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad);
-GstPad *fsu_filter_follow (FsuFilter *self, GstPad *pad);
-gboolean fsu_filter_handle_message (FsuFilter *self, GstMessage *message);
+GstPad *fsu_filter_apply (FsuFilter *self,
+    GstBin *bin,
+    GstPad *pad);
+GstPad *fsu_filter_revert (FsuFilter *self,
+    GstBin *bin,
+    GstPad *pad);
+GstPad *fsu_filter_follow (FsuFilter *self,
+    GstPad *pad);
+gboolean fsu_filter_handle_message (FsuFilter *self,
+    GstMessage *message);
 
 G_END_DECLS
 

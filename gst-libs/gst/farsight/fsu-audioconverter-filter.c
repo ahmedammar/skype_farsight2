@@ -49,7 +49,9 @@ fsu_audioconverter_filter_get_singleton (void)
 
 
 static GstPad *
-fsu_audioconverter_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_audioconverter_filter_apply (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   GstElement *converters = NULL;
   GstPad *out_pad = NULL;
@@ -64,7 +66,9 @@ fsu_audioconverter_filter_apply (FsuFilter *filter, GstBin *bin, GstPad *pad)
 }
 
 static GstPad *
-fsu_audioconverter_filter_revert (FsuFilter *filter, GstBin *bin, GstPad *pad)
+fsu_audioconverter_filter_revert (FsuFilter *filter,
+    GstBin *bin,
+    GstPad *pad)
 {
   return fsu_filter_revert_bin (bin, pad);
 }

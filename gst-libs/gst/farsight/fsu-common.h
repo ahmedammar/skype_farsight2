@@ -29,7 +29,8 @@ G_BEGIN_DECLS
 
 typedef gboolean (*klass_check) (GstElementFactory *factory);
 
-gboolean g_object_has_property (GObject *object, const gchar *property);
+gboolean g_object_has_property (GObject *object,
+    const gchar *property);
 GList * get_plugins_filtered (klass_check check);
 
 G_END_DECLS

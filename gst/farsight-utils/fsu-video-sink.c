@@ -62,13 +62,15 @@ create_auto_sink (FsuSink *self)
 }
 
 static gchar *
-need_mixer (FsuSink *self, GstElement *sink)
+need_mixer (FsuSink *self,
+    GstElement *sink)
 {
   return "fsfunnel";
 }
 
 static void
-add_filters (FsuSink *self, FsuFilterManager *manager)
+add_filters (FsuSink *self,
+    FsuFilterManager *manager)
 {
   FsuVideoconverterFilter *filter = fsu_videoconverter_filter_get_singleton ();
 
@@ -95,6 +97,7 @@ fsu_video_sink_class_init (FsuVideoSinkClass *klass)
 }
 
 static void
-fsu_video_sink_init (FsuVideoSink *self, FsuVideoSinkClass *klass)
+fsu_video_sink_init (FsuVideoSink *self,
+    FsuVideoSinkClass *klass)
 {
 }

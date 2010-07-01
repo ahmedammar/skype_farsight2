@@ -30,7 +30,8 @@
 
 
 gboolean
-g_object_has_property (GObject *object, const gchar *property)
+g_object_has_property (GObject *object,
+    const gchar *property)
 {
   GObjectClass *klass;
 
@@ -41,7 +42,8 @@ g_object_has_property (GObject *object, const gchar *property)
 /* function used to sort element features */
 /* Copy-pasted from decodebin */
 static gint
-compare_ranks (GstPluginFeature * f1, GstPluginFeature * f2)
+compare_ranks (GstPluginFeature * f1,
+    GstPluginFeature * f2)
 {
   gint diff;
   const gchar *rname1, *rname2;

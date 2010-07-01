@@ -32,7 +32,8 @@ struct _FsuSourceClass
   const gchar **priority_sources;
   const gchar **blacklisted_sources;
   klass_check klass_check;
-  void (*add_filters) (FsuSource *self, FsuFilterManager *manager);
+  void (*add_filters) (FsuSource *self,
+      FsuFilterManager *manager);
 };
 
 struct _FsuSource

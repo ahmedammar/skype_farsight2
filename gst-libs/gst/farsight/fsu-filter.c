@@ -26,9 +26,13 @@ G_DEFINE_TYPE (FsuFilter, fsu_filter, G_TYPE_OBJECT);
 
 static void fsu_filter_dispose (GObject *object);
 static void fsu_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 
 
 /* properties */
@@ -78,7 +82,9 @@ fsu_filter_init (FsuFilter *self)
 
 static void
 fsu_filter_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuFilter *self = FSU_FILTER (object);
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
@@ -95,7 +101,9 @@ fsu_filter_get_property (GObject *object,
 
 static void
 fsu_filter_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuFilter *self = FSU_FILTER (object);
   FsuFilterPrivate *priv = self->priv;
@@ -127,7 +135,9 @@ fsu_filter_dispose (GObject *object)
 
 
 GstPad *
-fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad)
+fsu_filter_apply (FsuFilter *self,
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
   FsuFilterPrivate *priv = self->priv;
@@ -148,7 +158,9 @@ fsu_filter_apply (FsuFilter *self, GstBin *bin, GstPad *pad)
 }
 
 GstPad *
-fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
+fsu_filter_revert (FsuFilter *self,
+    GstBin *bin,
+    GstPad *pad)
 {
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
   FsuFilterPrivate *priv = self->priv;
@@ -183,7 +195,8 @@ fsu_filter_revert (FsuFilter *self, GstBin *bin, GstPad *pad)
 }
 
 GstPad *
-fsu_filter_follow (FsuFilter *self, GstPad *pad)
+fsu_filter_follow (FsuFilter *self,
+    GstPad *pad)
 {
   GstPad *in_pad = g_hash_table_lookup (self->priv->pads, pad);
 
@@ -194,7 +207,8 @@ fsu_filter_follow (FsuFilter *self, GstPad *pad)
 }
 
 gboolean
-fsu_filter_handle_message (FsuFilter *self, GstMessage *message)
+fsu_filter_handle_message (FsuFilter *self,
+    GstMessage *message)
 {
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
 

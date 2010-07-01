@@ -57,16 +57,23 @@ GST_BOILERPLATE_FULL (FsuSource, fsu_source,
 
 static void fsu_source_dispose (GObject *object);
 static void fsu_source_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_source_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 
 static GstStateChangeReturn fsu_source_change_state (GstElement *element,
     GstStateChange transition);
-static void fsu_source_handle_message (GstBin *bin, GstMessage *message);
+static void fsu_source_handle_message (GstBin *bin,
+    GstMessage *message);
 static GstPad *fsu_source_request_new_pad (GstElement * element,
-  GstPadTemplate * templ, const gchar * name);
-static void fsu_source_release_pad (GstElement * element, GstPad * pad);
+  GstPadTemplate * templ,
+    const gchar * name);
+static void fsu_source_release_pad (GstElement * element,
+    GstPad * pad);
 static GstElement *create_source (FsuSource *self);
 
 /* properties */
@@ -176,7 +183,9 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
 
 static void
 fsu_source_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuSource *self = FSU_SOURCE (object);
   FsuSourcePrivate *priv = self->priv;
@@ -202,7 +211,9 @@ fsu_source_get_property (GObject *object,
 
 static void
 fsu_source_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuSource *self = FSU_SOURCE (object);
   FsuSourcePrivate *priv = self->priv;
@@ -263,7 +274,8 @@ fsu_source_dispose (GObject *object)
 
 
 static void
-add_filters (FsuSource *self, FsuFilterManager *manager)
+add_filters (FsuSource *self,
+    FsuFilterManager *manager)
 {
   if (FSU_SOURCE_GET_CLASS (self)->add_filters)
     FSU_SOURCE_GET_CLASS (self)->add_filters (self, manager);
@@ -339,8 +351,9 @@ create_tee (FsuSource *self)
 }
 
 static GstPad *
-fsu_source_request_new_pad (GstElement * element, GstPadTemplate * templ,
-  const gchar * name)
+fsu_source_request_new_pad (GstElement * element,
+    GstPadTemplate * templ,
+    const gchar * name)
 {
   FsuSource *self = FSU_SOURCE (element);
   FsuSourcePrivate *priv = self->priv;
@@ -392,7 +405,8 @@ fsu_source_request_new_pad (GstElement * element, GstPadTemplate * templ,
 }
 
 static void
-fsu_source_release_pad (GstElement * element, GstPad * pad)
+fsu_source_release_pad (GstElement * element,
+    GstPad * pad)
 {
   FsuSource *self = FSU_SOURCE (element);
   FsuSourcePrivate *priv = self->priv;
@@ -508,7 +522,8 @@ find_source (GstElement *src)
 
 
 static GstElement *
-test_source (FsuSource *self, const gchar *name)
+test_source (FsuSource *self,
+    const gchar *name)
 {
   FsuSourcePrivate *priv = self->priv;
   GstPropertyProbe *probe = NULL;
@@ -767,7 +782,8 @@ create_source (FsuSource *self)
 }
 
 static GstStateChangeReturn
-fsu_source_change_state (GstElement *element, GstStateChange transition)
+fsu_source_change_state (GstElement *element,
+    GstStateChange transition)
 {
   FsuSource *self = FSU_SOURCE (element);
   FsuSourcePrivate *priv = self->priv;
@@ -876,7 +892,8 @@ destroy_source (FsuSource *self)
 }
 
 static void
-fsu_source_handle_message (GstBin *bin, GstMessage *message)
+fsu_source_handle_message (GstBin *bin,
+    GstMessage *message)
 {
   FsuSource *self = FSU_SOURCE (bin);
   FsuSourcePrivate *priv = self->priv;

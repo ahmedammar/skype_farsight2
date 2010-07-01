@@ -27,18 +27,30 @@
 
 G_BEGIN_DECLS
 
-gboolean fsu_filter_add_element (GstBin *bin, GstPad *pad,
-    GstElement *element, GstPad *element_pad);
-GstElement *fsu_filter_add_element_by_name (GstBin *bin, GstPad *pad,
-    const gchar *element_name, const gchar *pad_name,
-    GstPad **out_pad, const gchar *out_pad_name);
-GstElement *fsu_filter_add_element_by_description (GstBin *bin, GstPad *pad,
-    const gchar *description, GstPad **out_pad);
-GstPad *fsu_filter_add_standard_element (GstBin *bin, GstPad *pad,
-    const gchar *element_name, GstElement **element, GList **elements);
+gboolean fsu_filter_add_element (GstBin *bin,
+    GstPad *pad,
+    GstElement *element,
+    GstPad *element_pad);
+GstElement *fsu_filter_add_element_by_name (GstBin *bin,
+    GstPad *pad,
+    const gchar *element_name,
+    const gchar *pad_name,
+    GstPad **out_pad,
+    const gchar *out_pad_name);
+GstElement *fsu_filter_add_element_by_description (GstBin *bin,
+    GstPad *pad,
+    const gchar *description,
+    GstPad **out_pad);
+GstPad *fsu_filter_add_standard_element (GstBin *bin,
+    GstPad *pad,
+    const gchar *element_name,
+    GstElement **element,
+    GList **elements);
 GstPad *fsu_filter_revert_standard_element (GstBin *bin,
-    GstPad *pad, GList **elements);
-GstPad *fsu_filter_revert_bin (GstBin *bin, GstPad *pad);
+    GstPad *pad,
+    GList **elements);
+GstPad *fsu_filter_revert_bin (GstBin *bin,
+    GstPad *pad);
 
 G_END_DECLS
 

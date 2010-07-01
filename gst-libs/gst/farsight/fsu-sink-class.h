@@ -29,8 +29,10 @@ struct _FsuSinkClass
   GstBinClass parent_class;
   gchar *auto_sink_name;
   GstElement *(*create_auto_sink) (FsuSink *self);
-  gchar *(*need_mixer) (FsuSink *self, GstElement *sink);
-  void (*add_filters) (FsuSink *self, FsuFilterManager *manager);
+  gchar *(*need_mixer) (FsuSink *self,
+      GstElement *sink);
+  void (*add_filters) (FsuSink *self,
+      FsuFilterManager *manager);
 };
 
 struct _FsuSink

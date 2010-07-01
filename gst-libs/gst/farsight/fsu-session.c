@@ -29,9 +29,13 @@ static void fsu_session_constructed (GObject *object);
 static void fsu_session_dispose (GObject *object);
 static void fsu_session_finalize (GObject *object);
 static void fsu_session_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec);
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
 static void fsu_session_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec);
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 
 /* properties */
 enum {
@@ -104,7 +108,9 @@ fsu_session_init (FsuSession *self)
 
 static void
 fsu_session_get_property (GObject *object,
-    guint property_id, GValue *value, GParamSpec *pspec)
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
 {
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
@@ -130,7 +136,9 @@ fsu_session_get_property (GObject *object,
 
 static void
 fsu_session_set_property (GObject *object,
-    guint property_id, const GValue *value, GParamSpec *pspec)
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
 {
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
@@ -219,7 +227,8 @@ fsu_session_finalize (GObject *object)
 
 FsuSession *
 fsu_session_new (FsuConference *conference,
-    FsSession *session, FsuSource *source)
+    FsSession *session,
+    FsuSource *source)
 {
 
   g_return_val_if_fail (conference, NULL);
@@ -233,7 +242,9 @@ fsu_session_new (FsuConference *conference,
 }
 
 FsuStream *
-fsu_session_handle_stream (FsuSession *self, FsStream *stream, FsuSink *sink)
+fsu_session_handle_stream (FsuSession *self,
+    FsStream *stream,
+    FsuSink *sink)
 {
   return fsu_stream_new (self->priv->conference, self, stream, sink);
 }

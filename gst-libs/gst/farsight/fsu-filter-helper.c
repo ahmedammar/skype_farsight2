@@ -22,8 +22,10 @@
 #include <gst/farsight/fsu-filter-helper.h>
 
 gboolean
-fsu_filter_add_element (GstBin *bin, GstPad *pad,
-    GstElement *element, GstPad *element_pad)
+fsu_filter_add_element (GstBin *bin,
+    GstPad *pad,
+    GstElement *element,
+    GstPad *element_pad)
 {
   gboolean floating = GST_OBJECT_IS_FLOATING (GST_OBJECT (element));
 
@@ -55,9 +57,12 @@ fsu_filter_add_element (GstBin *bin, GstPad *pad,
 
 
 GstElement *
-fsu_filter_add_element_by_name (GstBin *bin, GstPad *pad,
-    const gchar *element_name, const gchar *pad_name,
-    GstPad **out_pad, const gchar *out_pad_name)
+fsu_filter_add_element_by_name (GstBin *bin,
+    GstPad *pad,
+    const gchar *element_name,
+    const gchar *pad_name,
+    GstPad **out_pad,
+    const gchar *out_pad_name)
 {
   GstElement *element = gst_element_factory_make (element_name, NULL);
   GstPad *element_pad = NULL;
@@ -100,8 +105,10 @@ fsu_filter_add_element_by_name (GstBin *bin, GstPad *pad,
 }
 
 GstElement *
-fsu_filter_add_element_by_description (GstBin *bin, GstPad *pad,
-    const gchar *description, GstPad **out_pad)
+fsu_filter_add_element_by_description (GstBin *bin,
+    GstPad *pad,
+    const gchar *description,
+    GstPad **out_pad)
 {
   GstElement *filter = NULL;
   GstPad *src_pad = NULL;
@@ -149,8 +156,11 @@ fsu_filter_add_element_by_description (GstBin *bin, GstPad *pad,
 }
 
 GstPad *
-fsu_filter_add_standard_element (GstBin *bin, GstPad *pad,
-    const gchar *element_name, GstElement **element, GList **elements)
+fsu_filter_add_standard_element (GstBin *bin,
+    GstPad *pad,
+    const gchar *element_name,
+    GstElement **element,
+    GList **elements)
 {
   GstElement *elem = NULL;
   GstPad *out_pad = NULL;
@@ -175,7 +185,9 @@ fsu_filter_add_standard_element (GstBin *bin, GstPad *pad,
 }
 
 GstPad *
-fsu_filter_revert_standard_element (GstBin *bin, GstPad *pad, GList **elements)
+fsu_filter_revert_standard_element (GstBin *bin,
+    GstPad *pad,
+    GList **elements)
 {
   GstElement *element = GST_ELEMENT (gst_pad_get_parent (pad));
   GstPad *other_pad = NULL;
@@ -199,7 +211,8 @@ fsu_filter_revert_standard_element (GstBin *bin, GstPad *pad, GList **elements)
 
 
 GstPad *
-fsu_filter_revert_bin (GstBin *bin, GstPad *pad)
+fsu_filter_revert_bin (GstBin *bin,
+    GstPad *pad)
 {
   GstElement *filter_bin = GST_ELEMENT (gst_pad_get_parent (pad));
   GstPad *other_pad = NULL;
