@@ -65,8 +65,9 @@ sink_element_added (GstBin *bin,
     GstElement *sink,
     gpointer user_data)
 {
+  FsuSink *self = user_data;
 
-  /*g_object_set (sink, "async", FALSE, NULL);*/
+  fsu_sink_element_added (self, bin, sink);
 }
 
 static GstElement *
@@ -75,7 +76,7 @@ create_auto_sink (FsuSink *self)
   GstElement *sink = gst_element_factory_make ("autoaudiosink", NULL);
 
   g_signal_connect (sink, "element-added",
-      G_CALLBACK (sink_element_added), NULL);
+      G_CALLBACK (sink_element_added), self);
 
   return sink;
 }

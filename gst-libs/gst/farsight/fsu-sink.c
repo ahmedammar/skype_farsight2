@@ -83,6 +83,8 @@ enum
   PROP_SINK_NAME = 1,
   PROP_SINK_DEVICE,
   PROP_SINK_PIPELINE,
+  PROP_SYNC,
+  PROP_ASYNC,
   LAST_PROPERTY
 };
 
@@ -94,6 +96,8 @@ struct _FsuSinkPrivate
   gchar *sink_name;
   gchar *sink_device;
   gchar *sink_pipeline;
+  gboolean sync;
+  gboolean async;
 
   /* The mixer element to mix */
   GstElement *mixer;
@@ -146,6 +150,17 @@ fsu_sink_class_init (FsuSinkClass *klass)
           "The pipeline to use for creating the sink",
           NULL,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_SYNC,
+      g_param_spec_boolean ("sync", "Sync on the clock",
+          "Sync on the clock",
+          TRUE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_ASYNC,
+      g_param_spec_boolean ("async", "Go asynchronously to PAUSED",
+          "Go asynchronously to PAUSED",
+          TRUE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -157,6 +172,8 @@ fsu_sink_init (FsuSink *self, FsuSinkClass *klass)
 
   self->priv = priv;
   priv->dispose_has_run = FALSE;
+  priv->sync = priv->async = TRUE;
+
 }
 
 static void
@@ -178,6 +195,12 @@ fsu_sink_get_property (GObject *object,
       break;
     case PROP_SINK_PIPELINE:
       g_value_set_string (value, priv->sink_pipeline);
+      break;
+    case PROP_SYNC:
+      g_value_set_boolean (value, priv->sync);
+      break;
+    case PROP_ASYNC:
+      g_value_set_boolean (value, priv->async);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -204,6 +227,12 @@ fsu_sink_set_property (GObject *object,
       break;
     case PROP_SINK_PIPELINE:
       priv->sink_pipeline = g_value_dup_string (value);
+      break;
+    case PROP_SYNC:
+      priv->sync = g_value_get_boolean (value);
+      break;
+    case PROP_ASYNC:
+      priv->async = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -238,6 +267,19 @@ fsu_sink_dispose (GObject *object)
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
+
+void
+fsu_sink_element_added (FsuSink *self,
+    GstBin *bin,
+    GstElement *sink)
+{
+  if (g_object_has_property (G_OBJECT (sink), "sync") &&
+      g_object_has_property (G_OBJECT (sink), "async"))
+    g_object_set (sink,
+        "sync", self->priv->sync,
+        "async", self->priv->async,
+        NULL);
+}
 
 static GstElement *
 create_auto_sink (FsuSink *self)
@@ -609,11 +651,18 @@ create_sink (FsuSink *self)
     sink = gst_element_factory_make (priv->sink_name, NULL);
 
     if (sink && priv->sink_device)
-        g_object_set(sink,
-            "device", priv->sink_device,
-            NULL);
+      g_object_set(sink,
+          "device", priv->sink_device,
+          "sync", priv->sync,
+          "async", priv->async,
+          NULL);
+    else if (sink)
+      g_object_set(sink,
+          "sync", priv->sync,
+          "async", priv->async,
+          NULL);
 
-      return sink;
+    return sink;
   }
 
   return create_auto_sink (self);

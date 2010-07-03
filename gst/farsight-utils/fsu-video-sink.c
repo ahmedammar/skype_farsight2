@@ -51,13 +51,27 @@ _do_init (GType type)
 GST_BOILERPLATE_FULL (FsuVideoSink, fsu_video_sink,
     FsuSink, FSU_TYPE_SINK, _do_init)
 
+
+static void
+sink_element_added (GstBin *bin,
+    GstElement *sink,
+    gpointer user_data)
+{
+  FsuSink *self = user_data;
+
+  fsu_sink_element_added (self, bin, sink);
+}
+
 static GstElement *
 create_auto_sink (FsuSink *self)
 {
 #ifdef __APPLE__
   return gst_element_factory_make ("osxvideosink", NULL);
 #else
-  return gst_element_factory_make ("autovideosink", NULL);
+  GstElement *sink = gst_element_factory_make ("autovideosink", NULL);
+  g_signal_connect (sink, "element-added",
+      G_CALLBACK (sink_element_added), self);
+  return sink;
 #endif
 }
 
