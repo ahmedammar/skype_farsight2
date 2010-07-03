@@ -244,6 +244,11 @@ fsu_preview_filter_apply (FsuFilter *filter,
   }
 
 
+  g_object_set (sink,
+      "id", priv->id,
+      "sync", FALSE,
+      "async", FALSE,
+      NULL);
 
   if (!fsu_filter_add_element (bin, preview_pad, sink, sink_pad))
   {
@@ -267,7 +272,6 @@ fsu_preview_filter_apply (FsuFilter *filter,
   gst_object_unref (preview_pad);
   priv->sink = sink;
   priv->sink_pad = sink_pad;
-  g_object_set (priv->sink, "id", priv->id, NULL);
 
   return out_pad;
 }
