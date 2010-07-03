@@ -4,6 +4,7 @@
 #include <gst/farsight/fsu-resolution-filter.h>
 #include <gst/farsight/fsu-effectv-filter.h>
 #include <gst/farsight/fsu-framerate-filter.h>
+#include <gst/farsight/fsu-preview-filter.h>
 
 
 static FsuFilterId *effect_id = NULL;
@@ -141,6 +142,17 @@ static gboolean change_fps  (gpointer data)
 }
 
 
+static gboolean add_preview  (gpointer data)
+{
+  FsuFilterManager *filters = data;
+
+  g_debug ("Adding preview filter");
+  fsu_filter_manager_append_filter (filters,
+      FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0))));
+  g_timeout_add (5000, change_fps, filters);
+
+  return FALSE;
+}
 static gboolean add_filters  (gpointer data)
 {
   FsuFilterManager *filters = data;
@@ -162,7 +174,8 @@ static gboolean add_filters  (gpointer data)
   g_timeout_add (1000, add_effects, filters);
   //g_timeout_add (1000, change_effect, filters);
   */
-  g_timeout_add (5000, change_fps, filters);
+  //g_timeout_add (5000, change_fps, filters);
+  g_timeout_add (5000, add_preview, filters);
 
 
   return FALSE;
@@ -174,12 +187,13 @@ int main (int argc, char *argv[]) {
 
   GstElement *pipeline = gst_pipeline_new (NULL);
   GstElement *src = gst_element_factory_make ("fsuvideosrc", NULL);
-  GstElement *sink = gst_element_factory_make ("fsuvideosink", NULL);
+  GstElement *sink = gst_element_factory_make ("fakesink", NULL);
   g_assert (src != NULL);
   g_assert (sink != NULL);
-  g_object_set (sink, "sink-name", "fpsdisplaysink", NULL);
+  //g_object_set (sink, "sink-name", "fpsdisplaysink", NULL);
   GstPad *src_pad = gst_element_get_request_pad (src, "src%d");
-  GstPad *sink_pad = gst_element_get_request_pad (sink, "sink%d");
+  //  GstPad *sink_pad = gst_element_get_request_pad (sink, "sink%d");
+  GstPad *sink_pad = gst_element_get_static_pad (sink, "sink");
   GstPad *out_pad = NULL;
   FsuFilterManager *filters = fsu_filter_manager_new ();
 
