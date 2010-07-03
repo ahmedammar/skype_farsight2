@@ -50,6 +50,7 @@ G_BEGIN_DECLS
 
 typedef struct _FsuVideoSink      FsuVideoSink;
 typedef struct _FsuVideoSinkClass FsuVideoSinkClass;
+typedef struct _FsuVideoSinkPrivate FsuVideoSinkPrivate;
 
 struct _FsuVideoSinkClass
 {
@@ -59,6 +60,8 @@ struct _FsuVideoSinkClass
 struct _FsuVideoSink
 {
   FsuSink parent;
+  /*< private >*/
+  FsuVideoSinkPrivate *priv;
 };
 
 GType fsu_video_sink_get_type (void) G_GNUC_CONST;
