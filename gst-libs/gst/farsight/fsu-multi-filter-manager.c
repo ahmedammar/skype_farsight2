@@ -20,6 +20,7 @@
  */
 
 #include <gst/farsight/fsu-multi-filter-manager.h>
+#include <gst/farsight/fsu-single-filter-manager.h>
 
 static void fsu_multi_filter_manager_interface_init (
     FsuFilterManagerInterface *iface);
@@ -70,11 +71,15 @@ static gboolean fsu_multi_filter_manager_handle_message (
 struct _FsuMultiFilterManagerPrivate
 {
   gboolean dispose_has_run;
+  GList *filters;
+  GList *filter_managers;
 };
 
 struct _FsuFilterId
 {
   FsuFilter *filter;
+  /* SingleFilterManager->FilterId*/
+  GHashTable *associations;
 };
 
 
@@ -101,7 +106,6 @@ fsu_multi_filter_manager_interface_init (FsuFilterManagerInterface *iface)
   iface->apply = fsu_multi_filter_manager_apply;
   iface->revert = fsu_multi_filter_manager_revert;
   iface->handle_message = fsu_multi_filter_manager_handle_message;
-
 }
 
 static void
@@ -140,7 +144,8 @@ FsuFilterManager *fsu_multi_filter_manager_new (void)
 static GList *
 fsu_multi_filter_manager_list_filters (FsuFilterManager *iface)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  return g_list_copy (self->priv->filters);
 }
 
 
@@ -149,7 +154,36 @@ fsu_multi_filter_manager_insert_filter_before (FsuFilterManager *iface,
     FsuFilter *filter,
     FsuFilterId *before)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  GList *pos = g_list_find (priv->filters, before);
+  FsuFilterId *id = NULL;
+  GList *i = NULL;
+
+  if (!pos)
+    return NULL;
+
+  id = g_slice_new0 (FsuFilterId);
+  id->filter = g_object_ref (filter);
+  id->associations = g_hash_table_new (NULL, NULL);
+
+  for (i = priv->filter_managers; i; i = i->next)
+  {
+    FsuFilterManager *sub_fm = i->data;
+    FsuFilterId *before_sub_id = NULL;
+    FsuFilterId *sub_id = NULL;
+    before_sub_id = g_hash_table_lookup (before->associations, sub_fm);
+    if (before_sub_id)
+    {
+      sub_id = fsu_filter_manager_insert_filter_before (sub_fm, filter,
+          before_sub_id);
+      g_hash_table_insert (id->associations, sub_fm, sub_id);
+    }
+  }
+
+  priv->filters = g_list_insert_before (priv->filters, pos, id);
+
+  return id;
 }
 
 
@@ -158,7 +192,36 @@ fsu_multi_filter_manager_insert_filter_after (FsuFilterManager *iface,
     FsuFilter *filter,
     FsuFilterId *after)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  GList *pos = g_list_find (priv->filters, after);
+  FsuFilterId *id = NULL;
+  GList *i = NULL;
+
+  if (!pos)
+    return NULL;
+
+  id = g_slice_new0 (FsuFilterId);
+  id->filter = g_object_ref (filter);
+  id->associations = g_hash_table_new (NULL, NULL);
+
+  for (i = priv->filter_managers; i; i = i->next)
+  {
+    FsuFilterManager *sub_fm = i->data;
+    FsuFilterId *after_sub_id = NULL;
+    FsuFilterId *sub_id = NULL;
+    after_sub_id = g_hash_table_lookup (after->associations, sub_fm);
+    if (after_sub_id)
+    {
+      sub_id = fsu_filter_manager_insert_filter_after (sub_fm, filter,
+          after_sub_id);
+      g_hash_table_insert (id->associations, sub_fm, sub_id);
+    }
+  }
+
+  priv->filters = g_list_insert_before (priv->filters, pos->next, id);
+
+  return id;
 }
 
 
@@ -167,7 +230,37 @@ fsu_multi_filter_manager_replace_filter (FsuFilterManager *iface,
     FsuFilter *filter,
     FsuFilterId *replace)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  gint index = g_list_index (priv->filters, replace);
+  FsuFilterId *id = NULL;
+  GList *i = NULL;
+
+  if (index < 0)
+    return NULL;
+
+  id = g_slice_new0 (FsuFilterId);
+  id->filter = g_object_ref (filter);
+  id->associations = g_hash_table_new (NULL, NULL);
+
+  for (i = priv->filter_managers; i; i = i->next)
+  {
+    FsuFilterManager *sub_fm = i->data;
+    FsuFilterId *replace_sub_id = NULL;
+    FsuFilterId *sub_id = NULL;
+    replace_sub_id = g_hash_table_lookup (replace->associations, sub_fm);
+    if (replace_sub_id)
+    {
+      sub_id = fsu_filter_manager_replace_filter (sub_fm, filter,
+          replace_sub_id);
+      g_hash_table_insert (id->associations, sub_fm, sub_id);
+    }
+  }
+
+  priv->filters = g_list_remove (priv->filters, replace);
+  priv->filters = g_list_insert (priv->filters, id, index);
+
+  return id;
 }
 
 
@@ -176,7 +269,26 @@ fsu_multi_filter_manager_insert_filter (FsuFilterManager *iface,
     FsuFilter *filter,
     gint position)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  FsuFilterId *id = NULL;
+  GList *i = NULL;
+
+  id = g_slice_new0 (FsuFilterId);
+  id->filter = g_object_ref (filter);
+  id->associations = g_hash_table_new (NULL, NULL);
+
+  for (i = priv->filter_managers; i; i = i->next)
+  {
+    FsuFilterManager *sub_fm = i->data;
+    FsuFilterId *sub_id =  fsu_filter_manager_insert_filter (sub_fm, filter,
+        position);
+    g_hash_table_insert (id->associations, sub_fm, sub_id);
+  }
+
+  priv->filters = g_list_insert (priv->filters, id, position);
+
+  return id;
 }
 
 
@@ -184,7 +296,30 @@ static gboolean
 fsu_multi_filter_manager_remove_filter (FsuFilterManager *iface,
     FsuFilterId *id)
 {
-  return FALSE;
+
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  GList *pos = g_list_find (priv->filters, id);
+  GList *i = NULL;
+
+  if (!pos)
+    return FALSE;
+
+  for (i = priv->filter_managers; i; i = i->next)
+  {
+    FsuFilterManager *sub_fm = i->data;
+    FsuFilterId *remove_sub_id = NULL;
+    gboolean ret = TRUE;
+
+    remove_sub_id = g_hash_table_lookup (id->associations, sub_fm);
+    if (remove_sub_id)
+      ret = fsu_filter_manager_remove_filter (sub_fm, remove_sub_id);
+    g_assert (ret == TRUE);
+  }
+
+  priv->filters = g_list_remove (priv->filters, id);
+
+  return TRUE;
 }
 
 
@@ -192,7 +327,13 @@ static FsuFilter *
 fsu_multi_filter_manager_get_filter_by_id (FsuFilterManager *iface,
     FsuFilterId *id)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  gint index = g_list_index (self->priv->filters, id);
+
+  if (index < 0)
+    return NULL;
+
+  return g_object_ref (id->filter);
 }
 
 
@@ -201,7 +342,35 @@ fsu_multi_filter_manager_apply (FsuFilterManager *iface,
     GstBin *bin,
     GstPad *pad)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  FsuFilterManager *fm = fsu_single_filter_manager_new ();
+  GstPad * ret = NULL;
+  GList *i = NULL;
+
+
+  priv->filter_managers = g_list_append (priv->filter_managers, fm);
+  for (i = priv->filters; i; i = i->next)
+  {
+    FsuFilterId *id = i->data;
+    FsuFilterId *sub_id = fsu_filter_manager_append_filter (fm, id->filter);
+    g_hash_table_insert (id->associations, fm, sub_id);
+  }
+
+  ret = fsu_filter_manager_apply (fm, bin, pad);
+
+  if (!ret)
+  {
+    for (i = priv->filters; i; i = i->next)
+    {
+      FsuFilterId *id = i->data;
+      g_hash_table_remove (id->associations, fm);
+    }
+    g_object_unref (fm);
+    return NULL;
+  }
+
+  return ret;
 }
 
 static GstPad *
@@ -209,12 +378,65 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
     GstBin *bin,
     GstPad *pad)
 {
-  return NULL;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  FsuFilterManager *revert_fm = NULL;
+  GList *i = NULL;
+  GstPad *ret = NULL;
+
+  for (i = priv->filter_managers; i; i = i->next)
+  {
+    FsuFilterManager *fm = i->data;
+    GstBin *applied_bin = NULL;
+    GstPad *applied_pad = NULL;
+    g_object_get (fm,
+        "applied-bin", applied_bin,
+        "applied_pad", applied_pad,
+        NULL);
+    if (applied_bin == bin && applied_pad == pad)
+    {
+      revert_fm = fm;
+      gst_object_unref (applied_bin);
+      gst_object_unref (applied_pad);
+      break;
+    }
+    gst_object_unref (applied_bin);
+    gst_object_unref (applied_pad);
+  }
+
+  if (revert_fm == NULL)
+  {
+    g_debug ("Could not found the single filter manager to revert");
+    return pad;
+  }
+
+  priv->filter_managers = g_list_remove (priv->filter_managers, revert_fm);
+  for (i = priv->filters; i; i = i->next)
+  {
+    FsuFilterId *id = i->data;
+    g_hash_table_remove (id->associations, revert_fm);
+  }
+
+  ret = fsu_filter_manager_revert (revert_fm, bin, pad);
+  g_object_unref (revert_fm);
+
+  return ret;
 }
 
 static gboolean
 fsu_multi_filter_manager_handle_message (FsuFilterManager *iface,
     GstMessage *message)
 {
-  return FALSE;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  GList *i = NULL;
+  gboolean ret = FALSE;
+
+  for (i = priv->filter_managers; i && !ret; i = i->next)
+  {
+    FsuFilterManager *sub_fm = i->data;
+    ret = fsu_filter_manager_handle_message (sub_fm, message);
+  }
+
+  return ret;
 }
