@@ -28,6 +28,7 @@
 #include <gst/farsight/fsu-stream.h>
 #include <gst/farsight/fsu-stream-priv.h>
 #include <gst/farsight/fsu-session-priv.h>
+#include <gst/farsight/fsu-multi-filter-manager.h>
 
 G_DEFINE_TYPE (FsuStream, fsu_stream, G_TYPE_OBJECT);
 
@@ -54,6 +55,7 @@ enum
   PROP_SESSION,
   PROP_STREAM,
   PROP_SINK,
+  PROP_FILTER_MANAGER,
   LAST_PROPERTY
 };
 
@@ -66,6 +68,7 @@ struct _FsuStreamPrivate
   FsuSink *sink;
   gboolean receiving;
   gboolean sending;
+  FsuFilterManager *filters;
 };
 
 static void
@@ -103,6 +106,12 @@ fsu_stream_class_init (FsuStreamClass *klass)
           "The Farsight-utils sink to use with the stream.",
           FSU_TYPE_SINK,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_FILTER_MANAGER,
+      g_param_spec_object ("filter-manager", "Filter manager",
+          "The filter manager applied on the stream",
+          FSU_TYPE_FILTER_MANAGER,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 
@@ -115,6 +124,7 @@ fsu_stream_init (FsuStream *self)
 
   self->priv = priv;
   priv->dispose_has_run = FALSE;
+  priv->filters = fsu_multi_filter_manager_new ();
 }
 
 static void
@@ -139,6 +149,9 @@ fsu_stream_get_property (GObject *object,
       break;
     case PROP_SINK:
       g_value_set_object (value, priv->sink);
+      break;
+    case PROP_FILTER_MANAGER:
+      g_value_set_object (value, priv->filters);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -276,16 +289,17 @@ src_pad_added (FsStream *stream,
   FsuStreamPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
   GstElement *sink = GST_ELEMENT (priv->sink);
-  GstPad *sinkpad = NULL;
+  GstPad *sink_pad = NULL;
+  GstPad *filter_pad = NULL;
   GstPadLinkReturn ret;
   gchar *error = NULL;
 
+  g_object_get (priv->conference,
+      "pipeline", &pipeline,
+      NULL);
+
   if (!sink)
   {
-    g_object_get (priv->conference,
-        "pipeline", &pipeline,
-        NULL);
-
     sink = gst_element_factory_make ("fakesink", NULL);
     if (!sink)
     {
@@ -298,21 +312,27 @@ src_pad_added (FsStream *stream,
       gst_object_unref (sink);
       goto error;
     }
-    sinkpad = gst_element_get_static_pad (sink, "sink");
+    sink_pad = gst_element_get_static_pad (sink, "sink");
   }
   else
   {
-    sinkpad = gst_element_get_request_pad (sink, "sink%d");
+    sink_pad = gst_element_get_request_pad (sink, "sink%d");
   }
 
-  if (!sinkpad)
+  if (!sink_pad)
   {
     error = "Could not request sink pad from Sink";
     goto error;
   }
 
-  ret = gst_pad_link (pad, sinkpad);
-  gst_object_unref (sinkpad);
+  filter_pad = fsu_filter_manager_apply (priv->filters,
+      GST_BIN (pipeline), sink_pad);
+
+  if (!filter_pad)
+    filter_pad = sink_pad;
+
+  ret = gst_pad_link (pad, filter_pad);
+  gst_object_unref (filter_pad);
 
   if (ret != GST_PAD_LINK_OK)
   {
@@ -449,16 +469,37 @@ fsu_stream_stop_receiving (FsuStream *self)
     {
       case GST_ITERATOR_OK:
         {
-          GstPad *peer_pad = gst_pad_get_peer (pad);
-          if (peer_pad)
+          GstPad *filter_pad = gst_pad_get_peer (pad);
+          if (filter_pad)
           {
-            gst_pad_unlink (pad, peer_pad);
+            GstElement *pipeline = NULL;
+            GstPad *sink_pad = NULL;
+
+            g_object_get (priv->conference,
+                "pipeline", &pipeline,
+                NULL);
+            gst_pad_unlink (pad, filter_pad);
+            sink_pad = fsu_filter_manager_revert (priv->filters,
+                GST_BIN (pipeline), filter_pad);
+
+            if (!sink_pad)
+              sink_pad = filter_pad;
+            else
+              gst_object_unref (filter_pad);
+
             if (priv->sink)
             {
               gst_element_release_request_pad (GST_ELEMENT (priv->sink),
-                  peer_pad);
+                  sink_pad);
+              gst_object_unref (sink_pad);
             }
-            gst_object_unref (peer_pad);
+            else if (!priv->sink)
+            {
+              GstObject *sink = gst_object_get_parent (GST_OBJECT (sink_pad));
+              gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (sink));
+              gst_object_unref (sink);
+              gst_object_unref (sink_pad);
+            }
           }
 
           gst_object_unref (pad);
@@ -491,7 +532,5 @@ _fsu_stream_handle_message (FsuStream *self,
     GstMessage *message)
 {
   FsuStreamPrivate *priv = self->priv;
-  /* TODO: uncomment line once the stream has a filter manager */
-  //return fsu_filter_manager_handle_message (priv->filters, message);
-  return FALSE;
+  return fsu_filter_manager_handle_message (priv->filters, message);
 }
