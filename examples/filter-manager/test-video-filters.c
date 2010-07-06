@@ -1,5 +1,5 @@
 #include <gst/gst.h>
-#include <gst/farsight/fsu-single-filter-manager.h>
+#include <gst/farsight/fsu-multi-filter-manager.h>
 #include <gst/farsight/fsu-videoconverter-filter.h>
 #include <gst/farsight/fsu-resolution-filter.h>
 #include <gst/farsight/fsu-effectv-filter.h>
@@ -63,7 +63,8 @@ static gboolean change_effect  (gpointer data)
 {
   FsuFilterManager *filters = data;
   static gint idx = 0;
-  static gchar *effects[] = {"edgetv",
+  static gchar *effects[] = {"bullshit",
+                             "edgetv",
                              "agingtv",
                              "dicetv",
                              "warptv",
@@ -149,7 +150,11 @@ static gboolean add_preview  (gpointer data)
   g_debug ("Adding preview filter");
   fsu_filter_manager_append_filter (filters,
       FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0))));
-  g_timeout_add (5000, change_fps, filters);
+  //g_timeout_add (5000, change_fps, filters);
+  //g_timeout_add (5000, change_reso, filters);
+  FsuEffectvFilter *f2 = fsu_effectv_filter_new ("vertigotv");
+  effect_id = fsu_filter_manager_insert_filter_before (filters, FSU_FILTER (f2), last_converter_id);
+  g_timeout_add (10000, change_effect, filters);
 
   return FALSE;
 }
@@ -195,7 +200,8 @@ int main (int argc, char *argv[]) {
   //  GstPad *sink_pad = gst_element_get_request_pad (sink, "sink%d");
   GstPad *sink_pad = gst_element_get_static_pad (sink, "sink");
   GstPad *out_pad = NULL;
-  FsuFilterManager *filters = fsu_single_filter_manager_new ();
+  FsuFilterManager *filters = fsu_multi_filter_manager_new ();
+  add_filters (filters);
 
   g_assert (src_pad != NULL);
   g_assert (sink_pad != NULL);
@@ -203,13 +209,29 @@ int main (int argc, char *argv[]) {
   g_assert (gst_bin_add (GST_BIN (pipeline), src) == TRUE);
   g_assert (gst_bin_add (GST_BIN (pipeline), sink) == TRUE);
 
-  add_filters (filters);
   out_pad = fsu_filter_manager_apply (filters, GST_BIN (pipeline), sink_pad);
 
   g_assert (out_pad != NULL);
 
   g_assert (gst_pad_link (src_pad, out_pad) == GST_PAD_LINK_OK);
 
+  g_debug ("Creating second pipeline");
+
+  src = gst_element_factory_make ("videotestsrc", NULL);
+  sink = gst_element_factory_make ("fakesink", NULL);
+  src_pad = gst_element_get_static_pad (src, "src");
+  sink_pad = gst_element_get_static_pad (sink, "sink");
+  g_assert (src_pad != NULL);
+  g_assert (sink_pad != NULL);
+
+  g_assert (gst_bin_add (GST_BIN (pipeline), src) == TRUE);
+  g_assert (gst_bin_add (GST_BIN (pipeline), sink) == TRUE);
+
+  out_pad = fsu_filter_manager_apply (filters, GST_BIN (pipeline), sink_pad);
+
+  g_assert (out_pad != NULL);
+
+  g_assert (gst_pad_link (src_pad, out_pad) == GST_PAD_LINK_OK);
 
   //g_timeout_add (5000, add_filters, filters);
   g_timeout_add (10000, dump, pipeline);
