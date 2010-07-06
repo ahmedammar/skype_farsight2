@@ -28,7 +28,7 @@
 #include <gst/farsight/fsu-session.h>
 #include <gst/farsight/fsu-session-priv.h>
 #include <gst/farsight/fsu-stream-priv.h>
-#include <gst/farsight/fsu-filter-manager.h>
+#include <gst/farsight/fsu-single-filter-manager.h>
 
 G_DEFINE_TYPE (FsuSession, fsu_session, G_TYPE_OBJECT);
 
@@ -113,7 +113,7 @@ fsu_session_init (FsuSession *self)
 
   self->priv = priv;
   priv->dispose_has_run = FALSE;
-  priv->filters = fsu_filter_manager_new ();
+  priv->filters = fsu_single_filter_manager_new ();
 }
 
 static void

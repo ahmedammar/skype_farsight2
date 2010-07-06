@@ -399,7 +399,7 @@ fsu_source_request_new_pad (GstElement * element,
     return NULL;
   }
 
-  filter = fsu_filter_manager_new ();
+  filter = fsu_single_filter_manager_new ();
   add_filters (self, filter);
   priv->filters = g_list_prepend (priv->filters, filter);
 

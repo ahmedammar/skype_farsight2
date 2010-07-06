@@ -24,6 +24,8 @@ libgstfarsightinclude_HEADERS = \
 		fsu-stream.h \
 		fsu-stream-priv.h \
 		fsu-filter-manager.h \
+		fsu-single-filter-manager.h \
+		fsu-multi-filter-manager.h \
 		fsu-filter.h \
 		fsu-filter-helper.h \
 		fsu-volume-filter.h \
@@ -70,6 +72,8 @@ libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-session.c \
 		fsu-stream.c \
 		fsu-filter-manager.c \
+		fsu-single-filter-manager.c \
+		fsu-multi-filter-manager.c \
 		fsu-filter.c \
 		fsu-filter-helper.c \
 		fsu-volume-filter.c \
@@ -126,6 +130,8 @@ public_headers = fs-candidate.h \
 		fsu-session.h \
 		fsu-stream.h \
 		fsu-filter-manager.h \
+		fsu-single-filter-manager.h \
+		fsu-multi-filter-manager.h \
 		fsu-filter.h \
 		fsu-filter-helper.h \
 		fsu-volume-filter.h \

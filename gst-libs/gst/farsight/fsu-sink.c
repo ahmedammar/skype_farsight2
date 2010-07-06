@@ -27,8 +27,8 @@
 #include <string.h>
 #include <gst/interfaces/propertyprobe.h>
 
-#include <gst/farsight/fsu-common.h>
 #include "fsu-sink-class.h"
+#include <gst/farsight/fsu-common.h>
 
 
 GST_DEBUG_CATEGORY_STATIC (fsu_sink_debug);
@@ -519,7 +519,7 @@ fsu_sink_request_new_pad (GstElement * element,
     }
   }
 
-  filter = fsu_filter_manager_new ();
+  filter = fsu_single_filter_manager_new ();
   add_filters (self, filter);
   priv->filters = g_list_prepend (priv->filters, filter);
 

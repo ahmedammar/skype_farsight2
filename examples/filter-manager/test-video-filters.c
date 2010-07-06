@@ -1,5 +1,5 @@
 #include <gst/gst.h>
-#include <gst/farsight/fsu-filter-manager.h>
+#include <gst/farsight/fsu-single-filter-manager.h>
 #include <gst/farsight/fsu-videoconverter-filter.h>
 #include <gst/farsight/fsu-resolution-filter.h>
 #include <gst/farsight/fsu-effectv-filter.h>
@@ -195,7 +195,7 @@ int main (int argc, char *argv[]) {
   //  GstPad *sink_pad = gst_element_get_request_pad (sink, "sink%d");
   GstPad *sink_pad = gst_element_get_static_pad (sink, "sink");
   GstPad *out_pad = NULL;
-  FsuFilterManager *filters = fsu_filter_manager_new ();
+  FsuFilterManager *filters = fsu_single_filter_manager_new ();
 
   g_assert (src_pad != NULL);
   g_assert (sink_pad != NULL);

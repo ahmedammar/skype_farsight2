@@ -34,41 +34,52 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_CAST ((obj),           \
       FSU_TYPE_FILTER_MANAGER,                  \
       FsuFilterManager))
-#define FSU_FILTER_MANAGER_CLASS(klass)         \
-  (G_TYPE_CHECK_CLASS_CAST ((klass),            \
-      FSU_TYPE_FILTER_MANAGER,                  \
-      FsuFilterManagerClass))
 #define FSU_IS_FILTER_MANAGER(obj)              \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
       FSU_TYPE_FILTER_MANAGER))
-#define FSU_IS_FILTER_MANAGER_CLASS(klass)      \
-  (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
-      FSU_TYPE_FILTER_MANAGER))
-#define FSU_FILTER_MANAGER_GET_CLASS(obj)       \
-  (G_TYPE_INSTANCE_GET_CLASS ((obj),            \
+#define FSU_FILTER_MANAGER_GET_IFACE(inst)      \
+  (G_TYPE_INSTANCE_GET_INTERFACE ((inst),       \
       FSU_TYPE_FILTER_MANAGER,                  \
-      FsuFilterManagerClass))
+      FsuFilterManagerInterface))
 
 typedef struct _FsuFilterManager      FsuFilterManager;
-typedef struct _FsuFilterManagerClass FsuFilterManagerClass;
-typedef struct _FsuFilterManagerPrivate FsuFilterManagerPrivate;
+typedef struct _FsuFilterManagerInterface FsuFilterManagerInterface;
 typedef struct _FsuFilterId FsuFilterId;
 
-struct _FsuFilterManagerClass
+struct _FsuFilterManagerInterface
 {
-  GObjectClass parent_class;
+  GTypeInterface parent;
+
+  GList *(*list_filters) (FsuFilterManager *self);
+  FsuFilterId *(*insert_filter_before) (FsuFilterManager *self,
+      FsuFilter *filter,
+      FsuFilterId *before);
+  FsuFilterId *(*insert_filter_after) (FsuFilterManager *self,
+      FsuFilter *filter,
+      FsuFilterId *after);
+  FsuFilterId *(*replace_filter) (FsuFilterManager *self,
+      FsuFilter *filter,
+      FsuFilterId *replace);
+  FsuFilterId *(*insert_filter) (FsuFilterManager *self,
+      FsuFilter *filter,
+      gint position);
+  gboolean (*remove_filter) (FsuFilterManager *self,
+      FsuFilterId *id);
+  FsuFilter *(*get_filter_by_id) (FsuFilterManager *self,
+      FsuFilterId *id);
+  GstPad *(*apply) (FsuFilterManager *self,
+      GstBin *bin,
+      GstPad *pad);
+  GstPad *(*revert) (FsuFilterManager *self,
+      GstBin *bin,
+      GstPad *pad);
+  gboolean (*handle_message) (FsuFilterManager *self,
+      GstMessage *message);
 };
 
-struct _FsuFilterManager
-{
-  GObject parent;
-  /*< private >*/
-  FsuFilterManagerPrivate *priv;
-};
 
 GType fsu_filter_manager_get_type (void) G_GNUC_CONST;
 
-FsuFilterManager *fsu_filter_manager_new (void);
 GList *fsu_filter_manager_list_filters (FsuFilterManager *self);
 FsuFilterId *fsu_filter_manager_prepend_filter (FsuFilterManager *self,
     FsuFilter *filter);
