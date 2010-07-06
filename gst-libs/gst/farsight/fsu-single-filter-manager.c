@@ -37,6 +37,14 @@ G_DEFINE_TYPE_WITH_CODE (FsuSingleFilterManager,
         fsu_single_filter_manager_interface_init));
 
 static void fsu_single_filter_manager_dispose (GObject *object);
+static void fsu_single_filter_manager_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec);
+static void fsu_single_filter_manager_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec);
 
 static GList *fsu_single_filter_manager_list_filters (
     FsuFilterManager *iface);
@@ -76,6 +84,14 @@ static gboolean fsu_single_filter_manager_handle_message (
 
 typedef enum {INSERT, REMOVE, REPLACE} ModificationAction;
 
+enum
+{
+  PROP_APPLIED = 1,
+  PROP_APPLIED_BIN,
+  PROP_APPLIED_PAD,
+  LAST_PROPERTY
+};
+
 typedef struct
 {
   ModificationAction action;
@@ -111,6 +127,27 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
   g_type_class_add_private (klass, sizeof (FsuSingleFilterManagerPrivate));
 
   gobject_class->dispose = fsu_single_filter_manager_dispose;
+  gobject_class->get_property = fsu_single_filter_manager_get_property;
+  gobject_class->set_property = fsu_single_filter_manager_set_property;
+
+  g_object_class_install_property (gobject_class, PROP_APPLIED,
+      g_param_spec_boolean ("applied", "Applied status",
+          "Whether the filter manager has been applied",
+          FALSE,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_APPLIED_BIN,
+      g_param_spec_object ("applied-bin", "Applied bin",
+          "If applied, the bin it was applied on",
+          GST_TYPE_BIN,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_APPLIED_PAD,
+      g_param_spec_object ("applied-pad", "Applied pad",
+          "If applied, the pad it was applied on",
+          GST_TYPE_BIN,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
 }
 
 static void
@@ -156,6 +193,48 @@ fsu_single_filter_manager_dispose (GObject *object)
   G_OBJECT_CLASS (fsu_single_filter_manager_parent_class)->dispose (object);
 }
 
+static void
+fsu_single_filter_manager_get_property (GObject *object,
+    guint property_id,
+    GValue *value,
+    GParamSpec *pspec)
+{
+  FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
+  FsuSingleFilterManagerPrivate *priv = self->priv;
+
+  switch (property_id)
+  {
+    case PROP_APPLIED:
+      g_value_set_boolean (value, priv->applied_bin ? TRUE : FALSE);
+      break;
+    case PROP_APPLIED_BIN:
+      g_value_set_object (value, priv->applied_bin);
+      break;
+    case PROP_APPLIED_PAD:
+      g_value_set_object (value, priv->applied_pad);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
+
+static void
+fsu_single_filter_manager_set_property (GObject *object,
+    guint property_id,
+    const GValue *value,
+    GParamSpec *pspec)
+{
+  FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
+  FsuSingleFilterManagerPrivate *priv = self->priv;
+
+  switch (property_id)
+  {
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      break;
+  }
+}
 
 FsuFilterManager *fsu_single_filter_manager_new (void)
 {
@@ -514,7 +593,6 @@ fsu_single_filter_manager_get_filter_by_id (FsuFilterManager *iface,
     FsuFilterId *id)
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
-  FsuSingleFilterManagerPrivate *priv = self->priv;
   gint index = g_list_index (self->priv->filters, id);
 
   if (index < 0)
