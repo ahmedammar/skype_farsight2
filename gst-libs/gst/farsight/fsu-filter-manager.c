@@ -32,18 +32,18 @@ G_DEFINE_INTERFACE (FsuFilterManager, fsu_filter_manager, G_TYPE_INVALID);
 
 
 static void
-fsu_filter_manager_default_init (FsuFilterManagerInterface *klass)
+fsu_filter_manager_default_init (FsuFilterManagerInterface *iface)
 {
-  klass->list_filters = NULL;
-  klass->insert_filter_before = NULL;
-  klass->insert_filter_after = NULL;
-  klass->replace_filter = NULL;
-  klass->insert_filter = NULL;
-  klass->remove_filter = NULL;
-  klass->get_filter_by_id = NULL;
-  klass->apply = NULL;
-  klass->revert = NULL;
-  klass->handle_message = NULL;
+  iface->list_filters = NULL;
+  iface->insert_filter_before = NULL;
+  iface->insert_filter_after = NULL;
+  iface->replace_filter = NULL;
+  iface->insert_filter = NULL;
+  iface->remove_filter = NULL;
+  iface->get_filter_by_id = NULL;
+  iface->apply = NULL;
+  iface->revert = NULL;
+  iface->handle_message = NULL;
 }
 
 
