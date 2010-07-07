@@ -164,6 +164,8 @@ fsu_conference_constructed (GObject *object)
 
   if (!gst_bin_add (GST_BIN (priv->pipeline), priv->conference))
   {
+    gst_object_unref (priv->pipeline);
+    priv->pipeline = NULL;
     error = "Couldn't add fsrtpconference to the pipeline";
     goto error;
   }
@@ -171,6 +173,8 @@ fsu_conference_constructed (GObject *object)
   if (gst_element_set_state (priv->pipeline, GST_STATE_PLAYING) ==
       GST_STATE_CHANGE_FAILURE)
   {
+    gst_bin_remove (GST_BIN (priv->pipeline), priv->conference);
+    priv->conference = NULL;
     error = "Unable to set pipeline to PLAYING";
     goto error;
   }
@@ -189,7 +193,6 @@ fsu_conference_dispose (GObject *object)
 
   if (priv->conference)
   {
-    /* Check if the error was in adding to the pipeline */
     if (priv->pipeline)
       gst_bin_remove (GST_BIN (priv->pipeline), priv->conference);
     else
