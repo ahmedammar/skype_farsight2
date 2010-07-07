@@ -187,7 +187,13 @@ fsu_conference_dispose (GObject *object)
   FsuConferencePrivate *priv = self->priv;
 
   if (priv->conference)
-    gst_object_unref (priv->conference);
+  {
+    /* Check if the error was in adding to the pipeline */
+    if (priv->pipeline)
+      gst_bin_remove (GST_BIN (priv->pipeline), priv->conference);
+    else
+      gst_object_unref (priv->conference);
+  }
   priv->conference = NULL;
 
   if (priv->pipeline)
