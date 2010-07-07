@@ -57,6 +57,7 @@ struct _FsuConferencePrivate
   GstElement *pipeline;
   GstElement *conference;
   GList *sessions;
+  GError *error;
 };
 
 static void
@@ -147,7 +148,7 @@ fsu_conference_constructed (GObject *object)
       G_OBJECT_CLASS (fsu_conference_parent_class)->constructed;
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
-  gchar *error = NULL;
+  const gchar *error = NULL;
 
   if (chain_up)
     chain_up (object);
@@ -176,7 +177,7 @@ fsu_conference_constructed (GObject *object)
 
   return;
  error:
-  /* TODO: signal/something the error */
+  g_set_error (&priv->error, FS_ERROR, FS_ERROR_CONSTRUCTION, error);
   return;
 }
 
@@ -212,18 +213,29 @@ fsu_conference_dispose (GObject *object)
 
 FsuConference *
 fsu_conference_new (FsConference *conference,
-    GstElement *pipeline)
+    GstElement *pipeline,
+    GError **error)
 {
+  FsuConference *self = NULL;
+
   g_return_val_if_fail (conference, NULL);
   g_return_val_if_fail (FS_IS_CONFERENCE (conference), NULL);
   g_return_val_if_fail (!pipeline || GST_IS_PIPELINE (pipeline), NULL);
 
-  return g_object_new (FSU_TYPE_CONFERENCE,
+  self = g_object_new (FSU_TYPE_CONFERENCE,
       "pipeline", pipeline,
       "fs-conference", conference,
       NULL);
-}
 
+  if (self->priv->error != NULL)
+  {
+    g_propagate_error (error, self->priv->error);
+    g_object_unref (self);
+    return NULL;
+  }
+
+  return self;
+}
 
 static void
 session_destroyed (gpointer data,
