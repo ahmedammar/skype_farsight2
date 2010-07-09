@@ -72,7 +72,8 @@ add_filters (FsuSource *self,
 {
   FsuAudioconverterFilter *filter = fsu_audioconverter_filter_get_singleton ();
 
-  fsu_filter_manager_insert_filter (manager, FSU_FILTER (filter), 0);
+  fsu_filter_manager_append_filter (manager, FSU_FILTER (filter));
+  g_object_unref (filter);
 }
 
 static void

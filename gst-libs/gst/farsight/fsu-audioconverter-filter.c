@@ -45,9 +45,15 @@ fsu_audioconverter_filter_get_singleton (void)
   static FsuAudioconverterFilter *singleton = NULL;
 
   if (!singleton)
+  {
     singleton = fsu_audioconverter_filter_new ();
+    g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer *)&singleton);
+  }
+  else
+  {
+    g_object_ref (singleton);
+  }
 
-  g_debug ("Getting audioconverter singleton %p", singleton);
   return singleton;
 }
 

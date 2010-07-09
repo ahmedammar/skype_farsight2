@@ -47,7 +47,15 @@ fsu_videoconverter_filter_get_singleton (void)
   static FsuVideoconverterFilter *singleton = NULL;
 
   if (!singleton)
+  {
     singleton = fsu_videoconverter_filter_new ();
+    g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer *)&singleton);
+  }
+  else
+  {
+    g_object_ref (singleton);
+  }
+
   return singleton;
 }
 
