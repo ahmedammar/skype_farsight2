@@ -796,7 +796,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
   g_debug ("Reverting on filter manager %p", self);
 
 
-  if (g_queue_is_empty (priv->modifications))
+  if (!g_queue_is_empty (priv->modifications))
   {
     if (GST_PAD_IS_SRC (priv->applied_pad))
     {
