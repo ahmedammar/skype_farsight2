@@ -36,7 +36,7 @@ g_object_has_property (GObject *object,
   GObjectClass *klass;
 
   klass = G_OBJECT_GET_CLASS (object);
-  return NULL != g_object_class_find_property (klass, property);
+  return g_object_class_find_property (klass, property) ? TRUE : FALSE;
 }
 
 /* function used to sort element features */

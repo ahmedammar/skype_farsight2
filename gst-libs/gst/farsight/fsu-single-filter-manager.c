@@ -553,7 +553,7 @@ new_modification (FsuSingleFilterManager *self,
   modif->action = action;
   modif->id = id;
   modif->insert_position = insert_position;
-  modif->replace_id  = replace_id;
+  modif->replace_id = replace_id;
 
   g_debug ("New modification, %s filter %p (%d - %p). blocking pad %p",
       action == REMOVE?"Removing":action == REPLACE?"Replacing":"Inserting",
