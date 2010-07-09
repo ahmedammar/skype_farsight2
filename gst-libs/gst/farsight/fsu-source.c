@@ -445,10 +445,23 @@ fsu_source_release_pad (GstElement * element,
     GstPad *tee_pad = NULL;
     GList *i = NULL;
 
-    for (i = priv->filters; i && !tee_pad; i = i->next)
+    for (i = priv->filters; i; i = i->next)
     {
       FsuFilterManager *manager = i->data;
-      tee_pad = fsu_filter_manager_revert (manager, GST_BIN (self), filter_pad);
+      GstPad *out_pad = NULL;
+      g_object_get (manager,
+          "out-pad", &out_pad,
+          NULL);
+      if (out_pad == filter_pad)
+      {
+        tee_pad = fsu_filter_manager_revert (manager, GST_BIN (self),
+            filter_pad);
+        priv->filters = g_list_remove (priv->filters, manager);
+        g_object_unref (manager);
+        gst_object_unref (out_pad);
+        break;
+      }
+      gst_object_unref (out_pad);
     }
     gst_object_unref (filter_pad);
     if (tee_pad)
