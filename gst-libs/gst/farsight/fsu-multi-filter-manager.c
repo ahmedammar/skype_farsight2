@@ -388,20 +388,20 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
   {
     FsuFilterManager *fm = i->data;
     GstBin *applied_bin = NULL;
-    GstPad *applied_pad = NULL;
+    GstPad *out_pad = NULL;
     g_object_get (fm,
-        "applied-bin", applied_bin,
-        "applied_pad", applied_pad,
+        "applied-bin", &applied_bin,
+        "out-pad", &out_pad,
         NULL);
-    if (applied_bin == bin && applied_pad == pad)
+    if (applied_bin == bin && out_pad == pad)
     {
       revert_fm = fm;
       gst_object_unref (applied_bin);
-      gst_object_unref (applied_pad);
+      gst_object_unref (out_pad);
       break;
     }
     gst_object_unref (applied_bin);
-    gst_object_unref (applied_pad);
+    gst_object_unref (out_pad);
   }
 
   if (revert_fm == NULL)
