@@ -226,6 +226,7 @@ fsu_filter_revert_standard_element (GstBin *bin,
   gst_object_unref (other_pad);
 
   gst_bin_remove (bin, element);
+  gst_element_set_state (element, GST_STATE_NULL);
   gst_object_unref (element);
 
   return out_pad;
@@ -247,6 +248,7 @@ fsu_filter_revert_bin (GstBin *bin,
   gst_object_unref (other_pad);
 
   gst_bin_remove (bin, filter_bin);
+  gst_element_set_state (filter_bin, GST_STATE_NULL);
   gst_object_unref (filter_bin);
 
   return out_pad;
