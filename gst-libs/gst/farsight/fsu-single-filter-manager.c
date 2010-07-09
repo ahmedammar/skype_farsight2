@@ -806,8 +806,12 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
     else
     {
       GstPad *src_pad = gst_pad_get_peer (priv->out_pad);
-      gst_pad_set_blocked_async (src_pad, FALSE, pad_block_do_nothing, NULL);
-      gst_object_unref (src_pad);
+      /* The source might have been removed already */
+      if (src_pad)
+      {
+        gst_pad_set_blocked_async (src_pad, FALSE, pad_block_do_nothing, NULL);
+        gst_object_unref (src_pad);
+      }
     }
 
     while (!g_queue_is_empty (priv->modifications))
