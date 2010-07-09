@@ -45,6 +45,10 @@ static void fsu_single_filter_manager_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec);
+static void free_filter_id (FsuFilterId *id);
+static void pad_block_do_nothing (GstPad *pad,
+    gboolean blocked,
+    gpointer user_data);
 
 static GList *fsu_single_filter_manager_list_filters (
     FsuFilterManager *iface);
@@ -190,6 +194,55 @@ fsu_single_filter_manager_dispose (GObject *object)
 
   priv->dispose_has_run = TRUE;
 
+  if (!g_queue_is_empty (priv->modifications))
+  {
+    if (GST_PAD_IS_SRC (priv->applied_pad))
+    {
+      gst_pad_set_blocked_async (priv->applied_pad, FALSE,
+          pad_block_do_nothing, NULL);
+    }
+    else
+    {
+      GstPad *src_pad = gst_pad_get_peer (priv->out_pad);
+      /* The source might have been removed already */
+      if (src_pad)
+      {
+        gst_pad_set_blocked_async (src_pad, FALSE, pad_block_do_nothing, NULL);
+        gst_object_unref (src_pad);
+      }
+    }
+
+    while (!g_queue_is_empty (priv->modifications))
+    {
+      FilterModification *modif = g_queue_pop_head (priv->modifications);
+
+      if (modif->action == REMOVE)
+        free_filter_id (modif->id);
+      else if (modif->action == REPLACE)
+        free_filter_id (modif->replace_id);
+
+      g_slice_free (FilterModification, modif);
+    }
+  }
+  g_queue_free (priv->modifications);
+
+  if (priv->applied_filters)
+    g_list_free (priv->applied_filters);
+  priv->applied_filters = NULL;
+  if (priv->filters)
+  {
+    g_list_foreach (priv->filters, (GFunc) free_filter_id, NULL);
+    g_list_free (priv->filters);
+  }
+  priv->filters = NULL;
+
+  if (priv->applied_bin)
+    gst_object_unref (priv->applied_bin);
+  if (priv->applied_pad)
+    gst_object_unref (priv->applied_pad);
+  if (priv->out_pad)
+    gst_object_unref (priv->out_pad);
+
   G_OBJECT_CLASS (fsu_single_filter_manager_parent_class)->dispose (object);
 }
 
@@ -253,6 +306,11 @@ static void
 free_filter_id (FsuFilterId *id)
 {
   g_object_unref (id->filter);
+  if (id->in_pad)
+    gst_object_unref (id->in_pad);
+  if (id->out_pad)
+    gst_object_unref (id->out_pad);
+
   g_slice_free (FsuFilterId, id);
 }
 
@@ -325,12 +383,14 @@ apply_modifs (GstPad *pad,
       {
         if (GST_PAD_IS_SRC (priv->applied_pad))
         {
-          srcpad = current_pad = priv->out_pad;
+          current_pad = gst_object_ref (priv->out_pad);
+          srcpad = gst_object_ref (current_pad);
           sinkpad = gst_pad_get_peer (srcpad);
         }
         else
         {
-          sinkpad = current_pad = priv->applied_pad;
+          current_pad = gst_object_ref (priv->applied_pad);
+          sinkpad = gst_object_ref (current_pad);
           srcpad = gst_pad_get_peer (sinkpad);
         }
       }
@@ -338,12 +398,14 @@ apply_modifs (GstPad *pad,
       {
         if (GST_PAD_IS_SRC (priv->applied_pad))
         {
-          sinkpad = current_id->in_pad;
-          srcpad = current_pad = gst_pad_get_peer (sinkpad);
+          sinkpad = gst_object_ref (current_id->in_pad);
+          current_pad = gst_pad_get_peer (sinkpad);
+          srcpad = gst_object_ref (current_pad);
         }
         else
         {
-          sinkpad = current_pad = current_id->out_pad;
+          current_pad = gst_object_ref (current_id->out_pad);
+          sinkpad = gst_object_ref (current_pad);
           srcpad = gst_pad_get_peer (sinkpad);
         }
       }
@@ -355,15 +417,15 @@ apply_modifs (GstPad *pad,
       if (to_remove->in_pad)
       {
         remove = TRUE;
-        current_pad = to_remove->out_pad;
+        current_pad = gst_object_ref (to_remove->out_pad);
         if (GST_PAD_IS_SRC (priv->applied_pad))
         {
-          srcpad = current_pad;
+          srcpad = gst_object_ref (current_pad);
           sinkpad = gst_pad_get_peer (srcpad);
         }
         else
         {
-          sinkpad = current_pad;
+          sinkpad = gst_object_ref (current_pad);
           srcpad = gst_pad_get_peer (sinkpad);
         }
       }
@@ -394,35 +456,65 @@ apply_modifs (GstPad *pad,
           GstPad *out_pad2 = NULL;
           out_pad2 = fsu_filter_apply (modif->id->filter,
               priv->applied_bin, out_pad);
-          modif->id->in_pad = gst_pad_get_peer (out_pad);
-          modif->id->out_pad = out_pad2;
           if (out_pad2)
+          {
+            modif->id->in_pad = gst_pad_get_peer (out_pad);
+            modif->id->out_pad = gst_object_ref (out_pad2);
+            gst_object_unref (out_pad);
             out_pad = out_pad2;
+          }
+          else
+          {
+            if (modif->id->in_pad)
+              gst_object_unref (modif->id->in_pad);
+            if (modif->id->out_pad)
+              gst_object_unref (modif->id->out_pad);
+            modif->id->in_pad = modif->id->out_pad = NULL;
+          }
         }
         else if (insert)
         {
           modif->id->in_pad = gst_pad_get_peer (current_pad);
-          modif->id->out_pad = out_pad;
+          modif->id->out_pad = gst_object_ref (out_pad);
         }
 
         if (GST_PAD_IS_SRC (priv->applied_pad))
-          srcpad = out_pad;
+        {
+          gst_object_unref (srcpad);
+          srcpad = gst_object_ref (out_pad);
+        }
         else
-          sinkpad = out_pad;
+        {
+          gst_object_unref (sinkpad);
+          sinkpad = gst_object_ref (out_pad);
+        }
 
         /* Update the out pad*/
         if (current_pad == priv->out_pad)
         {
           g_debug ("out pad changed from %p to %p", priv->out_pad, out_pad);
-          priv->out_pad = out_pad;
+          gst_object_unref (priv->out_pad);
+          priv->out_pad = gst_object_ref (out_pad);
         }
+        gst_object_unref (out_pad);
+      }
+      else if (insert)
+      {
+        if (modif->id->in_pad)
+          gst_object_unref (modif->id->in_pad);
+        if (modif->id->out_pad)
+          gst_object_unref (modif->id->out_pad);
+        modif->id->in_pad = modif->id->out_pad = NULL;
       }
 
       g_debug ("Applied filter on pad %p got %p", current_pad, out_pad);
+      gst_object_unref (current_pad);
 
       // Link
       /* TODO: handle unable to link */
       gst_pad_link (srcpad, sinkpad);
+      gst_object_unref (srcpad);
+      gst_object_unref (sinkpad);
     }
 
     /* Synchronize our applied_filters list with the filters list */
@@ -624,13 +716,14 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
 
   g_debug ("Applying on filter manager %p", self);
 
-  priv->applied_pad = pad;
+  priv->applied_pad = gst_object_ref (pad);
 
   if (GST_PAD_IS_SRC (pad))
     i = priv->filters;
   else
     i = g_list_last (priv->filters);
 
+  pad = gst_object_ref (pad);
   while (i)
   {
     FsuFilterId *id = i->data;
@@ -639,11 +732,16 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
     if (out_pad)
     {
       id->in_pad = gst_pad_get_peer (pad);
-      id->out_pad = out_pad;
+      id->out_pad = gst_object_ref (out_pad);
+      gst_object_unref (pad);
       pad = out_pad;
     }
     else
     {
+      if (id->in_pad)
+        gst_object_unref (id->in_pad);
+      if (id->out_pad)
+        gst_object_unref (id->out_pad);
       id->in_pad = id->out_pad = NULL;
     }
 
@@ -655,8 +753,8 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
 
   g_debug ("Applied");
 
-  priv->out_pad = pad;
-  priv->applied_bin = bin;
+  priv->out_pad = gst_object_ref (pad);
+  priv->applied_bin = gst_object_ref (bin);
   priv->applied_filters = g_list_copy (self->priv->filters);
 
   return pad;
@@ -723,6 +821,8 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
   else
     i = priv->applied_filters;
 
+  pad = gst_object_ref (pad);
+
   while (i)
   {
     FsuFilterId *id = i->data;
@@ -732,10 +832,16 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
     {
       out_pad = fsu_filter_revert (id->filter, bin, pad);
 
+      gst_object_unref (id->in_pad);
+      if (id->out_pad)
+        gst_object_unref (id->out_pad);
       id->in_pad = id->out_pad = NULL;
 
       if (out_pad)
+      {
+        gst_object_unref (pad);
         pad = out_pad;
+      }
     }
 
     if (GST_PAD_IS_SRC (pad))
@@ -752,9 +858,13 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
 
   g_debug ("Reverted");
 
+  gst_object_unref (priv->applied_pad);
   priv->applied_pad = NULL;
+  gst_object_unref (priv->applied_bin);
   priv->applied_bin = NULL;
+  gst_object_unref (priv->out_pad);
   priv->out_pad = NULL;
+
   if (priv->applied_filters)
     g_list_free (priv->applied_filters);
   priv->applied_filters = NULL;

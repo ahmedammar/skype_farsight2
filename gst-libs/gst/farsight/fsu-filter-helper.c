@@ -171,7 +171,7 @@ fsu_filter_add_element_by_description (GstBin *bin,
       return NULL;
     }
   }
-  return filter;
+  return gst_object_ref (filter);
 }
 
 GstPad *
@@ -247,6 +247,7 @@ fsu_filter_revert_bin (GstBin *bin,
   gst_object_unref (other_pad);
 
   gst_bin_remove (bin, filter_bin);
+  gst_object_unref (filter_bin);
 
   return out_pad;
 }

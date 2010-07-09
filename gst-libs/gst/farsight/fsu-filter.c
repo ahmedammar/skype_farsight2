@@ -198,12 +198,16 @@ fsu_filter_revert (FsuFilter *self,
     g_warning ("Reverted pad not as expected");
     if (out_pad)
       gst_object_unref (out_pad);
-    gst_object_ref (expected);
+    out_pad = expected;
+  }
+  else
+  {
+    gst_object_unref (expected);
   }
 
   g_hash_table_remove (priv->pads, pad);
 
-  return expected;
+  return out_pad;
 }
 
 GstPad *

@@ -250,6 +250,8 @@ fsu_framerate_filter_apply (FsuFilter *filter,
           "caps", priv->caps,
           NULL);
     }
+
+    gst_object_unref (filter_bin);
   }
 
   return out_pad;

@@ -528,8 +528,9 @@ fsu_sink_request_new_pad (GstElement * element,
   if (!filter_pad)
   {
     WARNING ("Could not add filters to sink pad");
-    filter_pad = sink_pad;
+    filter_pad = gst_object_ref (sink_pad);
   }
+  gst_object_unref (sink_pad);
 
   pad = gst_ghost_pad_new (name, filter_pad);
   gst_object_unref (filter_pad);

@@ -65,6 +65,7 @@ fsu_audioconverter_filter_apply (FsuFilter *filter,
       "audioconvert ! audioresample ! audioconvert", &out_pad);
 
   g_debug ("Applying audioconverter filter : %p", converters);
+  gst_object_unref (converters);
 
   return out_pad;
 }
