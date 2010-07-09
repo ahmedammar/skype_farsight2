@@ -93,6 +93,7 @@ enum
   PROP_APPLIED = 1,
   PROP_APPLIED_BIN,
   PROP_APPLIED_PAD,
+  PROP_OUT_PAD,
   LAST_PROPERTY
 };
 
@@ -149,7 +150,13 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
   g_object_class_install_property (gobject_class, PROP_APPLIED_PAD,
       g_param_spec_object ("applied-pad", "Applied pad",
           "If applied, the pad it was applied on",
-          GST_TYPE_BIN,
+          GST_TYPE_PAD,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_property (gobject_class, PROP_OUT_PAD,
+      g_param_spec_object ("out-pad", "Output pad",
+          "If applied, the output pad it applied",
+          GST_TYPE_PAD,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 }
@@ -265,6 +272,9 @@ fsu_single_filter_manager_get_property (GObject *object,
       break;
     case PROP_APPLIED_PAD:
       g_value_set_object (value, priv->applied_pad);
+      break;
+    case PROP_OUT_PAD:
+      g_value_set_object (value, priv->out_pad);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
