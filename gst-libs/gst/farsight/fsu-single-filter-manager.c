@@ -455,9 +455,6 @@ apply_modifs (GstPad *pad,
         out_pad = fsu_filter_apply (modif->id->filter, priv->applied_bin,
             current_pad);
 
-      if (to_remove)
-        to_remove->in_pad = to_remove->out_pad = NULL;
-
       if (out_pad)
       {
         /* If we want to replace, we need to apply after the revert */
