@@ -407,7 +407,7 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
   if (revert_fm == NULL)
   {
     g_debug ("Could not found the single filter manager to revert");
-    return pad;
+    return NULL;
   }
 
   priv->filter_managers = g_list_remove (priv->filter_managers, revert_fm);
