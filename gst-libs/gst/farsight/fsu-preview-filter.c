@@ -301,12 +301,12 @@ fsu_preview_filter_revert (FsuFilter *filter,
     out_pad = gst_pad_get_peer (tee_pad);
   }
 
-  gst_bin_remove (bin, tee);
   gst_element_release_request_pad (tee, tee_pad);
   gst_object_unref (tee_pad);
   tee_pad = gst_pad_get_peer (priv->sink_pad);
   gst_element_release_request_pad (tee, tee_pad);
   gst_object_unref (tee_pad);
+  gst_bin_remove (bin, tee);
   gst_object_unref (tee);
   gst_bin_remove (bin, priv->sink);
 
