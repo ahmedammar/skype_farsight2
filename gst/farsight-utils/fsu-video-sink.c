@@ -220,4 +220,6 @@ fsu_video_sink_handle_message (GstBin *bin,
     (void);
   }
 #endif
+
+  GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }
