@@ -1004,6 +1004,7 @@ fsu_source_handle_message (GstBin *bin,
     }
     DEBUG ("Source got an error. setting source to state NULL");
     destroy_source (self);
+    gst_message_unref (message);
   }
   else
   {

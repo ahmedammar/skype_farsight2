@@ -244,7 +244,6 @@ fsu_framerate_filter_apply (FsuFilter *filter,
     if (capsfilter)
     {
       priv->elements = g_list_prepend (priv->elements, capsfilter);
-      gst_object_ref (capsfilter);
 
       g_object_set (capsfilter,
           "caps", priv->caps,
@@ -266,6 +265,7 @@ fsu_framerate_filter_revert (FsuFilter *filter,
   FsuFramerateFilterPrivate *priv = self->priv;
   GstElement *filter_bin = GST_ELEMENT (gst_pad_get_parent (pad));
   GstElement *capsfilter = NULL;
+  GstPad *ret = NULL;
 
   capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
   if (g_list_find (priv->elements, capsfilter))
@@ -273,6 +273,12 @@ fsu_framerate_filter_revert (FsuFilter *filter,
     priv->elements = g_list_remove (priv->elements, capsfilter);
     gst_object_unref (capsfilter);
   }
-  return fsu_filter_revert_bin (bin, pad);
+  if (capsfilter)
+    gst_object_unref (capsfilter);
+
+  ret = fsu_filter_revert_bin (bin, pad);
+  gst_object_unref (filter_bin);
+
+  return ret;
 }
 

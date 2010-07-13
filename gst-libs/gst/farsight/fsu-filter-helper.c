@@ -113,7 +113,7 @@ fsu_filter_add_element_by_name (GstBin *bin,
   }
 
   gst_object_unref (element_pad);
-  return element;
+  return gst_object_ref (element);
 }
 
 GstElement *
@@ -171,6 +171,7 @@ fsu_filter_add_element_by_description (GstBin *bin,
       return NULL;
     }
   }
+
   return gst_object_ref (filter);
 }
 
@@ -198,6 +199,9 @@ fsu_filter_add_standard_element (GstBin *bin,
     }
     if (element)
       *element = elem;
+    else
+      gst_object_unref (elem);
+
     return out_pad;
   }
 

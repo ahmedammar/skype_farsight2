@@ -270,7 +270,7 @@ fsu_preview_filter_apply (FsuFilter *filter,
 
   gst_object_unref (tee_pad);
   gst_object_unref (preview_pad);
-  priv->sink = sink;
+  priv->sink = gst_object_ref (sink);
   priv->sink_pad = sink_pad;
 
   return out_pad;
@@ -308,10 +308,14 @@ fsu_preview_filter_revert (FsuFilter *filter,
   gst_object_unref (tee_pad);
   gst_bin_remove (bin, tee);
   gst_object_unref (tee);
-  gst_bin_remove (bin, priv->sink);
 
-  priv->sink = NULL;
+  gst_element_release_request_pad (priv->sink, priv->sink_pad);
+  gst_object_unref (priv->sink_pad);
   priv->sink_pad = NULL;
+  gst_bin_remove (bin, priv->sink);
+  gst_element_set_state (priv->sink, GST_STATE_NULL);
+  gst_object_unref (priv->sink);
+  priv->sink = NULL;
 
   return out_pad;
 }
