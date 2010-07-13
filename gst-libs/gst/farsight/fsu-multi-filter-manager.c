@@ -31,6 +31,7 @@ G_DEFINE_TYPE_WITH_CODE (FsuMultiFilterManager,
         fsu_multi_filter_manager_interface_init));
 
 static void fsu_multi_filter_manager_dispose (GObject *object);
+static void free_filter_id (FsuFilterId *id);
 
 static GList *fsu_multi_filter_manager_list_filters (
     FsuFilterManager *iface);
@@ -125,21 +126,50 @@ fsu_multi_filter_manager_dispose (GObject *object)
 {
   FsuMultiFilterManager *self = (FsuMultiFilterManager *)object;
   FsuMultiFilterManagerPrivate *priv = self->priv;
+  GList *i;
 
   if (priv->dispose_has_run)
     return;
 
   priv->dispose_has_run = TRUE;
+  GList *filters;
+  GList *filter_managers;
+
+  for (i = priv->filter_managers; i; i = i->next)
+  {
+    FsuFilterManager *fm = i->data;
+
+    g_object_unref (fm);
+  }
+  g_list_free (priv->filter_managers);
+  priv->filter_managers = NULL;
+
+  for (i = priv->filters; i; i = i->next)
+  {
+    FsuFilterId *id = i->data;
+
+    free_filter_id (id);
+  }
+  g_list_free (priv->filters);
+  priv->filters = NULL;
 
   G_OBJECT_CLASS (fsu_multi_filter_manager_parent_class)->dispose (object);
 }
 
 
-FsuFilterManager *fsu_multi_filter_manager_new (void)
+FsuFilterManager *
+fsu_multi_filter_manager_new (void)
 {
   return g_object_new (FSU_TYPE_MULTI_FILTER_MANAGER, NULL);
 }
 
+static void
+free_filter_id (FsuFilterId *id)
+{
+  g_hash_table_destroy (id->associations);
+  g_object_unref (id->filter);
+  g_slice_free (FsuFilterId, id);
+}
 
 static GList *
 fsu_multi_filter_manager_list_filters (FsuFilterManager *iface)
@@ -259,6 +289,7 @@ fsu_multi_filter_manager_replace_filter (FsuFilterManager *iface,
 
   priv->filters = g_list_remove (priv->filters, replace);
   priv->filters = g_list_insert (priv->filters, id, index);
+  free_filter_id (replace);
 
   return id;
 }
@@ -318,6 +349,7 @@ fsu_multi_filter_manager_remove_filter (FsuFilterManager *iface,
   }
 
   priv->filters = g_list_remove (priv->filters, id);
+  free_filter_id (id);
 
   return TRUE;
 }
