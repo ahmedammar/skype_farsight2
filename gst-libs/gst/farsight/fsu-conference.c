@@ -148,7 +148,6 @@ fsu_conference_constructed (GObject *object)
       G_OBJECT_CLASS (fsu_conference_parent_class)->constructed;
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
-  const gchar *error = NULL;
 
   if (chain_up)
     chain_up (object);
@@ -158,15 +157,17 @@ fsu_conference_constructed (GObject *object)
 
   if (!priv->pipeline)
   {
-     error = "Couldn't create gstreamer pipeline";
-     goto error;
+    g_set_error_literal (&priv->error, FS_ERROR, FS_ERROR_CONSTRUCTION,
+        "Couldn't create gstreamer pipeline");
+    goto error;
   }
 
   if (!gst_bin_add (GST_BIN (priv->pipeline), priv->conference))
   {
     gst_object_unref (priv->pipeline);
     priv->pipeline = NULL;
-    error = "Couldn't add fsrtpconference to the pipeline";
+    g_set_error_literal (&priv->error, FS_ERROR, FS_ERROR_CONSTRUCTION,
+        "Couldn't add fsrtpconference to the pipeline");
     goto error;
   }
 
@@ -175,13 +176,12 @@ fsu_conference_constructed (GObject *object)
   {
     gst_bin_remove (GST_BIN (priv->pipeline), priv->conference);
     priv->conference = NULL;
-    error = "Unable to set pipeline to PLAYING";
+    g_set_error_literal (&priv->error, FS_ERROR, FS_ERROR_CONSTRUCTION,
+        "Unable to set pipeline to PLAYING");
     goto error;
   }
 
-  return;
  error:
-  g_set_error (&priv->error, FS_ERROR, FS_ERROR_CONSTRUCTION, error);
   return;
 }
 
