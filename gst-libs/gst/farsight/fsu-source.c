@@ -916,10 +916,10 @@ create_source (FsuSource *self)
     GST_OBJECT_FLAG_UNSET (src, GST_ELEMENT_IS_SINK);
     real_src = find_source (src);
     if (g_object_has_property (G_OBJECT (real_src), "buffer-time"))
-      g_object_set(src, "buffer-time", G_GINT64_CONSTANT(20000), NULL);
+      g_object_set(real_src, "buffer-time", G_GINT64_CONSTANT(20000), NULL);
 
     if (g_object_has_property (G_OBJECT (real_src), "is-live"))
-      g_object_set(src, "is-live", TRUE, NULL);
+      g_object_set(real_src, "is-live", TRUE, NULL);
 
     gst_object_unref (real_src);
   }
