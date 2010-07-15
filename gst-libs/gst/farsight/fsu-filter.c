@@ -151,9 +151,11 @@ fsu_filter_apply (FsuFilter *self,
 
   g_assert (klass->apply);
 
-  g_debug ("Applying on filter %p : %p", self, pad);
+  g_debug ("Applying on filter %s (%p) : %p", FSU_FILTER_GET_CLASS (self)->name,
+      self, pad);
   out_pad = klass->apply (self, bin, pad);
-  g_debug ("Applied filter %p : %p", self, out_pad);
+  g_debug ("Applied filter %s (%p) : %p", FSU_FILTER_GET_CLASS (self)->name,
+      self, out_pad);
 
   if (out_pad)
   {
@@ -181,18 +183,20 @@ fsu_filter_revert (FsuFilter *self,
 
   if (!in_pad)
   {
-    g_debug ("Can't revert, never got applied on this pad");
+    g_debug ("Can't revert filter %s (%p), never got applied on this pad",
+        klass->name, self);
     return NULL;
   }
   expected = gst_pad_get_peer (in_pad);
 
-  g_debug ("Reverting on filter %p : %p", self, pad);
+  g_debug ("Reverting on filter %s (%p) : %p", klass->name, self, pad);
   out_pad = klass->revert (self, bin, pad);
-  g_debug ("Reverted filter %p : %p", self, out_pad);
+  g_debug ("Reverted filter %s (%p) : %p", klass->name, self, out_pad);
 
   if (out_pad != expected)
   {
-    g_warning ("Reverted pad not as expected");
+    g_warning ("Reverted pad on filter %s (%p) not as expected",
+        klass->name, self);
     if (out_pad)
       gst_object_unref (out_pad);
     out_pad = expected;
