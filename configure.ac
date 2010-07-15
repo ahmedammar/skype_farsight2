@@ -381,6 +381,11 @@ if test "x$HAVE_GUPNP" = "xyes"; then
 	 [true])
 fi
 
+PKG_CHECK_MODULES(GTK, gtk+-2.0,
+		       [ HAVE_GTK=yes ], [ HAVE_GTK=no ])
+
+AM_CONDITIONAL(HAVE_GTK, test "x$HAVE_GTK" = "xyes")
+
 dnl *** output files ***
 
 AC_CONFIG_FILES(
