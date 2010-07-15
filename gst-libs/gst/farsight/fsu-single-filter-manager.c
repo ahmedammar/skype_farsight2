@@ -288,9 +288,6 @@ fsu_single_filter_manager_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec)
 {
-  FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
-  FsuSingleFilterManagerPrivate *priv = self->priv;
-
   switch (property_id)
   {
     default:
@@ -345,7 +342,8 @@ apply_modifs (GstPad *pad,
     FilterModification *modif = g_queue_pop_head (priv->modifications);
     GstPad *current_pad = NULL;
     GstPad *out_pad = NULL;
-    GstPad *srcpad, *sinkpad;
+    GstPad *srcpad = NULL;
+    GstPad *sinkpad = NULL;
     GList *current_pos = NULL;
     FsuFilterId *current_id = NULL;
     gboolean remove = FALSE;

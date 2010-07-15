@@ -74,6 +74,7 @@ fsu_preview_filter_class_init (FsuPreviewFilterClass *klass)
 
   gobject_class->get_property = fsu_preview_filter_get_property;
   gobject_class->set_property = fsu_preview_filter_set_property;
+  gobject_class->dispose = fsu_preview_filter_dispose;
 
   fsufilter_class->apply = fsu_preview_filter_apply;
   fsufilter_class->revert = fsu_preview_filter_revert;
@@ -140,6 +141,22 @@ fsu_preview_filter_set_property (GObject *object,
   }
 }
 
+static void
+fsu_preview_filter_dispose (GObject *object)
+{
+  FsuPreviewFilter *self = FSU_PREVIEW_FILTER (object);
+  FsuPreviewFilterPrivate *priv = self->priv;
+
+  if (priv->sink_pad)
+    gst_object_unref (priv->sink_pad);
+  priv->sink_pad = NULL;
+  if (priv->sink)
+    gst_object_unref (priv->sink);
+  priv->sink = NULL;
+
+  G_OBJECT_CLASS (fsu_preview_filter_parent_class)->dispose (object);
+}
+
 FsuPreviewFilter *
 fsu_preview_filter_new (gpointer id)
 {
@@ -158,7 +175,6 @@ fsu_preview_filter_apply (FsuFilter *filter,
   FsuPreviewFilterPrivate *priv = self->priv;
   GstElement *tee = NULL;
   GstElement *sink = NULL;
-  GstElement *filter_bin = NULL;
   GstPad *out_pad = NULL;
   GstPad *tee_pad = NULL;
   GstPad *preview_pad = NULL;

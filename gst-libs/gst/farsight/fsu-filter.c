@@ -113,9 +113,6 @@ fsu_filter_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec)
 {
-  FsuFilter *self = FSU_FILTER (object);
-  FsuFilterPrivate *priv = self->priv;
-
   switch (property_id)
   {
     default:

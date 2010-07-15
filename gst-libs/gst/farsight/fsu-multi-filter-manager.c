@@ -132,8 +132,6 @@ fsu_multi_filter_manager_dispose (GObject *object)
     return;
 
   priv->dispose_has_run = TRUE;
-  GList *filters;
-  GList *filter_managers;
 
   for (i = priv->filter_managers; i; i = i->next)
   {
