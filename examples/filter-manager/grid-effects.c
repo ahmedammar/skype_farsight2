@@ -1,3 +1,5 @@
+
+#include <string.h>
 #include <gst/gst.h>
 #include <gst/farsight/fsu-single-filter-manager.h>
 #include <gst/farsight/fsu-videoconverter-filter.h>
@@ -14,6 +16,20 @@
 #define HEIGHT 96
 
 static GMainLoop *mainloop = NULL;
+static GtkWidget *window = NULL;
+static FsuFilter *preview = NULL;
+static FsuFilterId *effect_id = NULL;
+
+static gchar *effects[] = {"edgetv",
+                           "agingtv",
+                           "dicetv",
+                           "warptv",
+                           "shagadelictv",
+                           "vertigotv",
+                           "revtv",
+                           "quarktv",
+                           "rippletv",
+                           NULL};
 
 gboolean
 dump  (gpointer data)
@@ -33,10 +49,58 @@ done (gpointer data)
   return FALSE;
 }
 
+static void
+button_clicked (GtkButton *button, gpointer user_data)
+{
+  guint idx = GPOINTER_TO_UINT (user_data);
+  FsuFilterManager *preview_manager = NULL;
+
+  g_debug ("Button %d clicked", idx);
+  g_object_get (preview, "filter-manager", &preview_manager, NULL);
+
+  if (effect_id)
+  {
+    FsuFilter *previous_effect = NULL;
+    gchar *effect = NULL;
+
+    previous_effect = fsu_filter_manager_get_filter_by_id (preview_manager,
+        effect_id);
+
+    g_object_get (previous_effect, "effect", &effect, NULL);
+    g_debug ("Previous effect %s. New effect %s", effect, effects[idx]);
+    if (!strcmp (effects[idx], effect))
+    {
+      g_debug ("Removing effect");
+      fsu_filter_manager_remove_filter (preview_manager, effect_id);
+      effect_id = NULL;
+    }
+    else
+    {
+      FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
+
+      g_debug ("Replacing effect : %s", effects[idx]);
+      effect_id = fsu_filter_manager_replace_filter (preview_manager, filter,
+          effect_id);
+      g_object_unref (filter);
+    }
+    g_free (effect);
+    g_object_unref (previous_effect);
+  }
+  else
+  {
+    FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
+
+    g_debug ("Adding new effect : %s", effects[idx]);
+    effect_id = fsu_filter_manager_append_filter (preview_manager, filter);
+    g_object_unref (filter);
+  }
+
+  g_object_unref (preview_manager);
+}
+
 static guint *
 create_grid (int rows, int columns)
 {
-  GtkWidget *window;
   GtkWidget *table;
   guint *wids = NULL;
   gint i,j;
@@ -50,14 +114,23 @@ create_grid (int rows, int columns)
   for (i = 0; i < rows; i++)
     for (j = 0; j < columns; j++) {
       GtkWidget *da = gtk_drawing_area_new();
+      GtkWidget *but = gtk_button_new();
+      GdkWindow *gdk_win = NULL;
 
       gtk_widget_set_size_request(da, WIDTH, HEIGHT);
       gtk_widget_set_app_paintable(da, TRUE);
       gtk_widget_set_double_buffered(da, FALSE);
 
-      gtk_table_attach_defaults (GTK_TABLE(table), da, i, i+1, j, j+1);
+      gtk_container_add(GTK_CONTAINER(but), da);
+      gtk_table_attach_defaults (GTK_TABLE(table), but, i, i+1, j, j+1);
       gtk_widget_realize(da);
-      wids[i * rows + j] = GDK_WINDOW_XID (gtk_widget_get_window (da));
+
+      gdk_win = gtk_widget_get_window (da);
+      wids[i * rows + j] = GDK_WINDOW_XID (gdk_win);
+      gdk_window_unref (gdk_win);
+
+      g_signal_connect (but, "clicked",
+          (GCallback) button_clicked, GUINT_TO_POINTER (i * rows + j));
     }
 
   gtk_widget_show_all(window);
@@ -92,33 +165,22 @@ gboolean
 add_filters  (gpointer data)
 {
   FsuFilterManager *filters = data;
-  static gchar *effects[] = {"edgetv",
-                             "agingtv",
-                             "dicetv",
-                             "warptv",
-                             "shagadelictv",
-                             "vertigotv",
-                             "revtv",
-                             "quarktv",
-                             "rippletv",
-                             NULL};
-
   guint *wids = create_grid (ROWS, COLUMNS);
   int i = 0;
   FsuFilter *f1 = FSU_FILTER (fsu_videoconverter_filter_new ());
   FsuFilter *f2 = FSU_FILTER (fsu_resolution_filter_new (1280, 960));
-  FsuFilter *f3 = FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0)));
-  FsuFilter *f4 = FSU_FILTER (fsu_resolution_filter_new (WIDTH, HEIGHT));
+  FsuFilter *f3 = FSU_FILTER (fsu_resolution_filter_new (WIDTH, HEIGHT));
+
+  preview = FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0)));
 
   fsu_filter_manager_append_filter (filters, f1);
   fsu_filter_manager_append_filter (filters, f2);
+  fsu_filter_manager_append_filter (filters, preview);
   fsu_filter_manager_append_filter (filters, f3);
-  fsu_filter_manager_append_filter (filters, f4);
 
   g_object_unref (f1);
   g_object_unref (f2);
   g_object_unref (f3);
-  g_object_unref (f4);
 
   for (i = 0; effects[i]; i++)
     add_effect (filters, effects[i], wids[i]);
@@ -136,8 +198,8 @@ int main (int argc, char *argv[]) {
   GstPad *out_pad = NULL;
   GstPad *src_pad = NULL;
   GstPad *sink_pad = NULL;
-  FsuFilterManager *filters = NULL;
   GError *error = NULL;
+  FsuFilterManager *filters = NULL;
   GOptionContext *optcontext;
 
   optcontext = g_option_context_new ("Grid Effects example");
@@ -208,8 +270,10 @@ int main (int argc, char *argv[]) {
   gst_object_unref (out_pad);
   gst_bin_remove (GST_BIN (pipeline), sink);
 
+  g_object_unref (preview);
   g_object_unref (filters);
   gst_object_unref (pipeline);
+  gtk_widget_unref (window);
   g_main_loop_unref (mainloop);
 
   return 0;
