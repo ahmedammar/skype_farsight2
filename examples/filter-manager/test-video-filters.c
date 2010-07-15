@@ -153,6 +153,7 @@ change_fps  (gpointer data)
 
   if (fps == 1) {
     g_object_set (filter, "fps", 30, NULL);
+    g_object_unref (filter);
     printf ("Setting FPS back to 30, changing resolutions now\n\n");
     g_timeout_add (TIMEOUT, change_reso, filters);
     return FALSE;
@@ -165,6 +166,7 @@ change_fps  (gpointer data)
 
   printf ("Setting FPS to %d\n\n", fps);
   g_object_set (filter, "fps", fps, NULL);
+  g_object_unref (filter);
 
   dump (pipeline);
 
