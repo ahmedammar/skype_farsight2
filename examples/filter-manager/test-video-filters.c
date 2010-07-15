@@ -317,6 +317,9 @@ int main (int argc, char *argv[]) {
   g_assert (fsu_filter_manager_revert (filters, GST_BIN (pipeline),
           src_pad) == NULL);
 
+  gst_object_unref (out_pad);
+  out_pad = gst_pad_get_peer (src_pad);
+
   g_assert (gst_pad_unlink (src_pad, out_pad) == TRUE);
   gst_element_release_request_pad (src, src_pad);
   gst_object_unref (src_pad);
@@ -328,6 +331,9 @@ int main (int argc, char *argv[]) {
   gst_bin_remove (GST_BIN (pipeline), sink);
 
 #if TWICE
+  gst_object_unref (out_pad2);
+  out_pad2 = gst_pad_get_peer (sink_pad2);
+
   g_assert (gst_pad_unlink (out_pad2, sink_pad2) == TRUE);
   gst_object_unref (sink_pad2);
   gst_bin_remove (GST_BIN (pipeline), sink2);
