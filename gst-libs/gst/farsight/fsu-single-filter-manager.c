@@ -812,17 +812,6 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
       }
     }
 
-    while (!g_queue_is_empty (priv->modifications))
-    {
-      FilterModification *modif = g_queue_pop_head (priv->modifications);
-
-      if (modif->action == REMOVE)
-        free_filter_id (modif->id);
-      else if (modif->action == REPLACE)
-        free_filter_id (modif->replace_id);
-
-      g_slice_free (FilterModification, modif);
-    }
   }
 
   if (GST_PAD_IS_SRC (pad))
@@ -873,6 +862,18 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
   priv->applied_bin = NULL;
   gst_object_unref (priv->out_pad);
   priv->out_pad = NULL;
+
+  while (!g_queue_is_empty (priv->modifications))
+  {
+    FilterModification *modif = g_queue_pop_head (priv->modifications);
+
+    if (modif->action == REMOVE)
+      free_filter_id (modif->id);
+    else if (modif->action == REPLACE)
+      free_filter_id (modif->replace_id);
+
+    g_slice_free (FilterModification, modif);
+  }
 
   if (priv->applied_filters)
     g_list_free (priv->applied_filters);
