@@ -61,7 +61,6 @@ enum
 
 struct _FsuResolutionFilterPrivate
 {
-  gboolean dispose_has_run;
   GList *elements;
   GstCaps *caps;
   gint width;
@@ -108,7 +107,6 @@ fsu_resolution_filter_init (FsuResolutionFilter *self)
           FsuResolutionFilterPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->width = DEFAULT_WIDTH;
   priv->height = DEFAULT_HEIGHT;
 }
@@ -167,10 +165,6 @@ fsu_resolution_filter_dispose (GObject *object)
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
 
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   gst_caps_unref (priv->caps);
 
@@ -180,13 +174,11 @@ fsu_resolution_filter_dispose (GObject *object)
 static void
 fsu_resolution_filter_constructed (GObject *object)
 {
-  void (*chain_up) (GObject *) =
-      G_OBJECT_CLASS (fsu_resolution_filter_parent_class)->constructed;
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
 
-  if (chain_up)
-    chain_up (object);
+  if (G_OBJECT_CLASS (fsu_resolution_filter_parent_class)->constructed)
+    G_OBJECT_CLASS (fsu_resolution_filter_parent_class)->constructed (object);
 
   priv->caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
           "width", G_TYPE_INT, priv->width,

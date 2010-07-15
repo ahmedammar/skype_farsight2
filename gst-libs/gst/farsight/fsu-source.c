@@ -94,7 +94,6 @@ enum
 
 struct _FsuSourcePrivate
 {
-  gboolean dispose_has_run;
 
   /* Properties */
   gboolean disabled;
@@ -184,7 +183,6 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
           FsuSourcePrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->probe_idx = -1;
 }
 
@@ -252,11 +250,6 @@ fsu_source_dispose (GObject *object)
   FsuSource *self = FSU_SOURCE (object);
   FsuSourcePrivate *priv = self->priv;
   GList *item, *walk;
-
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
  restart:
   for (item = GST_ELEMENT_PADS (object); item; item = g_list_next (item))

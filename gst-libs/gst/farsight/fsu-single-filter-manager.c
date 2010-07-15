@@ -107,7 +107,6 @@ typedef struct
 
 struct _FsuSingleFilterManagerPrivate
 {
-  gboolean dispose_has_run;
   GList *applied_filters;
   GList *filters;
   GstBin *applied_bin;
@@ -185,7 +184,6 @@ fsu_single_filter_manager_init (FsuSingleFilterManager *self)
           FsuSingleFilterManagerPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->modifications = g_queue_new ();
 }
 
@@ -196,10 +194,6 @@ fsu_single_filter_manager_dispose (GObject *object)
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   if (!g_queue_is_empty (priv->modifications))
   {

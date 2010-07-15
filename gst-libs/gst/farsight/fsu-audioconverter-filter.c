@@ -70,7 +70,6 @@ fsu_audioconverter_filter_apply (FsuFilter *filter,
   converters = fsu_filter_add_element_by_description (bin, pad,
       "audioconvert ! audioresample ! audioconvert", &out_pad);
 
-  g_debug ("Applying audioconverter filter : %p", converters);
   gst_object_unref (converters);
 
   return out_pad;

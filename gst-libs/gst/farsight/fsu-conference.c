@@ -144,13 +144,11 @@ fsu_conference_set_property (GObject *object,
 static void
 fsu_conference_constructed (GObject *object)
 {
-  void (*chain_up) (GObject *) =
-      G_OBJECT_CLASS (fsu_conference_parent_class)->constructed;
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
 
-  if (chain_up)
-    chain_up (object);
+  if (G_OBJECT_CLASS (fsu_conference_parent_class)->constructed)
+     G_OBJECT_CLASS (fsu_conference_parent_class)->constructed (object);
 
   if (!priv->pipeline)
     priv->pipeline = gst_pipeline_new ("fsu_pipeline");

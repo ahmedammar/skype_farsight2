@@ -50,7 +50,6 @@ enum
 
 struct _FsuFilterPrivate
 {
-  gboolean dispose_has_run;
   gboolean can_fail;
   GHashTable *pads;
 };
@@ -81,7 +80,6 @@ fsu_filter_init (FsuFilter *self)
           FsuFilterPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->pads = g_hash_table_new_full (NULL, NULL,
       gst_object_unref, gst_object_unref);
 }
@@ -126,11 +124,6 @@ fsu_filter_dispose (GObject *object)
 {
   FsuFilter *self = FSU_FILTER (object);
   FsuFilterPrivate *priv = self->priv;
-
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   if (priv->pads)
     g_hash_table_destroy (priv->pads);

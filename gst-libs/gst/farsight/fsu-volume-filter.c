@@ -58,8 +58,6 @@ enum
 
 struct _FsuVolumeFilterPrivate
 {
-  gboolean dispose_has_run;
-
   gdouble volume;
   gboolean mute;
   /* a list of GstElement * */
@@ -104,7 +102,6 @@ fsu_volume_filter_init (FsuVolumeFilter *self)
           FsuVolumeFilterPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->volume = 1.0;
 }
 
@@ -172,10 +169,6 @@ fsu_volume_filter_dispose (GObject *object)
   FsuVolumeFilter *self = FSU_VOLUME_FILTER (object);
   FsuVolumeFilterPrivate *priv = self->priv;
 
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   G_OBJECT_CLASS (fsu_volume_filter_parent_class)->dispose (object);
 }

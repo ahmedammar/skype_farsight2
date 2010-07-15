@@ -59,7 +59,6 @@ enum
 
 struct _FsuFramerateFilterPrivate
 {
-  gboolean dispose_has_run;
   GList *elements;
   GstCaps *caps;
   guint fps;
@@ -99,7 +98,6 @@ fsu_framerate_filter_init (FsuFramerateFilter *self)
           FsuFramerateFilterPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->fps = DEFAULT_FRAMERATE;
 }
 
@@ -175,10 +173,6 @@ fsu_framerate_filter_dispose (GObject *object)
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
   FsuFramerateFilterPrivate *priv = self->priv;
 
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   gst_caps_unref (priv->caps);
 
@@ -189,16 +183,11 @@ fsu_framerate_filter_dispose (GObject *object)
 static void
 fsu_framerate_filter_constructed (GObject *object)
 {
-  void (*chain_up) (GObject *) =
-      G_OBJECT_CLASS (fsu_framerate_filter_parent_class)->constructed;
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
   FsuFramerateFilterPrivate *priv = self->priv;
 
-  if (chain_up)
-    chain_up (object);
-
-  if (priv->caps)
-    gst_caps_unref (priv->caps);
+  if (G_OBJECT_CLASS (fsu_framerate_filter_parent_class)->constructed)
+    G_OBJECT_CLASS (fsu_framerate_filter_parent_class)->constructed (object);
 
   priv->caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
           "framerate", GST_TYPE_FRACTION, priv->fps, 1,

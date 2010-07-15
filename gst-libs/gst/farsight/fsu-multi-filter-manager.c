@@ -71,7 +71,6 @@ static gboolean fsu_multi_filter_manager_handle_message (
 
 struct _FsuMultiFilterManagerPrivate
 {
-  gboolean dispose_has_run;
   GList *filters;
   GList *filter_managers;
 };
@@ -117,7 +116,6 @@ fsu_multi_filter_manager_init (FsuMultiFilterManager *self)
           FsuMultiFilterManagerPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
 }
 
 
@@ -128,10 +126,6 @@ fsu_multi_filter_manager_dispose (GObject *object)
   FsuMultiFilterManagerPrivate *priv = self->priv;
   GList *i;
 
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   for (i = priv->filter_managers; i; i = i->next)
   {
