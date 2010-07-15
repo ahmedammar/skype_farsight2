@@ -193,7 +193,7 @@ fsu_single_filter_manager_init (FsuSingleFilterManager *self)
 static void
 fsu_single_filter_manager_dispose (GObject *object)
 {
-  FsuSingleFilterManager *self = (FsuSingleFilterManager *)object;
+  FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
   if (priv->dispose_has_run)

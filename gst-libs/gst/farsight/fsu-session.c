@@ -202,7 +202,7 @@ fsu_session_constructed (GObject *object)
 static void
 fsu_session_dispose (GObject *object)
 {
-  FsuSession *self = (FsuSession *)object;
+  FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
 
   if (priv->dispose_has_run)

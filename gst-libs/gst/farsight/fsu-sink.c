@@ -242,7 +242,7 @@ fsu_sink_set_property (GObject *object,
 static void
 fsu_sink_dispose (GObject *object)
 {
-  FsuSink *self = (FsuSink *)object;
+  FsuSink *self = FSU_SINK (object);
   FsuSinkPrivate *priv = self->priv;
   GList *item;
 

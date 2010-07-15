@@ -249,7 +249,7 @@ fsu_source_set_property (GObject *object,
 static void
 fsu_source_dispose (GObject *object)
 {
-  FsuSource *self = (FsuSource *)object;
+  FsuSource *self = FSU_SOURCE (object);
   FsuSourcePrivate *priv = self->priv;
   GList *item, *walk;
 

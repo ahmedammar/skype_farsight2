@@ -228,7 +228,7 @@ fsu_stream_constructed (GObject *object)
 static void
 fsu_stream_dispose (GObject *object)
 {
-  FsuStream *self = (FsuStream *)object;
+  FsuStream *self = FSU_STREAM (object);
   FsuStreamPrivate *priv = self->priv;
 
   if (priv->dispose_has_run)

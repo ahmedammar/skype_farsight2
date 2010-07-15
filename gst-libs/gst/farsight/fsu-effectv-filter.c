@@ -139,7 +139,7 @@ fsu_effectv_filter_set_property (GObject *object,
 static void
 fsu_effectv_filter_dispose (GObject *object)
 {
-  FsuEffectvFilter *self = (FsuEffectvFilter *)object;
+  FsuEffectvFilter *self = FSU_EFFECTV_FILTER (object);
   FsuEffectvFilterPrivate *priv = self->priv;
 
   g_free (priv->effect);

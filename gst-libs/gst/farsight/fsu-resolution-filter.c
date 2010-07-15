@@ -164,7 +164,7 @@ fsu_resolution_filter_set_property (GObject *object,
 static void
 fsu_resolution_filter_dispose (GObject *object)
 {
-  FsuResolutionFilter *self = (FsuResolutionFilter *)object;
+  FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
 
   if (priv->dispose_has_run)

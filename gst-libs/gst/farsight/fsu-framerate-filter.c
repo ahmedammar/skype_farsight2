@@ -172,7 +172,7 @@ fsu_framerate_filter_set_property (GObject *object,
 static void
 fsu_framerate_filter_dispose (GObject *object)
 {
-  FsuFramerateFilter *self = (FsuFramerateFilter *)object;
+  FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
   FsuFramerateFilterPrivate *priv = self->priv;
 
   if (priv->dispose_has_run)

@@ -127,7 +127,7 @@ fsu_filter_set_property (GObject *object,
 static void
 fsu_filter_dispose (GObject *object)
 {
-  FsuFilter *self = (FsuFilter *)object;
+  FsuFilter *self = FSU_FILTER (object);
   FsuFilterPrivate *priv = self->priv;
 
   if (priv->dispose_has_run)

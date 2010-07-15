@@ -124,7 +124,7 @@ fsu_multi_filter_manager_init (FsuMultiFilterManager *self)
 static void
 fsu_multi_filter_manager_dispose (GObject *object)
 {
-  FsuMultiFilterManager *self = (FsuMultiFilterManager *)object;
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (object);
   FsuMultiFilterManagerPrivate *priv = self->priv;
   GList *i;
 

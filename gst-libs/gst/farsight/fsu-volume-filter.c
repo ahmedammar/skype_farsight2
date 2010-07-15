@@ -169,7 +169,7 @@ fsu_volume_filter_set_property (GObject *object,
 static void
 fsu_volume_filter_dispose (GObject *object)
 {
-  FsuVolumeFilter *self = (FsuVolumeFilter *)object;
+  FsuVolumeFilter *self = FSU_VOLUME_FILTER (object);
   FsuVolumeFilterPrivate *priv = self->priv;
 
   if (priv->dispose_has_run)
