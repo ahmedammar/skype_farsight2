@@ -7,7 +7,7 @@
 #include <gst/farsight/fsu-preview-filter.h>
 
 
-#define TIMEOUT 1000
+#define TIMEOUT 5000
 #define TWICE 1
 
 static FsuFilterId *effect_id = NULL;
@@ -15,17 +15,28 @@ static FsuFilterId *framerate_id = NULL;
 static FsuFilterId *resolution_id = NULL;
 static FsuFilterId *last_converter_id = NULL;
 static GMainLoop *mainloop = NULL;
+static GstElement *pipeline = NULL;
 
-static gboolean dump  (gpointer data)
+gboolean
+dump  (gpointer data)
 {
 
   g_debug ("Dumping pipeline");
-  GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS   (data, GST_DEBUG_GRAPH_SHOW_ALL, "test-filters");
+  GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (data, GST_DEBUG_GRAPH_SHOW_ALL,
+      "test-video-filters");
 
   return TRUE;
 }
 
-static gboolean add_effects  (gpointer data)
+gboolean
+done (gpointer data)
+{
+  g_main_loop_quit (mainloop);
+  return FALSE;
+}
+
+gboolean
+add_effects  (gpointer data)
 {
   FsuFilterManager *filters = data;
   static gint idx = 0;
@@ -35,11 +46,11 @@ static gboolean add_effects  (gpointer data)
                              "quarktv",
                              "rippletv",
   };
-  FsuEffectvFilter *filter = fsu_effectv_filter_new (effects[idx]);
-  FsuVideoconverterFilter *f1 = fsu_videoconverter_filter_get_singleton ();
+  FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
 
   g_debug ("Insert filter %s", effects[idx]);
-  fsu_filter_manager_insert_filter_before (filters, FSU_FILTER (filter), last_converter_id);
+  fsu_filter_manager_insert_filter_before (filters, filter, last_converter_id);
+  g_object_unref (filter);
 
   idx++;
   if (idx > 4) {
@@ -54,7 +65,8 @@ static gboolean add_effects  (gpointer data)
         remove = FALSE;
       if (remove)
         fsu_filter_manager_remove_filter (filters, i->data);
-      g_timeout_add (TIMEOUT, (GSourceFunc) g_main_loop_quit, mainloop);
+      g_list_free (f);
+      g_timeout_add (TIMEOUT, done, NULL);
     }
 
     return FALSE;
@@ -63,7 +75,8 @@ static gboolean add_effects  (gpointer data)
   return TRUE;
 }
 
-static gboolean change_effect  (gpointer data)
+gboolean
+change_effect  (gpointer data)
 {
   FsuFilterManager *filters = data;
   static gint idx = 0;
@@ -80,7 +93,7 @@ static gboolean change_effect  (gpointer data)
                              "streaktv",
                              "rippletv",
   };
-  FsuEffectvFilter *filter = fsu_effectv_filter_new (effects[idx]);
+  FsuFilter *filter;
 
   if (effect_id == NULL)
   {
@@ -88,8 +101,10 @@ static gboolean change_effect  (gpointer data)
     return TRUE;
   }
 
+  filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
   g_debug ("Changing effect to %s", effects[idx]);
-  effect_id = fsu_filter_manager_replace_filter (filters, FSU_FILTER (filter), effect_id);
+  effect_id = fsu_filter_manager_replace_filter (filters, filter, effect_id);
+  g_object_unref (filter);
 
   idx++;
   if (idx > 10) {
@@ -100,14 +115,17 @@ static gboolean change_effect  (gpointer data)
   return TRUE;
 }
 
-static gboolean change_reso  (gpointer data)
+gboolean
+change_reso  (gpointer data)
 {
   FsuFilterManager *filters = data;
   static gint width = 320;
   static gint height = 240;
-  FsuResolutionFilter *filter = fsu_resolution_filter_new (width, height);
+  FsuFilter *filter = FSU_FILTER (fsu_resolution_filter_new (width, height));
 
-  resolution_id = fsu_filter_manager_replace_filter (filters, FSU_FILTER (filter), resolution_id);
+  resolution_id = fsu_filter_manager_replace_filter (filters,
+      filter, resolution_id);
+  g_object_unref (filter);
 
   if (width == 1280) {
     return FALSE;
@@ -125,7 +143,8 @@ static gboolean change_reso  (gpointer data)
   return TRUE;
 }
 
-static gboolean change_fps  (gpointer data)
+gboolean
+change_fps  (gpointer data)
 {
   FsuFilterManager *filters = data;
   static gint fps = 10;
@@ -147,24 +166,31 @@ static gboolean change_fps  (gpointer data)
   printf ("Setting FPS to %d\n\n", fps);
   g_object_set (filter, "fps", fps, NULL);
 
+  dump (pipeline);
+
   return TRUE;
 }
 
 
-static gboolean add_preview  (gpointer data)
+gboolean
+add_preview  (gpointer data)
 {
   FsuFilterManager *filters = data;
+  FsuFilter *filter = FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0)));
 
   g_debug ("Adding preview filter");
-  fsu_filter_manager_append_filter (filters,
-      FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0))));
-  //g_timeout_add (5000, change_fps, filters);
+  fsu_filter_manager_append_filter (filters, filter);
+  g_object_unref (filter);
+
+  //g_timeout_add (TIMEOUT, change_fps, filters);
   //g_timeout_add (5000, change_reso, filters);
   g_timeout_add (TIMEOUT, change_effect, filters);
 
   return FALSE;
 }
-static gboolean add_filters  (gpointer data)
+
+gboolean
+add_filters  (gpointer data)
 {
   FsuFilterManager *filters = data;
   FsuFilter *f1 = FSU_FILTER (fsu_videoconverter_filter_new ());
@@ -179,7 +205,13 @@ static gboolean add_filters  (gpointer data)
   framerate_id = fsu_filter_manager_insert_filter (filters, f3, -1);
   fsu_filter_manager_append_filter (filters, f1);
   last_converter_id = fsu_filter_manager_insert_filter (filters, f1, 10);
-  effect_id = fsu_filter_manager_insert_filter_before (filters, f4, last_converter_id);
+  effect_id = fsu_filter_manager_insert_filter_before (filters, f4,
+      last_converter_id);
+
+  g_object_unref (f1);
+  g_object_unref (f2);
+  g_object_unref (f3);
+  g_object_unref (f4);
 
   /*
   FsuFilter *f3 = fsu_effectv_filter_new ("vertigotv");
@@ -196,39 +228,60 @@ static gboolean add_filters  (gpointer data)
 
 
 int main (int argc, char *argv[]) {
+  GstElement *src = NULL;
+  GstElement *sink = NULL;
+  GstPad *out_pad = NULL;
+  GstPad *src_pad = NULL;
+  GstPad *sink_pad = NULL;
+#if TWICE
+  GstElement *src2 = NULL;
+  GstElement *sink2 = NULL;
+  GstPad *out_pad2 = NULL;
+  GstPad *src_pad2 = NULL;
+  GstPad *sink_pad2 = NULL;
+#endif
+  FsuFilterManager *filters = NULL;
+
   gst_init (&argc, &argv);
 
-  GstElement *pipeline = gst_pipeline_new (NULL);
-  GstElement *src = gst_element_factory_make ("fsuvideosrc", NULL);
-  GstElement *sink = gst_element_factory_make ("fakesink", NULL);
+  mainloop = g_main_loop_new (NULL, FALSE);
+  pipeline = gst_pipeline_new (NULL);
+
+  src = gst_element_factory_make ("fsuvideosrc", NULL);
+  sink = gst_element_factory_make ("fakesink", NULL);
   g_assert (src != NULL);
   g_assert (sink != NULL);
   g_object_set (src,
       "source-pipeline", "videotestsrc is-live=TRUE pattern=1",
       NULL);
-#if TWICE
-  GstElement *src2 = gst_element_factory_make ("videotestsrc", NULL);
-  GstElement *sink2 = gst_element_factory_make ("fakesink", NULL);
-  g_assert (src2 != NULL);
-  g_assert (sink2 != NULL);
-#endif
-  GstPad *out_pad = NULL;
-  GstPad *src_pad = gst_element_get_request_pad (src, "src%d");
-  GstPad *sink_pad = gst_element_get_static_pad (sink, "sink");
+  g_object_set (sink,
+      "sync", FALSE,
+      "async", FALSE,
+      NULL);
+  src_pad = gst_element_get_request_pad (src, "src%d");
+  sink_pad = gst_element_get_static_pad (sink, "sink");
   g_assert (src_pad != NULL);
   g_assert (sink_pad != NULL);
+
 #if TWICE
-  GstPad *out_pad2 = NULL;
-  GstPad *src_pad2 = gst_element_get_static_pad (src2, "src");
-  GstPad *sink_pad2 = gst_element_get_static_pad (sink2, "sink");
+  src2 = gst_element_factory_make ("fsuvideosrc", NULL);
+  sink2 = gst_element_factory_make ("fakesink", NULL);
+  g_assert (src2 != NULL);
+  g_assert (sink2 != NULL);
+  g_object_set (sink2,
+      "sync", FALSE,
+      "async", FALSE,
+      NULL);
+  src_pad2 = gst_element_get_request_pad (src2, "src%d");
+  sink_pad2 = gst_element_get_static_pad (sink2, "sink");
   g_assert (src_pad2 != NULL);
   g_assert (sink_pad2 != NULL);
 #endif
-  FsuFilterManager *filters = fsu_multi_filter_manager_new ();
-  mainloop = g_main_loop_new (NULL, FALSE);
+  filters = fsu_multi_filter_manager_new ();
+
 
   add_filters (filters);
-  //g_timeout_add (TIMEOUT, (GSourceFunc) g_main_loop_quit, mainloop);
+  //g_timeout_add (TIMEOUT, done, NULL);
 
   g_assert (gst_bin_add (GST_BIN (pipeline), src) == TRUE);
   g_assert (gst_bin_add (GST_BIN (pipeline), sink) == TRUE);
@@ -279,12 +332,14 @@ int main (int argc, char *argv[]) {
   g_assert (fsu_filter_manager_revert (filters, GST_BIN (pipeline),
           out_pad2) == src_pad2);
   gst_object_unref (out_pad2);
+  gst_element_release_request_pad (src2, src_pad2);
   gst_object_unref (src_pad2);
   gst_bin_remove (GST_BIN (pipeline), src2);
 #endif
 
   g_object_unref (filters);
   gst_object_unref (pipeline);
+  g_main_loop_unref (mainloop);
 
   return 0;
 }
