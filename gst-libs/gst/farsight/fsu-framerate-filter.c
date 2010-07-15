@@ -172,9 +172,15 @@ fsu_framerate_filter_dispose (GObject *object)
 {
   FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
   FsuFramerateFilterPrivate *priv = self->priv;
+  GList *i;
 
+  if(priv->caps)
+    gst_caps_unref (priv->caps);
 
-  gst_caps_unref (priv->caps);
+  for (i = priv->elements; i; i = i->next)
+    gst_object_unref (i->data);
+  g_list_free (priv->elements);
+  priv->elements = NULL;
 
   G_OBJECT_CLASS (fsu_framerate_filter_parent_class)->dispose (object);
 }

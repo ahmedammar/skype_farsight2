@@ -142,7 +142,8 @@ fsu_effectv_filter_dispose (GObject *object)
   FsuEffectvFilter *self = FSU_EFFECTV_FILTER (object);
   FsuEffectvFilterPrivate *priv = self->priv;
 
-  g_free (priv->effect);
+  if (priv->effect)
+    g_free (priv->effect);
   priv->effect = NULL;
 
   G_OBJECT_CLASS (fsu_effectv_filter_parent_class)->dispose (object);

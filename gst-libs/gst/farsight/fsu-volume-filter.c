@@ -168,7 +168,12 @@ fsu_volume_filter_dispose (GObject *object)
 {
   FsuVolumeFilter *self = FSU_VOLUME_FILTER (object);
   FsuVolumeFilterPrivate *priv = self->priv;
+  GList *i;
 
+  for (i = priv->elements; i; i = i->next)
+    gst_object_unref (i->data);
+  g_list_free (priv->elements);
+  priv->elements = NULL;
 
   G_OBJECT_CLASS (fsu_volume_filter_parent_class)->dispose (object);
 }
@@ -197,6 +202,7 @@ fsu_volume_filter_apply (FsuFilter *filter,
     g_object_set (volume,
         "volume", self->priv->volume,
         "mute", self->priv->mute, NULL);
+    gst_object_unref (volume);
   }
 
   return ret;
