@@ -27,6 +27,7 @@
 
 #include <gst/farsight/fsu-preview-filter.h>
 #include <gst/farsight/fsu-filter-helper.h>
+#include <gst/farsight/fsu-single-filter-manager.h>
 
 
 G_DEFINE_TYPE (FsuPreviewFilter, fsu_preview_filter, FSU_TYPE_FILTER);
@@ -52,6 +53,7 @@ static GstPad *fsu_preview_filter_revert (FsuFilter *filter,
 enum
 {
   PROP_ID = 1,
+  PROP_FILTER_MANAGER,
   LAST_PROPERTY
 };
 
@@ -62,6 +64,7 @@ struct _FsuPreviewFilterPrivate
   gpointer id;
   GstElement *sink;
   GstPad *sink_pad;
+  FsuFilterManager *manager;
 };
 
 static void
@@ -85,6 +88,12 @@ fsu_preview_filter_class_init (FsuPreviewFilterClass *klass)
           "The id to use for embedding the preview window",
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  g_object_class_install_property (gobject_class, PROP_FILTER_MANAGER,
+      g_param_spec_object ("filter-manager", "Filter manager",
+          "The filter manager to apply on the preview window",
+          FSU_TYPE_SINGLE_FILTER_MANAGER,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
 }
 
 static void
@@ -95,6 +104,7 @@ fsu_preview_filter_init (FsuPreviewFilter *self)
           FsuPreviewFilterPrivate);
 
   self->priv = priv;
+  priv->manager = fsu_single_filter_manager_new ();
 }
 
 static void
@@ -111,6 +121,9 @@ fsu_preview_filter_get_property (GObject *object,
   {
     case PROP_ID:
       g_value_set_pointer (value, priv->id);
+      break;
+    case PROP_FILTER_MANAGER:
+      g_value_set_object (value, priv->manager);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -133,7 +146,6 @@ fsu_preview_filter_set_property (GObject *object,
       priv->id = g_value_get_pointer (value);
       if (priv->sink)
         g_object_set (priv->sink, "id", priv->id, NULL);
-
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -153,6 +165,10 @@ fsu_preview_filter_dispose (GObject *object)
   if (priv->sink)
     gst_object_unref (priv->sink);
   priv->sink = NULL;
+
+  if (priv->manager)
+    g_object_unref (priv->manager);
+  priv->manager = NULL;
 
   G_OBJECT_CLASS (fsu_preview_filter_parent_class)->dispose (object);
 }
@@ -178,6 +194,7 @@ fsu_preview_filter_apply (FsuFilter *filter,
   GstPad *out_pad = NULL;
   GstPad *tee_pad = NULL;
   GstPad *preview_pad = NULL;
+  GstPad *filter_pad = NULL;
   GstPad *sink_pad = NULL;
 
   if (priv->sink)
@@ -259,14 +276,19 @@ fsu_preview_filter_apply (FsuFilter *filter,
     return NULL;
   }
 
-
   g_object_set (sink,
       "id", priv->id,
       "sync", FALSE,
       "async", FALSE,
       NULL);
 
-  if (!fsu_filter_add_element (bin, preview_pad, sink, sink_pad))
+  filter_pad = fsu_filter_manager_apply (priv->manager, bin, preview_pad);
+
+  if (!filter_pad)
+    filter_pad = gst_object_ref (preview_pad);
+  gst_object_unref (preview_pad);
+
+  if (!fsu_filter_add_element (bin, filter_pad, sink, sink_pad))
   {
     gst_bin_remove (bin, tee);
     gst_object_unref (sink);
@@ -275,7 +297,7 @@ fsu_preview_filter_apply (FsuFilter *filter,
     if (GST_PAD_IS_SINK (pad) && tee_pad)
       gst_element_release_request_pad (tee, tee_pad);
     gst_element_release_request_pad (tee, preview_pad);
-    gst_object_unref (preview_pad);
+    gst_object_unref (filter_pad);
     gst_element_release_request_pad (sink, sink_pad);
     gst_object_unref (sink_pad);
     gst_object_unref (tee_pad);
@@ -285,7 +307,7 @@ fsu_preview_filter_apply (FsuFilter *filter,
   }
 
   gst_object_unref (tee_pad);
-  gst_object_unref (preview_pad);
+  gst_object_unref (filter_pad);
   priv->sink = gst_object_ref (sink);
   priv->sink_pad = sink_pad;
 
@@ -301,6 +323,7 @@ fsu_preview_filter_revert (FsuFilter *filter,
   FsuPreviewFilterPrivate *priv = self->priv;
   GstElement *tee = GST_ELEMENT (gst_pad_get_parent (pad));
   GstPad *tee_pad = NULL;
+  GstPad *filter_pad = NULL;
   GstPad *out_pad = NULL;
 
   if (GST_PAD_IS_SRC (pad))
@@ -319,7 +342,11 @@ fsu_preview_filter_revert (FsuFilter *filter,
 
   gst_element_release_request_pad (tee, tee_pad);
   gst_object_unref (tee_pad);
-  tee_pad = gst_pad_get_peer (priv->sink_pad);
+  filter_pad = gst_pad_get_peer (priv->sink_pad);
+  tee_pad = fsu_filter_manager_revert (priv->manager, bin, filter_pad);
+  if (!tee_pad)
+    tee_pad = gst_object_ref (filter_pad);
+  gst_object_unref (filter_pad);
   gst_element_release_request_pad (tee, tee_pad);
   gst_object_unref (tee_pad);
   gst_bin_remove (bin, tee);
