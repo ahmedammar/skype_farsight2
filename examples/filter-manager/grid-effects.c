@@ -202,6 +202,9 @@ int main (int argc, char *argv[]) {
   FsuFilterManager *filters = NULL;
   GOptionContext *optcontext;
 
+  if (!g_thread_get_initialized ())
+    g_thread_init(NULL);
+
   optcontext = g_option_context_new ("Grid Effects example");
   g_option_context_add_group (optcontext, gst_init_get_option_group ());
   g_option_context_add_group (optcontext, gtk_get_option_group (TRUE));
