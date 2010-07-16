@@ -214,7 +214,9 @@ fsu_stream_constructed (GObject *object)
       priv->sink = NULL;
     }
     gst_object_unref (pipeline);
-    gst_object_unref (parent);
+
+    if (parent)
+      gst_object_unref (parent);
   }
 
 }

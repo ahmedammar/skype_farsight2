@@ -194,7 +194,9 @@ fsu_session_constructed (GObject *object)
       priv->source = NULL;
     }
     gst_object_unref (pipeline);
-    gst_object_unref (parent);
+
+    if (parent)
+      gst_object_unref (parent);
   }
 
 }
