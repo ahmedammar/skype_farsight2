@@ -181,16 +181,20 @@ fsu_session_constructed (GObject *object)
 
   if (priv->source)
   {
+    GstObject *parent = gst_object_get_parent (GST_OBJECT (priv->source));
+
     g_object_get (priv->conference,
         "pipeline", &pipeline,
         NULL);
 
-    if (!gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source)))
+    if ((parent && parent != GST_OBJECT (pipeline)) ||
+        !gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source)))
     {
       gst_object_unref (GST_OBJECT (priv->source));
       priv->source = NULL;
     }
     gst_object_unref (pipeline);
+    gst_object_unref (parent);
   }
 
 }
