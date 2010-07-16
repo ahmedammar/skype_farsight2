@@ -1,5 +1,5 @@
 
-noinst_PROGRAMS = test-video-filters
+noinst_PROGRAMS = test-video-filters test-level
 
 if HAVE_GTK
  noinst_PROGRAMS += grid-effects

@@ -487,5 +487,16 @@ fsu_preview_filter_new
 fsu_single_filter_manager_get_type
 fsu_single_filter_manager_new
 fsu_sink_element_added
+FSU_IS_LEVEL_FILTER
+FSU_IS_LEVEL_FILTER_CLASS
+FSU_LEVEL_FILTER
+FSU_LEVEL_FILTER_CLASS
+FSU_LEVEL_FILTER_GET_CLASS
+FSU_TYPE_LEVEL_FILTER
+FsuLevelFilter
+FsuLevelFilterClass
+FsuLevelFilterPrivate
+fsu_level_filter_get_type
+fsu_level_filter_new
 
 </SECTION>
