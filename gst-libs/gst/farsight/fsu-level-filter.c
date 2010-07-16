@@ -142,6 +142,7 @@ fsu_level_filter_revert (FsuFilter *filter,
  GstPad *pad)
 {
   FsuLevelFilter *self = FSU_LEVEL_FILTER (filter);
+
   return fsu_filter_revert_standard_element (bin, pad, &self->priv->elements);
 }
 

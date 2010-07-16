@@ -91,7 +91,7 @@ fsu_preview_filter_class_init (FsuPreviewFilterClass *klass)
   g_object_class_install_property (gobject_class, PROP_FILTER_MANAGER,
       g_param_spec_object ("filter-manager", "Filter manager",
           "The filter manager to apply on the preview window",
-          FSU_TYPE_SINGLE_FILTER_MANAGER,
+          FSU_TYPE_FILTER_MANAGER,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
 }
