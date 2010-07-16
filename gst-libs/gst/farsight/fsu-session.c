@@ -58,7 +58,6 @@ enum
 
 struct _FsuSessionPrivate
 {
-  gboolean dispose_has_run;
   FsuConference *conference;
   FsSession *session;
   FsuSource *source;
@@ -112,7 +111,6 @@ fsu_session_init (FsuSession *self)
           FsuSessionPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->filters = fsu_single_filter_manager_new ();
 }
 
@@ -174,14 +172,12 @@ fsu_session_set_property (GObject *object,
 static void
 fsu_session_constructed (GObject *object)
 {
-  void (*chain_up) (GObject *) =
-      G_OBJECT_CLASS (fsu_session_parent_class)->constructed;
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
   GstElement *pipeline = NULL;
 
-  if (chain_up)
-    chain_up (object);
+  if (G_OBJECT_CLASS (fsu_session_parent_class)->constructed)
+    G_OBJECT_CLASS (fsu_session_parent_class)->constructed (object);
 
   if (priv->source)
   {
@@ -191,10 +187,10 @@ fsu_session_constructed (GObject *object)
 
     if (!gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source)))
     {
-      /* TODO: signal/other error */
       gst_object_unref (GST_OBJECT (priv->source));
       priv->source = NULL;
     }
+    gst_object_unref (pipeline);
   }
 
 }
@@ -204,11 +200,6 @@ fsu_session_dispose (GObject *object)
 {
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
-
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
   if (priv->conference)
     gst_object_unref (priv->conference);
@@ -225,14 +216,16 @@ fsu_session_dispose (GObject *object)
   }
   priv->streams = NULL;
 
-  /* TODO: release requested pads */
+  while (priv->sending > 0)
+    _fsu_session_stop_sending (self);
 
   if (priv->source)
-  {
-    //fsu_source_stop (priv->source);
     gst_object_unref (GST_OBJECT (priv->source));
-  }
   priv->source = NULL;
+
+  if (priv->filters)
+    g_object_unref (priv->filters);
+  priv->filters = NULL;
 
   G_OBJECT_CLASS (fsu_session_parent_class)->dispose (object);
 }
@@ -248,6 +241,7 @@ _fsu_session_new (FsuConference *conference,
   g_return_val_if_fail (FSU_IS_CONFERENCE (conference), NULL);
   g_return_val_if_fail (session, NULL);
   g_return_val_if_fail (FS_IS_SESSION (session), NULL);
+  g_return_val_if_fail (!source || FSU_IS_SOURCE (source), NULL);
 
   return g_object_new (FSU_TYPE_SESSION,
       "fsu-conference", conference,
@@ -305,7 +299,7 @@ _fsu_session_start_sending (FsuSession *self)
     goto no_source;
 
   if (priv->sending > 0)
-    return TRUE;
+    goto done;
 
   g_object_get (priv->conference,
       "pipeline", &pipeline,
@@ -316,19 +310,14 @@ _fsu_session_start_sending (FsuSession *self)
   if (!srcpad)
   {
     error = "Couldn't request pad from Source";
-    gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
     goto no_source;
   }
 
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), srcpad);
+
   if (!filter_pad)
-  {
-    error = "Couldn't add filter manager";
-    gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
-    /* TODO: release pad if requested */
-    goto no_source;
-  }
+    filter_pad = gst_object_ref (srcpad);
   gst_object_unref (srcpad);
 
   g_object_get (priv->session,
@@ -337,29 +326,45 @@ _fsu_session_start_sending (FsuSession *self)
 
   if (gst_pad_link (filter_pad, sinkpad) != GST_PAD_LINK_OK)
   {
+    srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
+        filter_pad);
+    if (srcpad)
+    {
+      gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
+      gst_object_unref (srcpad);
+    }
     gst_object_unref (sinkpad);
     gst_object_unref (filter_pad);
-    gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
-    error = "Couldn't link the volume/level/src to fsrtpconference";
     goto no_source;
   }
-
-  gst_object_unref (sinkpad);
 
   if (gst_element_set_state (GST_ELEMENT (priv->source), GST_STATE_READY) !=
       GST_STATE_CHANGE_SUCCESS)
   {
-    error = "Couldn't set source to READY";
+    gst_pad_unlink (filter_pad, sinkpad);
+    srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
+        filter_pad);
+    if (srcpad)
+    {
+      gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
+      gst_object_unref (srcpad);
+    }
+    gst_object_unref (sinkpad);
+    gst_object_unref (filter_pad);
     goto no_source;
   }
+
+  gst_object_unref (filter_pad);
+  gst_object_unref (sinkpad);
+
   if (GST_STATE (pipeline) > GST_STATE_NULL)
     gst_element_sync_state_with_parent (GST_ELEMENT (priv->source));
 
+ done:
   priv->sending++;
 
   return TRUE;
  no_source:
-  /* TODO: signal/other error */
   return FALSE;
 }
 
@@ -388,8 +393,11 @@ _fsu_session_stop_sending (FsuSession *self)
       gst_pad_unlink (filter_pad, sinkpad);
       srcpad = fsu_filter_manager_revert (priv->filters,
           GST_BIN (pipeline), filter_pad);
-      /* TODO: release request pad */
-      gst_element_set_state (GST_ELEMENT (priv->source), GST_STATE_NULL);
+      gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
+      gst_object_unref (srcpad);
+      gst_object_unref (filter_pad);
+      gst_object_unref (sinkpad);
+      gst_object_unref (pipeline);
     }
   }
 }
