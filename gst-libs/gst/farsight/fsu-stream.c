@@ -225,25 +225,40 @@ fsu_stream_dispose (GObject *object)
   fsu_stream_stop_sending (self);
   fsu_stream_stop_receiving (self);
 
-  if (priv->conference)
-    gst_object_unref (priv->conference);
-  priv->conference = NULL;
-
-  if (priv->session)
-    gst_object_unref (priv->session);
-  priv->session = NULL;
-
-  if (priv->stream)
-    gst_object_unref (priv->stream);
-  priv->stream = NULL;
-
   if (priv->sink)
+  {
+    if (GST_OBJECT_REFCOUNT(priv->sink) == 1)
+    {
+      GstElement *pipeline = NULL;
+
+      g_object_get (priv->conference,
+          "pipeline", &pipeline,
+          NULL);
+
+      gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->sink));
+      gst_object_unref (pipeline);
+      gst_element_set_state (GST_ELEMENT (priv->sink), GST_STATE_NULL);
+    }
+
     gst_object_unref (GST_OBJECT (priv->sink));
+  }
   priv->sink = NULL;
 
   if (priv->filters)
     g_object_unref (priv->filters);
   priv->filters = NULL;
+
+  if (priv->stream)
+    gst_object_unref (priv->stream);
+  priv->stream = NULL;
+
+  if (priv->session)
+    gst_object_unref (priv->session);
+  priv->session = NULL;
+
+  if (priv->conference)
+    gst_object_unref (priv->conference);
+  priv->conference = NULL;
 
   G_OBJECT_CLASS (fsu_stream_parent_class)->dispose (object);
 }
@@ -422,7 +437,7 @@ fsu_stream_start_sending (FsuStream *self)
   priv->sending = TRUE;
   g_object_get (priv->stream, "direction", &direction, NULL);
 
-  new_direction = (FsStreamDirection)(direction  | FS_DIRECTION_SEND);
+  new_direction = (direction  | FS_DIRECTION_SEND);
 
   if (new_direction != direction)
     g_object_set (priv->stream, "direction", new_direction, NULL);
@@ -443,7 +458,7 @@ fsu_stream_stop_sending (FsuStream *self)
   priv->sending = FALSE;
   g_object_get (priv->stream, "direction", &direction, NULL);
 
-  new_direction = (FsStreamDirection)(direction & ~FS_DIRECTION_SEND);
+  new_direction = (direction & ~FS_DIRECTION_SEND);
 
   if (new_direction != direction)
     g_object_set (priv->stream, "direction", new_direction, NULL);
@@ -495,7 +510,7 @@ fsu_stream_start_receiving (FsuStream *self)
 
   g_object_get (priv->stream, "direction", &direction, NULL);
 
-  new_direction = (FsStreamDirection)(direction | FS_DIRECTION_RECV);
+  new_direction = (direction | FS_DIRECTION_RECV);
 
   if (new_direction != direction)
     g_object_set (priv->stream, "direction", new_direction, NULL);
@@ -544,7 +559,7 @@ fsu_stream_stop_receiving (FsuStream *self)
 
   g_object_get (priv->stream, "direction", &direction, NULL);
 
-  new_direction = (FsStreamDirection)(direction & ~FS_DIRECTION_RECV);
+  new_direction = (direction & ~FS_DIRECTION_RECV);
 
   if (new_direction != direction)
     g_object_set (priv->stream, "direction", new_direction, NULL);

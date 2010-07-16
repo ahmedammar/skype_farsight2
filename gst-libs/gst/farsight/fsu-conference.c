@@ -189,6 +189,13 @@ fsu_conference_dispose (GObject *object)
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
 
+  if (priv->sessions)
+  {
+    g_list_foreach (priv->sessions, remove_weakref, self);
+    g_list_free (priv->sessions);
+  }
+  priv->sessions = NULL;
+
   if (priv->conference)
   {
     if (priv->pipeline)
@@ -199,15 +206,12 @@ fsu_conference_dispose (GObject *object)
   priv->conference = NULL;
 
   if (priv->pipeline)
-    gst_object_unref (priv->pipeline);
-  priv->pipeline = NULL;
-
-  if (priv->sessions)
   {
-    g_list_foreach (priv->sessions, remove_weakref, self);
-    g_list_free (priv->sessions);
+    if (GST_OBJECT_REFCOUNT(priv->pipeline) == 1)
+      gst_element_set_state (priv->pipeline, GST_STATE_NULL);
+    gst_object_unref (priv->pipeline);
   }
-  priv->sessions = NULL;
+  priv->pipeline = NULL;
 
   G_OBJECT_CLASS (fsu_conference_parent_class)->dispose (object);
 }

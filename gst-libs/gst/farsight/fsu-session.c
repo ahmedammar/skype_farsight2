@@ -201,13 +201,31 @@ fsu_session_dispose (GObject *object)
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
 
-  if (priv->conference)
-    gst_object_unref (priv->conference);
-  priv->conference = NULL;
+  while (priv->sending > 0)
+    _fsu_session_stop_sending (self);
 
-  if (priv->session)
-    gst_object_unref (priv->session);
-  priv->session = NULL;
+  if (priv->source)
+  {
+    if (GST_OBJECT_REFCOUNT(priv->source) == 1)
+    {
+      GstElement *pipeline = NULL;
+
+      g_object_get (priv->conference,
+          "pipeline", &pipeline,
+          NULL);
+
+      gst_bin_remove (GST_BIN (pipeline), GST_ELEMENT (priv->source));
+      gst_object_unref (pipeline);
+      gst_element_set_state (GST_ELEMENT (priv->source), GST_STATE_NULL);
+    }
+
+    gst_object_unref (GST_OBJECT (priv->source));
+  }
+  priv->source = NULL;
+
+  if (priv->filters)
+    g_object_unref (priv->filters);
+  priv->filters = NULL;
 
   if (priv->streams)
   {
@@ -216,16 +234,13 @@ fsu_session_dispose (GObject *object)
   }
   priv->streams = NULL;
 
-  while (priv->sending > 0)
-    _fsu_session_stop_sending (self);
+  if (priv->session)
+    gst_object_unref (priv->session);
+  priv->session = NULL;
 
-  if (priv->source)
-    gst_object_unref (GST_OBJECT (priv->source));
-  priv->source = NULL;
-
-  if (priv->filters)
-    g_object_unref (priv->filters);
-  priv->filters = NULL;
+  if (priv->conference)
+    gst_object_unref (priv->conference);
+  priv->conference = NULL;
 
   G_OBJECT_CLASS (fsu_session_parent_class)->dispose (object);
 }
