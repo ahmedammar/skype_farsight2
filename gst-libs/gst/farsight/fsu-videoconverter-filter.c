@@ -38,17 +38,11 @@ fsu_videoconverter_filter_init (FsuVideoconverterFilter *self)
 FsuVideoconverterFilter *
 fsu_videoconverter_filter_new (void)
 {
-  return g_object_new (FSU_TYPE_VIDEOCONVERTER_FILTER, NULL);
-}
-
-FsuVideoconverterFilter *
-fsu_videoconverter_filter_get_singleton (void)
-{
   static FsuVideoconverterFilter *singleton = NULL;
 
   if (!singleton)
   {
-    singleton = fsu_videoconverter_filter_new ();
+    singleton = g_object_new (FSU_TYPE_VIDEOCONVERTER_FILTER, NULL);
     g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer *)&singleton);
   }
   else
@@ -58,7 +52,6 @@ fsu_videoconverter_filter_get_singleton (void)
 
   return singleton;
 }
-
 
 static GstPad *
 fsu_videoconverter_filter_apply (FsuFilter *filter,

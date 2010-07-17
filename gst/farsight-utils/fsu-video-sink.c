@@ -110,7 +110,7 @@ static void
 add_filters (FsuSink *self,
     FsuFilterManager *manager)
 {
-  FsuVideoconverterFilter *filter = fsu_videoconverter_filter_get_singleton ();
+  FsuVideoconverterFilter *filter = fsu_videoconverter_filter_new ();
 
   fsu_filter_manager_append_filter (manager, FSU_FILTER (filter));
   g_object_unref (filter);

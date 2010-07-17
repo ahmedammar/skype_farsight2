@@ -36,17 +36,11 @@ fsu_audioconverter_filter_init (FsuAudioconverterFilter *self)
 FsuAudioconverterFilter *
 fsu_audioconverter_filter_new (void)
 {
-  return g_object_new (FSU_TYPE_AUDIOCONVERTER_FILTER, NULL);
-}
-
-FsuAudioconverterFilter *
-fsu_audioconverter_filter_get_singleton (void)
-{
   static FsuAudioconverterFilter *singleton = NULL;
 
   if (!singleton)
   {
-    singleton = fsu_audioconverter_filter_new ();
+    singleton = g_object_new (FSU_TYPE_AUDIOCONVERTER_FILTER, NULL);
     g_object_add_weak_pointer (G_OBJECT (singleton), (gpointer *)&singleton);
   }
   else

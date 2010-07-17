@@ -64,7 +64,6 @@ struct _FsuAudioconverterFilter
 GType fsu_audioconverter_filter_get_type (void) G_GNUC_CONST;
 
 FsuAudioconverterFilter *fsu_audioconverter_filter_new (void);
-FsuAudioconverterFilter *fsu_audioconverter_filter_get_singleton (void);
 
 G_END_DECLS
 

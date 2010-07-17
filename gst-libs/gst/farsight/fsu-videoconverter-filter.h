@@ -64,7 +64,6 @@ struct _FsuVideoconverterFilter
 GType fsu_videoconverter_filter_get_type (void) G_GNUC_CONST;
 
 FsuVideoconverterFilter *fsu_videoconverter_filter_new (void);
-FsuVideoconverterFilter *fsu_videoconverter_filter_get_singleton (void);
 
 G_END_DECLS
 
