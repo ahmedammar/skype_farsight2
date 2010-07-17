@@ -23,7 +23,7 @@
 #define __FSU_SINK_CLASS_H__
 
 #include <gst/farsight/fsu-sink.h>
-#include <gst/farsight/fsu-single-filter-manager.h>
+#include <gst/farsight/fsu-multi-filter-manager.h>
 
 struct _FsuSinkClass
 {

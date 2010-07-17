@@ -117,8 +117,8 @@ struct _FsuSourcePrivate
   gint probe_idx;
   /* Thread for replacing the source */
   GThread *thread;
-  /* The list of FsuFilterManager filters to apply on the source */
-  GList *filters;
+  /* A FsuMultiFilterManager filters to apply on the source */
+  FsuFilterManager *filters;
 };
 
 
@@ -184,6 +184,9 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
 
   self->priv = priv;
   priv->probe_idx = -1;
+  priv->filters = fsu_multi_filter_manager_new ();
+  if (FSU_SOURCE_GET_CLASS (self)->add_filters)
+    FSU_SOURCE_GET_CLASS (self)->add_filters (self, priv->filters);
 }
 
 static void
@@ -294,21 +297,13 @@ fsu_source_dispose (GObject *object)
 
   priv->priority_source_ptr = NULL;
 
-  g_assert (priv->filters == NULL);
+  g_object_unref (priv->filters);
+
   g_assert (priv->thread == NULL);
 
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
-}
-
-
-static void
-add_filters (FsuSource *self,
-    FsuFilterManager *manager)
-{
-  if (FSU_SOURCE_GET_CLASS (self)->add_filters)
-    FSU_SOURCE_GET_CLASS (self)->add_filters (self, manager);
 }
 
 static void
@@ -509,11 +504,8 @@ fsu_source_request_new_pad (GstElement * element,
     return NULL;
   }
 
-  filter = fsu_single_filter_manager_new ();
-  add_filters (self, filter);
-
   GST_OBJECT_LOCK (GST_OBJECT (self));
-  priv->filters = g_list_prepend (priv->filters, filter);
+  filter = priv->filters;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), tee_pad);
@@ -522,11 +514,6 @@ fsu_source_request_new_pad (GstElement * element,
   {
     WARNING ("Could not add filters to source tee pad");
     filter_pad = gst_object_ref (tee_pad);
-    GST_OBJECT_LOCK (GST_OBJECT (self));
-    priv->filters = g_list_remove (priv->filters, filter);
-    GST_OBJECT_UNLOCK (GST_OBJECT (self));
-    g_object_unref (filter);
-    filter = NULL;
   }
   gst_object_unref (tee_pad);
 
@@ -561,45 +548,22 @@ fsu_source_release_pad (GstElement * element,
   {
     GstPad *filter_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
     GstPad *tee_pad = NULL;
-    GList *i = NULL;
+    FsuFilterManager *filter = NULL;
+    GstElement *tee = NULL;
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    i = priv->filters;
+    tee = gst_object_ref (priv->tee);
+    filter = priv->filters;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
-    for (; i; i = i->next)
-    {
-      FsuFilterManager *manager = i->data;
-      GstPad *out_pad = NULL;
-      g_object_get (manager,
-          "out-pad", &out_pad,
-          NULL);
-      if (out_pad == filter_pad)
-      {
-        tee_pad = fsu_filter_manager_revert (manager, GST_BIN (self),
-            filter_pad);
 
-        GST_OBJECT_LOCK (GST_OBJECT (self));
-        priv->filters = g_list_remove (priv->filters, manager);
-        GST_OBJECT_UNLOCK (GST_OBJECT (self));
-
-        g_object_unref (manager);
-        gst_object_unref (out_pad);
-        break;
-      }
-      gst_object_unref (out_pad);
-    }
+    tee_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
+    if (!tee_pad)
+      tee_pad = gst_object_ref (filter_pad);
     gst_object_unref (filter_pad);
-    if (tee_pad)
-    {
-      GstElement *tee = NULL;
 
-      GST_OBJECT_LOCK (GST_OBJECT (self));
-      tee = priv->tee;
-      GST_OBJECT_UNLOCK (GST_OBJECT (self));
-
-      gst_element_release_request_pad (tee, tee_pad);
-      gst_object_unref (tee_pad);
-    }
+    gst_element_release_request_pad (tee, tee_pad);
+    gst_object_unref (tee_pad);
+    gst_object_unref (tee);
   }
 
   gst_element_remove_pad (element, pad);

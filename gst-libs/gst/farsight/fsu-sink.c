@@ -102,8 +102,8 @@ struct _FsuSinkPrivate
   /* The mixer element to mix */
   GstElement *mixer;
   GList *sinks;
-  /* The list of FsuFilterManager filters to apply on the sink */
-  GList *filters;
+  /* The FsuMultiFilterManager filters to apply on the sink */
+  FsuFilterManager *filters;
 };
 
 
@@ -172,7 +172,9 @@ fsu_sink_init (FsuSink *self, FsuSinkClass *klass)
   self->priv = priv;
   priv->dispose_has_run = FALSE;
   priv->sync = priv->async = TRUE;
-
+  priv->filters = fsu_multi_filter_manager_new ();
+  if (FSU_SINK_GET_CLASS (self)->add_filters)
+    FSU_SINK_GET_CLASS (self)->add_filters (self, priv->filters);
 }
 
 static void
@@ -273,9 +275,10 @@ fsu_sink_dispose (GObject *object)
     g_free (priv->sink_pipeline);
   priv->sink_pipeline = NULL;
 
+  g_object_unref (priv->filters);
+
   g_assert (priv->mixer == NULL);
   g_assert (priv->sinks == NULL);
-  g_assert (priv->filters == NULL);
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
@@ -471,16 +474,6 @@ check_and_remove_mixer (FsuSink *self)
   }
 }
 
-
-static void
-add_filters (FsuSink *self,
-    FsuFilterManager *manager)
-{
-  if (FSU_SINK_GET_CLASS (self)->add_filters)
-    FSU_SINK_GET_CLASS (self)->add_filters (self, manager);
-}
-
-
 static GstPad *
 fsu_sink_request_new_pad (GstElement * element,
     GstPadTemplate * templ,
@@ -600,19 +593,14 @@ fsu_sink_request_new_pad (GstElement * element,
     }
   }
 
-  filter = fsu_single_filter_manager_new ();
-  priv->filters = g_list_prepend (priv->filters, filter);
-  add_filters (self, filter);
+  filter = priv->filters;
 
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad);
 
   if (!filter_pad)
   {
     WARNING ("Could not add filters to sink pad");
-    priv->filters = g_list_remove (priv->filters, filter);
     filter_pad = gst_object_ref (sink_pad);
-    g_object_unref (filter);
-    filter = NULL;
   }
 
   pad = gst_ghost_pad_new (name, filter_pad);
@@ -625,13 +613,8 @@ fsu_sink_request_new_pad (GstElement * element,
       gst_bin_remove (GST_BIN (self), sink);
       gst_object_unref (sink);
     }
-    if (filter)
-    {
-      gst_object_unref (sink_pad);
-      sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
-      priv->filters = g_list_remove (priv->filters, filter);
-      g_object_unref (filter);
-    }
+    gst_object_unref (sink_pad);
+    sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
     if (priv->mixer)
     {
       gst_element_release_request_pad (priv->mixer, sink_pad);
@@ -675,47 +658,30 @@ fsu_sink_release_pad (GstElement * element,
   {
     GstPad *filter_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
     GstPad *sink_pad = NULL;
-    GList *i = NULL;
+    FsuFilterManager *manager = priv->filters;
 
-    for (i = priv->filters; i; i = i->next)
-    {
-      FsuFilterManager *manager = i->data;
-      GstPad *out_pad = NULL;
-      g_object_get (manager,
-          "out-pad", &out_pad,
-          NULL);
-      if (out_pad == filter_pad)
-      {
-        sink_pad = fsu_filter_manager_revert (manager,
-            GST_BIN (self), filter_pad);
-        priv->filters = g_list_remove (priv->filters, manager);
-        g_object_unref (manager);
-        gst_object_unref (out_pad);
-        break;
-      }
-      gst_object_unref (out_pad);
-    }
+    sink_pad = fsu_filter_manager_revert (manager, GST_BIN (self), filter_pad);
+    if (!sink_pad)
+      sink_pad = gst_object_ref (filter_pad);
     gst_object_unref (filter_pad);
-    if (sink_pad)
+
+    if (priv->mixer)
     {
-      if (priv->mixer)
-      {
-        gst_element_release_request_pad (priv->mixer, sink_pad);
-        gst_object_unref (sink_pad);
-        check_and_remove_mixer (self);
-      }
-      else
-      {
-        GstElement *sink = GST_ELEMENT (
-            gst_object_get_parent (GST_OBJECT (sink_pad)));
-        gst_object_unref (sink_pad);
-        gst_element_set_state (sink, GST_STATE_NULL);
-        gst_bin_remove (GST_BIN (self), sink);
-        priv->sinks = g_list_remove (priv->sinks, sink);
-        gst_object_unref (sink);
-        /* From the get_parent */
-        gst_object_unref (sink);
-      }
+      gst_element_release_request_pad (priv->mixer, sink_pad);
+      gst_object_unref (sink_pad);
+      check_and_remove_mixer (self);
+    }
+    else
+    {
+      GstElement *sink = GST_ELEMENT (
+          gst_object_get_parent (GST_OBJECT (sink_pad)));
+      gst_object_unref (sink_pad);
+      gst_element_set_state (sink, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (self), sink);
+      priv->sinks = g_list_remove (priv->sinks, sink);
+      gst_object_unref (sink);
+      /* From the get_parent */
+      gst_object_unref (sink);
     }
   }
 
