@@ -252,12 +252,14 @@ fsu_source_dispose (GObject *object)
   GList *item, *walk;
 
  restart:
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   for (item = GST_ELEMENT_PADS (object); item; item = g_list_next (item))
   {
     GstPad *pad = GST_PAD (item->data);
 
     if (GST_PAD_IS_SRC (pad))
     {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       gst_element_release_request_pad (GST_ELEMENT (object), pad);
       goto restart;
     }
@@ -295,6 +297,8 @@ fsu_source_dispose (GObject *object)
   g_assert (priv->filters == NULL);
   g_assert (priv->thread == NULL);
 
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
@@ -313,29 +317,46 @@ check_and_remove_tee (FsuSource *self)
   FsuSourcePrivate *priv = self->priv;
   GList *item;
 
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   for (item = GST_ELEMENT_PADS (self); item; item = g_list_next (item))
   {
     GstPad *pad = GST_PAD (item->data);
 
     if (GST_PAD_IS_SRC (pad))
+    {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       return;
+    }
   }
 
   DEBUG ("No more request source pads");
   if (priv->tee)
   {
-    gst_bin_remove (GST_BIN (self), priv->tee);
-    gst_element_set_state (priv->tee, GST_STATE_NULL);
-    gst_object_unref (priv->tee);
+    GstElement *tee = priv->tee;
+
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    gst_bin_remove (GST_BIN (self), tee);
+    gst_element_set_state (tee, GST_STATE_NULL);
+    gst_object_unref (tee);
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->tee = NULL;
   }
   if (priv->source)
   {
-    gst_bin_remove (GST_BIN (self), priv->source);
-    gst_element_set_state (priv->source, GST_STATE_NULL);
-    gst_object_unref (priv->source);
+    GstElement *source = priv->source;
+
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    gst_bin_remove (GST_BIN (self), source);
+    gst_element_set_state (source, GST_STATE_NULL);
+    gst_object_unref (source);
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->source = NULL;
   }
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 }
 
 static void
@@ -346,6 +367,7 @@ create_source_and_link_tee (FsuSource *self)
   GstPad *src_pad = NULL;
   GstPad *tee_pad = NULL;
 
+  /* TODO: mutex on these ? */
   g_return_if_fail (priv->tee);
   g_return_if_fail (!priv->source);
 
@@ -368,7 +390,14 @@ create_source_and_link_tee (FsuSource *self)
 
   if (src_pad)
   {
-    tee_pad = gst_element_get_static_pad (priv->tee, "sink");
+    GstElement *tee = NULL;
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    tee = gst_object_ref (priv->tee);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    tee_pad = gst_element_get_static_pad (tee, "sink");
+    gst_object_unref (tee);
 
     if (tee_pad)
     {
@@ -395,7 +424,9 @@ create_source_and_link_tee (FsuSource *self)
     }
 
     gst_object_unref (src_pad);
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->source = gst_object_ref (src);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
 
 }
@@ -419,7 +450,9 @@ create_tee (FsuSource *self)
     gst_object_unref (tee);
     return;
   }
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   priv->tee = gst_object_ref (tee);
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
@@ -445,18 +478,30 @@ fsu_source_request_new_pad (GstElement * element,
   GstPad *tee_pad = NULL;
   GstPad *filter_pad = NULL;
   FsuFilterManager *filter = NULL;
+  GstElement *tee = NULL;
 
   DEBUG ("requesting pad");
 
-  if (!priv->tee)
-    create_tee (self);
-
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   if (!priv->tee)
   {
-    WARNING ("Couldn't create a tee to request pad from");
-    return NULL;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    create_tee (self);
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    if (!priv->tee)
+    {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
+      WARNING ("Couldn't create a tee to request pad from");
+      return NULL;
+    }
   }
-  tee_pad = gst_element_get_request_pad (priv->tee, "src%d");
+
+  tee = gst_object_ref (priv->tee);
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+  tee_pad = gst_element_get_request_pad (tee, "src%d");
+  gst_object_unref (tee);
+
   if (!tee_pad)
   {
     WARNING ("Couldn't get new request pad from src tee");
@@ -466,7 +511,10 @@ fsu_source_request_new_pad (GstElement * element,
 
   filter = fsu_single_filter_manager_new ();
   add_filters (self, filter);
+
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   priv->filters = g_list_prepend (priv->filters, filter);
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), tee_pad);
 
@@ -474,7 +522,9 @@ fsu_source_request_new_pad (GstElement * element,
   {
     WARNING ("Could not add filters to source tee pad");
     filter_pad = gst_object_ref (tee_pad);
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->filters = g_list_remove (priv->filters, filter);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     g_object_unref (filter);
     filter = NULL;
   }
@@ -513,7 +563,10 @@ fsu_source_release_pad (GstElement * element,
     GstPad *tee_pad = NULL;
     GList *i = NULL;
 
-    for (i = priv->filters; i; i = i->next)
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    i = priv->filters;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    for (; i; i = i->next)
     {
       FsuFilterManager *manager = i->data;
       GstPad *out_pad = NULL;
@@ -524,7 +577,11 @@ fsu_source_release_pad (GstElement * element,
       {
         tee_pad = fsu_filter_manager_revert (manager, GST_BIN (self),
             filter_pad);
+
+        GST_OBJECT_LOCK (GST_OBJECT (self));
         priv->filters = g_list_remove (priv->filters, manager);
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
         g_object_unref (manager);
         gst_object_unref (out_pad);
         break;
@@ -534,7 +591,13 @@ fsu_source_release_pad (GstElement * element,
     gst_object_unref (filter_pad);
     if (tee_pad)
     {
-      gst_element_release_request_pad (priv->tee, tee_pad);
+      GstElement *tee = NULL;
+
+      GST_OBJECT_LOCK (GST_OBJECT (self));
+      tee = priv->tee;
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+      gst_element_release_request_pad (tee, tee_pad);
       gst_object_unref (tee_pad);
     }
   }
@@ -631,6 +694,7 @@ test_source (FsuSource *self,
   GstStateChangeReturn state_ret;
   GValueArray *arr;
   const gchar **blacklist = FSU_SOURCE_GET_CLASS (self)->blacklisted_sources;
+  gint probe_idx;
 
   if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
@@ -644,13 +708,19 @@ test_source (FsuSource *self,
     DEBUG ("we are not NULL, target state set to %s", target_state_name);
   }
 
-  DEBUG ("Testing source %s. probe idx = %d", name, priv->probe_idx);
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  probe_idx = priv->probe_idx;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+  DEBUG ("Testing source %s. probe idx = %d", name, probe_idx);
 
   for (;blacklist && *blacklist; blacklist++)
   {
     if (!strcmp (name, *blacklist))
     {
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       priv->probe_idx = -1;
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       return NULL;
     }
   }
@@ -660,14 +730,19 @@ test_source (FsuSource *self,
 
   if (!element)
   {
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->probe_idx = -1;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     return NULL;
   }
 
   /* Test the source */
-  if (priv->probe_idx == -1)
+  if (probe_idx == -1)
   {
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->probe_idx = 0;
+    probe_idx = 0;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     state_ret = gst_element_set_state (element, target_state);
     if (state_ret == GST_STATE_CHANGE_ASYNC)
@@ -693,7 +768,7 @@ test_source (FsuSource *self,
       if (arr)
       {
         guint i;
-        for (i = priv->probe_idx; i < arr->n_values; i++)
+        for (i = probe_idx; i < arr->n_values; i++)
         {
           const gchar *device;
           GValue *val;
@@ -723,7 +798,11 @@ test_source (FsuSource *self,
           {
             DEBUG ("Took device %s with idx %d", device, i);
             g_value_array_free (arr);
+
+            GST_OBJECT_LOCK (GST_OBJECT (self));
             priv->probe_idx = i + 1;
+            GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
             return element;
           }
         }
@@ -734,7 +813,11 @@ test_source (FsuSource *self,
 
   gst_element_set_state (element, GST_STATE_NULL);
   gst_object_unref (element);
+
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   priv->probe_idx = -1;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
   return NULL;
 }
 
@@ -745,24 +828,32 @@ create_source (FsuSource *self)
   FsuSourcePrivate *priv = self->priv;
   GstElement *src = NULL;
   GstElement *real_src = NULL;
+  gchar *source_pipeline = NULL;
+  gchar *source_name = NULL;
+  gchar *source_device = NULL;
+
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+
+  g_assert (!priv->source);
 
   if (priv->disabled)
   {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     DEBUG ("Source is disabled");
     return NULL;
   }
 
-  DEBUG ("Creating source : %p - %s -- %s (%s)",
-      priv->source,
-      priv->source_pipeline ? priv->source_pipeline : "(null)",
-      priv->source_name ? priv->source_name : "(null)",
-      priv->source_device ? priv->source_device : "(null)");
+  source_pipeline = g_strdup (priv->source_pipeline);
+  source_name = g_strdup (priv->source_name);
+  source_device = g_strdup (priv->source_device);
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
-  if (priv->source)
-  {
-    return priv->source;
-  }
-  else if (priv->source_pipeline)
+  DEBUG ("Creating source : %s -- %s (%s)",
+      source_pipeline ? source_pipeline : "(null)",
+      source_name ? source_name : "(null)",
+      source_device ? source_device : "(null)");
+
+  if (source_pipeline)
   {
     GstBin *bin = NULL;
     gchar *desc = NULL;
@@ -770,7 +861,7 @@ create_source (FsuSource *self)
     GstStateChangeReturn state_ret;
 
     /* parse the pipeline to a bin */
-    desc = g_strdup_printf ("bin.( %s ! identity )", priv->source_pipeline);
+    desc = g_strdup_printf ("bin.( %s ! identity )", source_pipeline);
     bin = (GstBin *) gst_parse_launch (desc, &error);
     g_free (desc);
 
@@ -789,7 +880,7 @@ create_source (FsuSource *self)
     {
       WARNING ("Error while creating source-pipeline (%d): %s",
           error->code, (error->message? error->message : "(null)"));
-      return NULL;
+      goto error;
     }
 
     state_ret = gst_element_set_state (GST_ELEMENT (bin), GST_STATE_READY);
@@ -804,20 +895,20 @@ create_source (FsuSource *self)
     {
       WARNING ("Could not change state of source-pipeline to READY");
       gst_object_unref (bin);
-      return NULL;
+      goto error;
     }
 
     src = GST_ELEMENT (bin);
   }
-  else if (priv->source_name)
+  else if (source_name)
   {
     GstStateChangeReturn state_ret;
 
-    src = gst_element_factory_make (priv->source_name, NULL);
+    src = gst_element_factory_make (source_name, NULL);
 
-    if (src && priv->source_device && get_device_property_name(src))
+    if (src && source_device && get_device_property_name(src))
       g_object_set(src,
-          get_device_property_name(src), priv->source_device,
+          get_device_property_name(src), source_device,
           NULL);
 
     if (src)
@@ -825,7 +916,7 @@ create_source (FsuSource *self)
       state_ret = gst_element_set_state (src, GST_STATE_READY);
       if (state_ret == GST_STATE_CHANGE_ASYNC)
       {
-        DEBUG ("Waiting for %s to go to state READY", priv->source_name);
+        DEBUG ("Waiting for %s to go to state READY", source_name);
         state_ret = gst_element_get_state (src, NULL, NULL,
             GST_CLOCK_TIME_NONE);
       }
@@ -834,7 +925,7 @@ create_source (FsuSource *self)
       {
         DEBUG ("Unable to set source to READY");
         gst_object_unref (src);
-        return NULL;
+        goto error;
       }
     }
 
@@ -842,7 +933,15 @@ create_source (FsuSource *self)
   else
   {
     GList *walk;
-    const gchar **priority_source = priv->priority_source_ptr;
+    const gchar **priority_source = NULL;
+
+    g_free (source_pipeline);
+    g_free (source_name);
+    g_free (source_device);
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    priority_source = priv->priority_source_ptr;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     if (!priority_source)
       priority_source = FSU_SOURCE_GET_CLASS (self)->priority_sources;
@@ -857,17 +956,26 @@ create_source (FsuSource *self)
       src = element;
       break;
     }
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->priority_source_ptr = priority_source;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     if (!src)
     {
-      if (!priv->filtered_sources_done && !priv->filtered_sources)
-        priv->filtered_sources = get_plugins_filtered (
-            FSU_SOURCE_GET_CLASS (self)->klass_check);
-
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       walk = priv->current_filtered_source;
       if (!walk && !priv->filtered_sources_done)
         walk = priv->filtered_sources;
+
+      if (!walk && !priv->filtered_sources_done)
+      {
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
+        walk = get_plugins_filtered (FSU_SOURCE_GET_CLASS (self)->klass_check);
+
+        GST_OBJECT_LOCK (GST_OBJECT (self));
+        priv->filtered_sources = walk;
+      }
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
       for (;walk; walk = g_list_next (walk))
       {
@@ -887,18 +995,27 @@ create_source (FsuSource *self)
         src = element;
         break;
       }
+
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       priv->current_filtered_source = walk;
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
       if (!walk)
       {
+        GST_OBJECT_LOCK (GST_OBJECT (self));
         priv->filtered_sources_done = TRUE;
-        for (walk = priv->filtered_sources; walk; walk = g_list_next (walk))
+        walk = priv->filtered_sources;
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+        for (; walk; walk = g_list_next (walk))
         {
           if (walk->data)
             gst_object_unref (GST_ELEMENT_FACTORY (walk->data));
         }
+        GST_OBJECT_LOCK (GST_OBJECT (self));
         g_list_free (priv->filtered_sources);
         priv->filtered_sources = NULL;
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
       }
 
     }
@@ -918,6 +1035,13 @@ create_source (FsuSource *self)
   }
 
   return src;
+
+ error:
+  g_free (source_pipeline);
+  g_free (source_name);
+  g_free (source_device);
+
+  return NULL;
 }
 
 static GstStateChangeReturn
@@ -931,10 +1055,16 @@ fsu_source_change_state (GstElement *element,
   switch (transition)
   {
     case GST_STATE_CHANGE_NULL_TO_READY:
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       if (!priv->source && priv->tee)
       {
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
         DEBUG ("Going to READY state. Creating source and linking to tee");
         create_source_and_link_tee (self);
+      }
+      else
+      {
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
       }
       break;
     default:
@@ -946,20 +1076,26 @@ fsu_source_change_state (GstElement *element,
   switch (transition)
   {
     case GST_STATE_CHANGE_READY_TO_NULL:
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       if (priv->source)
       {
+        GstElement *source = priv->source;
+
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
         DEBUG ("Setting source to state NULL");
-        ret = gst_element_set_state (priv->source, GST_STATE_NULL);
+        ret = gst_element_set_state (source, GST_STATE_NULL);
         if (ret == GST_STATE_CHANGE_ASYNC)
         {
           DEBUG ("Waiting for source to go to state NULL");
-          ret = gst_element_get_state (priv->source, NULL, NULL,
+          ret = gst_element_get_state (source, NULL, NULL,
               GST_CLOCK_TIME_NONE);
         }
-        gst_bin_remove (GST_BIN (self), priv->source);
-        gst_object_unref (priv->source);
+        gst_bin_remove (GST_BIN (self), source);
+        gst_object_unref (source);
+        GST_OBJECT_LOCK (GST_OBJECT (self));
         priv->source = NULL;
       }
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       break;
     default:
       break;
@@ -1052,19 +1188,28 @@ fsu_source_handle_message (GstBin *bin,
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
   {
     GError *error;
-    GstElement *source = find_source (priv->source);
+    GstElement *source = NULL;
+    GstElement *real_source = NULL;
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    source = gst_object_ref (priv->source);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    real_source = find_source (source);
+    gst_object_unref (source);
+
     gst_message_parse_error (message, &error, NULL);
 
     if (error->domain == GST_RESOURCE_ERROR &&
-        GST_MESSAGE_SRC (message) == GST_OBJECT (source))
+        GST_MESSAGE_SRC (message) == GST_OBJECT (real_source))
     {
       DEBUG ("Source got an error. setting source to state NULL");
       destroy_source (self);
       gst_message_unref (message);
-      gst_object_unref (source);
+      gst_object_unref (real_source);
       return;
     }
-    gst_object_unref (source);
+    gst_object_unref (real_source);
   }
   GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }
