@@ -495,7 +495,6 @@ fsu_source_request_new_pad (GstElement * element,
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   tee_pad = gst_element_get_request_pad (tee, "src%d");
-  gst_object_unref (tee);
 
   if (!tee_pad)
   {
@@ -511,10 +510,7 @@ fsu_source_request_new_pad (GstElement * element,
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), tee_pad);
 
   if (!filter_pad)
-  {
-    WARNING ("Could not add filters to source tee pad");
     filter_pad = gst_object_ref (tee_pad);
-  }
   gst_object_unref (tee_pad);
 
   pad = gst_ghost_pad_new (name, filter_pad);
@@ -522,9 +518,14 @@ fsu_source_request_new_pad (GstElement * element,
   if (!pad)
   {
     WARNING ("Couldn't create ghost pad for tee");
+    tee_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
+    gst_element_release_request_pad (tee, tee_pad);
+    gst_object_unref (tee_pad);
+    gst_object_unref (tee);
     check_and_remove_tee (self);
     return NULL;
   }
+  gst_object_unref (tee);
 
   gst_pad_set_active (pad, TRUE);
 

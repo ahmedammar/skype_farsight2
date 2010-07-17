@@ -598,10 +598,8 @@ fsu_sink_request_new_pad (GstElement * element,
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad);
 
   if (!filter_pad)
-  {
-    WARNING ("Could not add filters to sink pad");
     filter_pad = gst_object_ref (sink_pad);
-  }
+  gst_object_unref (sink_pad);
 
   pad = gst_ghost_pad_new (name, filter_pad);
 
@@ -613,7 +611,6 @@ fsu_sink_request_new_pad (GstElement * element,
       gst_bin_remove (GST_BIN (self), sink);
       gst_object_unref (sink);
     }
-    gst_object_unref (sink_pad);
     sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
     if (priv->mixer)
     {
@@ -625,7 +622,6 @@ fsu_sink_request_new_pad (GstElement * element,
 
     return NULL;
   }
-  gst_object_unref (sink_pad);
   gst_object_unref (filter_pad);
 
   gst_pad_set_active (pad, TRUE);
