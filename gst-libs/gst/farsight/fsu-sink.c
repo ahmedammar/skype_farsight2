@@ -288,12 +288,18 @@ fsu_sink_element_added (FsuSink *self,
   if (g_object_has_property (G_OBJECT (sink), "sync") &&
       g_object_has_property (G_OBJECT (sink), "async"))
   {
+    FsuSinkPrivate *priv = self->priv;
+    gboolean sync, async;
+
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    g_object_set (sink,
-        "sync", self->priv->sync,
-        "async", self->priv->async,
-        NULL);
+    sync = priv->sync;
+    async = priv->async;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    g_object_set (sink,
+        "sync", sync,
+        "async", async,
+        NULL);
   }
 }
 
