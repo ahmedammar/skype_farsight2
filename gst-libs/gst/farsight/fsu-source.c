@@ -890,6 +890,7 @@ create_source (FsuSource *self)
       {
         DEBUG ("Unable to set source to READY");
         gst_object_unref (src);
+        src = NULL;
         goto error;
       }
     }
@@ -899,10 +900,6 @@ create_source (FsuSource *self)
   {
     GList *walk;
     const gchar **priority_source = NULL;
-
-    g_free (source_pipeline);
-    g_free (source_name);
-    g_free (source_device);
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
     priority_source = priv->priority_source_ptr;
@@ -999,14 +996,12 @@ create_source (FsuSource *self)
     gst_object_unref (real_src);
   }
 
-  return src;
-
  error:
   g_free (source_pipeline);
   g_free (source_name);
   g_free (source_device);
 
-  return NULL;
+  return src;
 }
 
 static GstStateChangeReturn
