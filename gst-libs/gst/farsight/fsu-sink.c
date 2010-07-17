@@ -246,12 +246,14 @@ fsu_sink_dispose (GObject *object)
   GList *item;
 
  restart:
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   for (item = GST_ELEMENT_PADS (object); item; item = g_list_next (item))
   {
     GstPad *pad = GST_PAD (item->data);
 
     if (GST_PAD_IS_SINK (pad))
     {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       gst_element_release_request_pad (GST_ELEMENT (object), pad);
       goto restart;
     }
@@ -272,6 +274,8 @@ fsu_sink_dispose (GObject *object)
   g_assert (!priv->mixer);
   g_assert (!priv->sinks);
 
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
@@ -283,10 +287,14 @@ fsu_sink_element_added (FsuSink *self,
 {
   if (g_object_has_property (G_OBJECT (sink), "sync") &&
       g_object_has_property (G_OBJECT (sink), "async"))
+  {
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     g_object_set (sink,
         "sync", self->priv->sync,
         "async", self->priv->async,
         NULL);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  }
 }
 
 static GstElement *
@@ -420,10 +428,16 @@ static void
 check_and_remove_mixer (FsuSink *self)
 {
   FsuSinkPrivate *priv = self->priv;
-  GstIterator *iter =  gst_element_iterate_sink_pads (priv->mixer);
+  GstElement *mixer = NULL;
+  GstIterator *iter = NULL;
   gboolean still_has_sink = FALSE;
   gboolean done = FALSE;
 
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  mixer = priv->mixer;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+  iter = gst_element_iterate_sink_pads (mixer);
   while (!done)
   {
     gpointer item = NULL;
@@ -449,20 +463,27 @@ check_and_remove_mixer (FsuSink *self)
 
   if (!still_has_sink)
   {
-    gst_element_set_state (priv->mixer, GST_STATE_NULL);
-    gst_bin_remove (GST_BIN (self), priv->mixer);
-    gst_object_unref (priv->mixer);
+    gst_element_set_state (mixer, GST_STATE_NULL);
+    gst_bin_remove (GST_BIN (self), mixer);
+    gst_object_unref (mixer);
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->mixer = NULL;
+
     if (priv->sinks)
     {
       GstElement *sink = priv->sinks->data;
 
       g_assert (g_list_length (priv->sinks) == 1);
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
       gst_element_set_state (sink, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (self), sink);
-      priv->sinks = g_list_remove (priv->sinks, sink);
       gst_object_unref (sink);
+
+      GST_OBJECT_LOCK (GST_OBJECT (self));
+      priv->sinks = g_list_remove (priv->sinks, sink);
     }
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
 }
 
@@ -474,6 +495,7 @@ fsu_sink_request_new_pad (GstElement * element,
   FsuSink *self = FSU_SINK (element);
   FsuSinkPrivate *priv = self->priv;
   GstElement *sink = NULL;
+  GstElement *mixer = NULL;
   GstPad *pad = NULL;
   GstPad *sink_pad = NULL;
   GstPad *filter_pad = NULL;
@@ -481,9 +503,14 @@ fsu_sink_request_new_pad (GstElement * element,
 
   DEBUG ("requesting pad");
 
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  mixer = priv->mixer;
+
   /* If this is our first sink or second sink with no mixer*/
-  if (!priv->sinks || !priv->mixer)
+  if (!priv->sinks || !mixer)
   {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
     sink = create_sink (self);
     if (!sink)
     {
@@ -517,9 +544,11 @@ fsu_sink_request_new_pad (GstElement * element,
         gst_object_unref (sink);
         return NULL;
       }
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       /* If this isn't our first sink then we don't need a mixer, get the pad */
       if (priv->sinks)
       {
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
         sink_pad = gst_element_get_static_pad (sink, "sink");
         if (!sink_pad)
         {
@@ -528,13 +557,19 @@ fsu_sink_request_new_pad (GstElement * element,
           return NULL;
         }
       }
+      else
+      {
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
+      }
     }
     gst_object_ref (sink);
   }
   else
   {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
     /* This isn't our first sink and we already have a mixer */
-    sink_pad = gst_element_get_request_pad (priv->mixer, "sink%d");
+    sink_pad = gst_element_get_request_pad (mixer, "sink%d");
     if (!sink_pad)
     {
       WARNING ("Couldn't get new request pad from mixer");
@@ -550,8 +585,8 @@ fsu_sink_request_new_pad (GstElement * element,
     WARNING ("Unable to set sink to READY");
     if (sink_pad)
     {
-      if (priv->mixer)
-        gst_element_release_request_pad (priv->mixer, sink_pad);
+      if (mixer)
+        gst_element_release_request_pad (mixer, sink_pad);
       gst_object_unref (sink_pad);
     }
     gst_bin_remove (GST_BIN (self), sink);
@@ -562,12 +597,12 @@ fsu_sink_request_new_pad (GstElement * element,
   /* First sink, we don't know yet if we need a mixer */
   if (!sink_pad)
   {
-    priv->mixer = create_mixer (self, sink);
+    mixer = create_mixer (self, sink);
     /* Check if we need a mixer */
-    if (!priv->mixer)
+    if (!mixer)
       sink_pad = gst_element_get_static_pad (sink, "sink");
     else
-      sink_pad = gst_element_get_request_pad (priv->mixer, "sink%d");
+      sink_pad = gst_element_get_request_pad (mixer, "sink%d");
 
     if (!sink_pad)
     {
@@ -577,15 +612,19 @@ fsu_sink_request_new_pad (GstElement * element,
         gst_bin_remove (GST_BIN (self), sink);
         gst_object_unref (sink);
       }
-      if (priv->mixer)
-        gst_bin_remove (GST_BIN (self), priv->mixer);
-      gst_object_unref (priv->mixer);
-      priv->mixer = NULL;
+      if (mixer)
+        gst_bin_remove (GST_BIN (self), mixer);
+      gst_object_unref (mixer);
       return NULL;
     }
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    priv->mixer = mixer;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
 
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   filter = priv->filters;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad);
 
@@ -604,9 +643,9 @@ fsu_sink_request_new_pad (GstElement * element,
       gst_object_unref (sink);
     }
     sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
-    if (priv->mixer)
+    if (mixer)
     {
-      gst_element_release_request_pad (priv->mixer, sink_pad);
+      gst_element_release_request_pad (mixer, sink_pad);
       check_and_remove_mixer (self);
     }
     gst_object_unref (sink_pad);
@@ -622,11 +661,15 @@ fsu_sink_request_new_pad (GstElement * element,
 
   if (sink)
     gst_element_sync_state_with_parent (sink);
-  if (priv->mixer)
-    gst_element_sync_state_with_parent (priv->mixer);
+  if (mixer)
+    gst_element_sync_state_with_parent (mixer);
 
   if (sink)
+  {
+    GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->sinks = g_list_prepend (priv->sinks, sink);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  }
 
   return pad;
 }
@@ -646,16 +689,22 @@ fsu_sink_release_pad (GstElement * element,
   {
     GstPad *filter_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
     GstPad *sink_pad = NULL;
-    FsuFilterManager *manager = priv->filters;
+    GstElement *mixer = NULL;
+    FsuFilterManager *manager = NULL;
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    mixer = priv->mixer;
+    manager = priv->filters;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     sink_pad = fsu_filter_manager_revert (manager, GST_BIN (self), filter_pad);
     if (!sink_pad)
       sink_pad = gst_object_ref (filter_pad);
     gst_object_unref (filter_pad);
 
-    if (priv->mixer)
+    if (mixer)
     {
-      gst_element_release_request_pad (priv->mixer, sink_pad);
+      gst_element_release_request_pad (mixer, sink_pad);
       gst_object_unref (sink_pad);
       check_and_remove_mixer (self);
     }
@@ -666,7 +715,11 @@ fsu_sink_release_pad (GstElement * element,
       gst_object_unref (sink_pad);
       gst_element_set_state (sink, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (self), sink);
+
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       priv->sinks = g_list_remove (priv->sinks, sink);
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
       gst_object_unref (sink);
       /* From the get_parent */
       gst_object_unref (sink);
@@ -681,21 +734,34 @@ static GstElement *
 create_sink (FsuSink *self)
 {
   FsuSinkPrivate *priv = self->priv;
+  GstElement *sink = NULL;
   gchar *auto_sink_name = FSU_SINK_GET_CLASS (self)->auto_sink_name;
+  gchar *sink_pipeline = NULL;
+  gchar *sink_name = NULL;
+  gchar *sink_device = NULL;
+  gboolean sync, async;
+
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  sync = priv->sync;
+  async = priv->async;
+  sink_pipeline = g_strdup (priv->sink_pipeline);
+  sink_name = g_strdup (priv->sink_name);
+  sink_device = g_strdup (priv->sink_device);
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   DEBUG ("Creating sink : %s -- %s (%s)",
-      priv->sink_pipeline ? priv->sink_pipeline : "(null)",
-      priv->sink_name ? priv->sink_name : "(null)",
-      priv->sink_device ? priv->sink_device : "(null)");
+      sink_pipeline ? sink_pipeline : "(null)",
+      sink_name ? sink_name : "(null)",
+      sink_device ? sink_device : "(null)");
 
-  if (priv->sink_pipeline)
+  if (sink_pipeline)
   {
     GstBin *bin = NULL;
     gchar *desc = NULL;
     GError *error  = NULL;
 
     /* parse the pipeline to a bin */
-    desc = g_strdup_printf ("bin.( queue ! %s )", priv->sink_pipeline);
+    desc = g_strdup_printf ("bin.( queue ! %s )", sink_pipeline);
     bin = (GstBin *) gst_parse_launch (desc, &error);
     g_free (desc);
 
@@ -715,33 +781,38 @@ create_sink (FsuSink *self)
     {
       WARNING ("Error while creating sink-pipeline (%d): %s",
           error->code, (error->message? error->message : "(null)"));
-      return NULL;
+      goto done;
     }
 
-    return GST_ELEMENT (bin);
-
+    sink = GST_ELEMENT (bin);
+    goto done;
   }
-  else if (priv->sink_name &&
-      (!auto_sink_name || strcmp (priv->sink_name, auto_sink_name)))
+  else if (sink_name &&
+      (!auto_sink_name || strcmp (sink_name, auto_sink_name)))
   {
-    GstElement *sink = NULL;
+    sink = gst_element_factory_make (sink_name, NULL);
 
-    sink = gst_element_factory_make (priv->sink_name, NULL);
-
-    if (sink && priv->sink_device)
+    if (sink && sink_device)
       g_object_set(sink,
-          "device", priv->sink_device,
-          "sync", priv->sync,
-          "async", priv->async,
+          "device", sink_device,
+          "sync", sync,
+          "async", async,
           NULL);
     else if (sink)
       g_object_set(sink,
-          "sync", priv->sync,
-          "async", priv->async,
+          "sync", sync,
+          "async", async,
           NULL);
 
-    return sink;
+    goto done;
   }
 
-  return create_auto_sink (self);
+  sink = create_auto_sink (self);
+
+ done:
+  g_free (sink_pipeline);
+  g_free (sink_name);
+  g_free (sink_device);
+
+  return sink;
 }
