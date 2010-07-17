@@ -90,8 +90,6 @@ enum
 
 struct _FsuSinkPrivate
 {
-  gboolean dispose_has_run;
-
   /* Properties */
   gchar *sink_name;
   gchar *sink_device;
@@ -170,7 +168,6 @@ fsu_sink_init (FsuSink *self, FsuSinkClass *klass)
           FsuSinkPrivate);
 
   self->priv = priv;
-  priv->dispose_has_run = FALSE;
   priv->sync = priv->async = TRUE;
   priv->filters = fsu_multi_filter_manager_new ();
   if (FSU_SINK_GET_CLASS (self)->add_filters)
@@ -247,11 +244,6 @@ fsu_sink_dispose (GObject *object)
   FsuSink *self = FSU_SINK (object);
   FsuSinkPrivate *priv = self->priv;
   GList *item;
-
-  if (priv->dispose_has_run)
-    return;
-
-  priv->dispose_has_run = TRUE;
 
  restart:
   for (item = GST_ELEMENT_PADS (object); item; item = g_list_next (item))
