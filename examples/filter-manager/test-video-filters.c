@@ -178,7 +178,7 @@ gboolean
 add_preview  (gpointer data)
 {
   FsuFilterManager *filters = data;
-  FsuFilter *filter = FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0)));
+  FsuFilter *filter = FSU_FILTER (fsu_preview_filter_new (0));
 
   g_debug ("Adding preview filter");
   fsu_filter_manager_append_filter (filters, filter);

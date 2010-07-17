@@ -66,7 +66,7 @@ struct _FsuPreviewFilter
 
 GType fsu_preview_filter_get_type (void) G_GNUC_CONST;
 
-FsuPreviewFilter *fsu_preview_filter_new (gpointer id);
+FsuPreviewFilter *fsu_preview_filter_new (gint xid);
 
 G_END_DECLS
 

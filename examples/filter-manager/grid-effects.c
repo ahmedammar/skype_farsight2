@@ -141,8 +141,7 @@ create_grid (int rows, int columns)
 gboolean
 add_effect  (FsuFilterManager *filters, const gchar *effect, gint id)
 {
-  FsuFilter *preview = FSU_FILTER (fsu_preview_filter_new (
-          GINT_TO_POINTER (id)));
+  FsuFilter *preview = FSU_FILTER (fsu_preview_filter_new (id));
   FsuFilterManager *preview_manager = NULL;
   FsuFilter *queue = FSU_FILTER (fsu_effectv_filter_new ("queue"));
   FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effect));
@@ -171,7 +170,7 @@ add_filters  (gpointer data)
   FsuFilter *f2 = FSU_FILTER (fsu_resolution_filter_new (1280, 960));
   FsuFilter *f3 = FSU_FILTER (fsu_resolution_filter_new (WIDTH, HEIGHT));
 
-  preview = FSU_FILTER (fsu_preview_filter_new (GINT_TO_POINTER (0)));
+  preview = FSU_FILTER (fsu_preview_filter_new (0));
 
   fsu_filter_manager_append_filter (filters, f1);
   fsu_filter_manager_append_filter (filters, f2);

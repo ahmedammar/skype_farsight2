@@ -52,7 +52,7 @@ static GstPad *fsu_preview_filter_revert (FsuFilter *filter,
 /* properties */
 enum
 {
-  PROP_ID = 1,
+  PROP_XID = 1,
   PROP_FILTER_MANAGER,
   LAST_PROPERTY
 };
@@ -61,7 +61,7 @@ enum
 
 struct _FsuPreviewFilterPrivate
 {
-  gpointer id;
+  gint xid;
   GstElement *sink;
   GstPad *sink_pad;
   FsuFilterManager *manager;
@@ -83,9 +83,10 @@ fsu_preview_filter_class_init (FsuPreviewFilterClass *klass)
   fsufilter_class->revert = fsu_preview_filter_revert;
   fsufilter_class->name = "preview";
 
-  g_object_class_install_property (gobject_class, PROP_ID,
-      g_param_spec_pointer ("id", "The id for the preview",
-          "The id to use for embedding the preview window",
+  g_object_class_install_property (gobject_class, PROP_XID,
+      g_param_spec_int ("xid", "The X window id for the preview",
+          "The X Window id to use for embedding the preview window",
+          G_MININT, G_MAXINT, 0,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_FILTER_MANAGER,
@@ -119,8 +120,8 @@ fsu_preview_filter_get_property (GObject *object,
 
   switch (property_id)
   {
-    case PROP_ID:
-      g_value_set_pointer (value, priv->id);
+    case PROP_XID:
+      g_value_set_int (value, priv->xid);
       break;
     case PROP_FILTER_MANAGER:
       g_value_set_object (value, priv->manager);
@@ -142,10 +143,10 @@ fsu_preview_filter_set_property (GObject *object,
 
   switch (property_id)
   {
-    case PROP_ID:
-      priv->id = g_value_get_pointer (value);
+    case PROP_XID:
+      priv->xid = g_value_get_int (value);
       if (priv->sink)
-        g_object_set (priv->sink, "id", priv->id, NULL);
+        g_object_set (priv->sink, "xid", priv->xid, NULL);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -174,10 +175,10 @@ fsu_preview_filter_dispose (GObject *object)
 }
 
 FsuPreviewFilter *
-fsu_preview_filter_new (gpointer id)
+fsu_preview_filter_new (gint xid)
 {
   return g_object_new (FSU_TYPE_PREVIEW_FILTER,
-      "id", id,
+      "xid", xid,
       NULL);
 }
 
@@ -277,7 +278,7 @@ fsu_preview_filter_apply (FsuFilter *filter,
   }
 
   g_object_set (sink,
-      "id", priv->id,
+      "xid", priv->xid,
       "sync", FALSE,
       "async", FALSE,
       NULL);

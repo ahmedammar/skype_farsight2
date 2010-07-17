@@ -55,13 +55,13 @@ GST_BOILERPLATE_FULL (FsuVideoSink, fsu_video_sink,
 /* properties */
 enum
 {
-  PROP_ID = 1,
+  PROP_XID = 1,
 };
 
 struct _FsuVideoSinkPrivate
 {
   /* Properties */
-  gpointer id;
+  gint xid;
 };
 
 
@@ -144,9 +144,10 @@ fsu_video_sink_class_init (FsuVideoSinkClass *klass)
   gstbin_class->handle_message =
       GST_DEBUG_FUNCPTR (fsu_video_sink_handle_message);
 
-  g_object_class_install_property (gobject_class, PROP_ID,
-      g_param_spec_pointer ("id", "Sink id",
+  g_object_class_install_property (gobject_class, PROP_XID,
+      g_param_spec_int ("xid", "Sink window xid",
           "The xid of the window in which to embed the video sink.",
+          G_MININT, G_MAXINT, 0,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
@@ -161,8 +162,8 @@ fsu_video_sink_get_property (GObject *object,
 
   switch (property_id)
   {
-    case PROP_ID:
-      g_value_set_pointer (value, priv->id);
+    case PROP_XID:
+      g_value_set_int (value, priv->xid);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -181,8 +182,8 @@ fsu_video_sink_set_property (GObject *object,
 
   switch (property_id)
   {
-    case PROP_ID:
-      priv->id = g_value_get_pointer (value);
+    case PROP_XID:
+      priv->xid = g_value_get_int (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -200,7 +201,7 @@ fsu_video_sink_init (FsuVideoSink *self,
           FsuVideoSinkPrivate);
 
   self->priv = priv;
-  priv->id = GINT_TO_POINTER (0);
+  priv->xid = 0;
 }
 
 static void
@@ -209,16 +210,21 @@ fsu_video_sink_handle_message (GstBin *bin,
 {
   FsuVideoSink *self = FSU_VIDEO_SINK (bin);
   const GstStructure *s = gst_message_get_structure (message);
+  gint xid = 0;
+
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  xid = self->priv->xid;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ELEMENT &&
       gst_structure_has_name (s, "prepare-xwindow-id"))
     gst_x_overlay_set_xwindow_id (GST_X_OVERLAY (GST_MESSAGE_SRC (message)),
-        GPOINTER_TO_INT (self->priv->id));
+        xid);
+
 #ifdef __APPLE__
   else if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ELEMENT &&
-      gst_structure_has_name (s, "have-ns-view")) {
-    (void);
-  }
+      gst_structure_has_name (s, "have-ns-view"))
+    (void); /* TODO: do what? */
 #endif
 
   GST_BIN_CLASS (parent_class)->handle_message (bin, message);
