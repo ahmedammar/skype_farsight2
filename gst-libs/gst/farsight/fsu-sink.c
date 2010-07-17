@@ -170,8 +170,8 @@ fsu_sink_init (FsuSink *self, FsuSinkClass *klass)
   self->priv = priv;
   priv->sync = priv->async = TRUE;
   priv->filters = fsu_multi_filter_manager_new ();
-  if (FSU_SINK_GET_CLASS (self)->add_filters)
-    FSU_SINK_GET_CLASS (self)->add_filters (self, priv->filters);
+  if (klass->add_filters)
+    klass->add_filters (self, priv->filters);
 }
 
 static void
@@ -259,14 +259,11 @@ fsu_sink_dispose (GObject *object)
     }
   }
 
-  if (priv->sink_name)
-    g_free (priv->sink_name);
+  g_free (priv->sink_name);
   priv->sink_name = NULL;
-  if (priv->sink_device)
-    g_free (priv->sink_device);
+  g_free (priv->sink_device);
   priv->sink_device = NULL;
-  if (priv->sink_pipeline)
-    g_free (priv->sink_pipeline);
+  g_free (priv->sink_pipeline);
   priv->sink_pipeline = NULL;
 
   g_object_unref (priv->filters);

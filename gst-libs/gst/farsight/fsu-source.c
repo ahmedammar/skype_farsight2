@@ -185,8 +185,8 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
   self->priv = priv;
   priv->probe_idx = -1;
   priv->filters = fsu_multi_filter_manager_new ();
-  if (FSU_SOURCE_GET_CLASS (self)->add_filters)
-    FSU_SOURCE_GET_CLASS (self)->add_filters (self, priv->filters);
+  if (klass->add_filters)
+    klass->add_filters (self, priv->filters);
 }
 
 static void
