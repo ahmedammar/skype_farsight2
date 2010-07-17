@@ -299,7 +299,7 @@ fsu_source_dispose (GObject *object)
 
   g_object_unref (priv->filters);
 
-  g_assert (priv->thread == NULL);
+  g_assert (!priv->thread);
 
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 

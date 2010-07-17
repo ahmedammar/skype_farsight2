@@ -277,8 +277,8 @@ fsu_sink_dispose (GObject *object)
 
   g_object_unref (priv->filters);
 
-  g_assert (priv->mixer == NULL);
-  g_assert (priv->sinks == NULL);
+  g_assert (!priv->mixer);
+  g_assert (!priv->sinks);
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
