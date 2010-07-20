@@ -333,6 +333,7 @@ _fsu_session_start_sending (FsuSession *self)
   GstPad *srcpad = NULL;
   GstPad *sinkpad = NULL;
   gchar *error;
+  GstState state = GST_STATE_NULL;
 
   if (!priv->source)
     goto no_source;
@@ -400,7 +401,8 @@ _fsu_session_start_sending (FsuSession *self)
   gst_object_unref (filter_pad);
   gst_object_unref (sinkpad);
 
-  if (GST_STATE (pipeline) > GST_STATE_NULL)
+  gst_element_get_state (pipeline, &state, NULL, GST_CLOCK_TIME_NONE);
+  if (state > GST_STATE_NULL)
     gst_element_sync_state_with_parent (GST_ELEMENT (priv->source));
 
  done:
