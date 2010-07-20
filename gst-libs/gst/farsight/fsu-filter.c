@@ -50,7 +50,6 @@ enum
 
 struct _FsuFilterPrivate
 {
-  gboolean can_fail;
   GHashTable *pads;
 };
 
