@@ -197,7 +197,7 @@ fsu_video_sink_init (FsuVideoSink *self,
     FsuVideoSinkClass *klass)
 {
   FsuVideoSinkPrivate *priv =
-      G_TYPE_INSTANCE_GET_PRIVATE (self, FSU_TYPE_SINK,
+      G_TYPE_INSTANCE_GET_PRIVATE (self, FSU_TYPE_VIDEO_SINK,
           FsuVideoSinkPrivate);
 
   self->priv = priv;
