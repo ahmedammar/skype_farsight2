@@ -405,8 +405,16 @@ create_source_and_link_tee (FsuSource *self)
         check_and_remove_tee (self);
         return;
       }
+      GST_OBJECT_LOCK (GST_OBJECT (self));
       if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
+      {
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
         gst_element_sync_state_with_parent  (src);
+      }
+      else
+      {
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
+      }
       gst_object_unref (tee_pad);
     }
     else
@@ -449,13 +457,16 @@ create_tee (FsuSource *self)
   priv->tee = gst_object_ref (tee);
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     gst_element_sync_state_with_parent  (tee);
     create_source_and_link_tee (self);
   }
   else
   {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     DEBUG ("State NULL, not creating source now...");
   }
 
@@ -510,7 +521,10 @@ fsu_source_request_new_pad (GstElement * element,
   filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), tee_pad);
 
   if (!filter_pad)
+  {
+    WARNING ("Couldn't apply filter manager");
     filter_pad = gst_object_ref (tee_pad);
+  }
   gst_object_unref (tee_pad);
 
   pad = gst_ghost_pad_new (name, filter_pad);
@@ -661,6 +675,7 @@ test_source (FsuSource *self,
   const gchar **blacklist = FSU_SOURCE_GET_CLASS (self)->blacklisted_sources;
   gint probe_idx;
 
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
     target_state = GST_STATE (GST_ELEMENT (self));
@@ -673,7 +688,6 @@ test_source (FsuSource *self,
     DEBUG ("we are not NULL, target state set to %s", target_state_name);
   }
 
-  GST_OBJECT_LOCK (GST_OBJECT (self));
   probe_idx = priv->probe_idx;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
@@ -1094,9 +1108,15 @@ replace_source_thread (gpointer data)
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
     source = priv->source;
-    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     if (source && GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
+    {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       gst_element_sync_state_with_parent  (source);
+    }
+    else
+    {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    }
   }
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
