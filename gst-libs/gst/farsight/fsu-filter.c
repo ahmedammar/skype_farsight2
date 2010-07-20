@@ -51,6 +51,7 @@ enum
 struct _FsuFilterPrivate
 {
   GHashTable *pads;
+  GMutex *mutex;
 };
 
 static void
@@ -81,6 +82,7 @@ fsu_filter_init (FsuFilter *self)
   self->priv = priv;
   priv->pads = g_hash_table_new_full (NULL, NULL,
       gst_object_unref, gst_object_unref);
+  priv->mutex = g_mutex_new ();
 }
 
 
@@ -124,9 +126,15 @@ fsu_filter_dispose (GObject *object)
   FsuFilter *self = FSU_FILTER (object);
   FsuFilterPrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
   if (priv->pads)
     g_hash_table_destroy (priv->pads);
   priv->pads = NULL;
+  g_mutex_unlock (priv->mutex);
+
+  if (priv->mutex)
+    g_mutex_free (priv->mutex);
+  priv->mutex = NULL;
 
   G_OBJECT_CLASS (fsu_filter_parent_class)->dispose (object);
 }
@@ -148,7 +156,9 @@ fsu_filter_apply (FsuFilter *self,
   if (out_pad)
   {
     gst_object_ref (out_pad);
+    g_mutex_lock (priv->mutex);
     g_hash_table_insert (priv->pads, out_pad, gst_pad_get_peer (pad));
+    g_mutex_unlock (priv->mutex);
   }
 
   return out_pad;
@@ -167,7 +177,9 @@ fsu_filter_revert (FsuFilter *self,
 
   g_assert (klass->revert);
 
+  g_mutex_lock (priv->mutex);
   in_pad = GST_PAD (g_hash_table_lookup (priv->pads, pad));
+  g_mutex_unlock (priv->mutex);
 
   if (!in_pad)
   {
@@ -192,7 +204,9 @@ fsu_filter_revert (FsuFilter *self,
     gst_object_unref (expected);
   }
 
+  g_mutex_lock (priv->mutex);
   g_hash_table_remove (priv->pads, pad);
+  g_mutex_unlock (priv->mutex);
 
   return out_pad;
 }
@@ -201,7 +215,12 @@ GstPad *
 fsu_filter_follow (FsuFilter *self,
     GstPad *pad)
 {
-  GstPad *in_pad = g_hash_table_lookup (self->priv->pads, pad);
+  GstPad *in_pad = NULL;
+  FsuFilterPrivate *priv = self->priv;
+
+  g_mutex_lock (priv->mutex);
+  g_hash_table_lookup (priv->pads, pad);
+  g_mutex_unlock (priv->mutex);
 
   if (in_pad)
     return gst_pad_get_peer (in_pad);

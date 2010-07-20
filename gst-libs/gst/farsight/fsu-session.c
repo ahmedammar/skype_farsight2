@@ -63,7 +63,8 @@ struct _FsuSessionPrivate
   FsuSource *source;
   GList *streams;
   FsuFilterManager *filters;
-  guint sending;
+  gint sending;
+  GMutex *mutex;
 };
 
 static void
@@ -112,6 +113,7 @@ fsu_session_init (FsuSession *self)
 
   self->priv = priv;
   priv->filters = fsu_single_filter_manager_new ();
+  priv->mutex = g_mutex_new ();
 }
 
 static void
@@ -207,8 +209,14 @@ fsu_session_dispose (GObject *object)
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
   while (priv->sending > 0)
+  {
+    g_mutex_unlock (priv->mutex);
     _fsu_session_stop_sending (self);
+    g_mutex_lock (priv->mutex);
+  }
+  g_mutex_unlock (priv->mutex);
 
   if (priv->source)
   {
@@ -229,6 +237,7 @@ fsu_session_dispose (GObject *object)
   }
   priv->source = NULL;
 
+  g_mutex_lock (priv->mutex);
   if (priv->filters)
     g_object_unref (priv->filters);
   priv->filters = NULL;
@@ -239,6 +248,7 @@ fsu_session_dispose (GObject *object)
     g_list_free (priv->streams);
   }
   priv->streams = NULL;
+  g_mutex_unlock (priv->mutex);
 
   if (priv->session)
     gst_object_unref (priv->session);
@@ -247,6 +257,10 @@ fsu_session_dispose (GObject *object)
   if (priv->conference)
     gst_object_unref (priv->conference);
   priv->conference = NULL;
+
+  if (priv->mutex)
+    g_mutex_free (priv->mutex);
+  priv->mutex = NULL;
 
   G_OBJECT_CLASS (fsu_session_parent_class)->dispose (object);
 }
@@ -278,7 +292,9 @@ stream_destroyed (gpointer data,
   FsuSession *self = FSU_SESSION (data);
   FsuSessionPrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
   priv->streams = g_list_remove (priv->streams, destroyed_stream);
+  g_mutex_unlock (priv->mutex);
 }
 
 static void
@@ -298,7 +314,9 @@ fsu_session_handle_stream (FsuSession *self,
 
   if (str)
   {
+    g_mutex_lock (priv->mutex);
     priv->streams = g_list_prepend (priv->streams, str);
+    g_mutex_unlock (priv->mutex);
     g_object_weak_ref (G_OBJECT (str), stream_destroyed, self);
   }
 
@@ -319,7 +337,7 @@ _fsu_session_start_sending (FsuSession *self)
   if (!priv->source)
     goto no_source;
 
-  if (priv->sending > 0)
+  if (g_atomic_int_get (&priv->sending) > 0)
     goto done;
 
   g_object_get (priv->conference,
@@ -334,8 +352,10 @@ _fsu_session_start_sending (FsuSession *self)
     goto no_source;
   }
 
+  g_mutex_lock (priv->mutex);
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), srcpad);
+  g_mutex_unlock (priv->mutex);
 
   if (!filter_pad)
     filter_pad = gst_object_ref (srcpad);
@@ -347,8 +367,10 @@ _fsu_session_start_sending (FsuSession *self)
 
   if (gst_pad_link (filter_pad, sinkpad) != GST_PAD_LINK_OK)
   {
+    g_mutex_lock (priv->mutex);
     srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
         filter_pad);
+    g_mutex_unlock (priv->mutex);
     if (srcpad)
     {
       gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
@@ -382,7 +404,7 @@ _fsu_session_start_sending (FsuSession *self)
     gst_element_sync_state_with_parent (GST_ELEMENT (priv->source));
 
  done:
-  priv->sending++;
+  g_atomic_int_inc (&priv->sending);
 
   return TRUE;
  no_source:
@@ -400,8 +422,7 @@ _fsu_session_stop_sending (FsuSession *self)
 
   if (priv->sending > 0)
   {
-    priv->sending--;
-    if (priv->sending == 0)
+    if (g_atomic_int_dec_and_test (&priv->sending))
     {
       g_object_get (priv->conference,
           "pipeline", &pipeline,
@@ -412,8 +433,10 @@ _fsu_session_stop_sending (FsuSession *self)
 
       filter_pad = gst_pad_get_peer (sinkpad);
       gst_pad_unlink (filter_pad, sinkpad);
+      g_mutex_lock (priv->mutex);
       srcpad = fsu_filter_manager_revert (priv->filters,
           GST_BIN (pipeline), filter_pad);
+      g_mutex_unlock (priv->mutex);
       gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
       gst_object_unref (srcpad);
       gst_object_unref (filter_pad);
@@ -431,13 +454,17 @@ _fsu_session_handle_message (FsuSession *self,
   GList *i;
   gboolean drop = FALSE;
 
+  g_mutex_lock (priv->mutex);
   drop = fsu_filter_manager_handle_message (priv->filters, message);
 
   for (i = priv->streams; i && !drop; i = i->next)
   {
     FsuStream *stream = i->data;
+    g_mutex_unlock (priv->mutex);
     drop = _fsu_stream_handle_message (stream, message);
+    g_mutex_lock (priv->mutex);
   }
+  g_mutex_unlock (priv->mutex);
 
   return drop;
 }

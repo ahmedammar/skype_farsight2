@@ -68,6 +68,7 @@ struct _FsuStreamPrivate
   gboolean receiving;
   gboolean sending;
   FsuFilterManager *filters;
+  GMutex *mutex;
 };
 
 static void
@@ -123,6 +124,7 @@ fsu_stream_init (FsuStream *self)
 
   self->priv = priv;
   priv->filters = fsu_multi_filter_manager_new ();
+  priv->mutex = g_mutex_new ();
 }
 
 static void
@@ -250,9 +252,11 @@ fsu_stream_dispose (GObject *object)
   }
   priv->sink = NULL;
 
+  g_mutex_lock (priv->mutex);
   if (priv->filters)
     g_object_unref (priv->filters);
   priv->filters = NULL;
+  g_mutex_unlock (priv->mutex);
 
   if (priv->stream)
     gst_object_unref (priv->stream);
@@ -265,6 +269,10 @@ fsu_stream_dispose (GObject *object)
   if (priv->conference)
     gst_object_unref (priv->conference);
   priv->conference = NULL;
+
+  if (priv->mutex)
+    g_mutex_free (priv->mutex);
+  priv->mutex = NULL;
 
   G_OBJECT_CLASS (fsu_stream_parent_class)->dispose (object);
 }
@@ -305,8 +313,10 @@ src_pad_unlinked (GstPad  *pad,
       "pipeline", &pipeline,
       NULL);
 
+  g_mutex_lock (priv->mutex);
   sink_pad = fsu_filter_manager_revert (priv->filters,
       GST_BIN (pipeline), filter_pad);
+  g_mutex_unlock (priv->mutex);
 
   if (!sink_pad)
     sink_pad = gst_object_ref (filter_pad);
@@ -382,8 +392,10 @@ src_pad_added (FsStream *stream,
     goto error;
   }
 
+  g_mutex_lock (priv->mutex);
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), sink_pad);
+  g_mutex_unlock (priv->mutex);
 
   if (!filter_pad)
     filter_pad = gst_object_ref (sink_pad);
@@ -393,8 +405,10 @@ src_pad_added (FsStream *stream,
 
   if (ret != GST_PAD_LINK_OK)
   {
+    g_mutex_lock (priv->mutex);
     sink_pad = fsu_filter_manager_revert (priv->filters,
         GST_BIN (pipeline), filter_pad);
+    g_mutex_unlock (priv->mutex);
     if (!sink_pad)
       sink_pad = gst_object_ref (filter_pad);
     if (priv->sink)
@@ -410,8 +424,10 @@ src_pad_added (FsStream *stream,
       GST_STATE_CHANGE_FAILURE)
   {
     gst_pad_unlink (pad, filter_pad);
+    g_mutex_lock (priv->mutex);
     sink_pad = fsu_filter_manager_revert (priv->filters,
         GST_BIN (pipeline), filter_pad);
+    g_mutex_unlock (priv->mutex);
     if (!sink_pad)
       sink_pad = gst_object_ref (filter_pad);
     if (priv->sink)
@@ -435,10 +451,15 @@ fsu_stream_start_sending (FsuStream *self)
 {
   FsuStreamPrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
   if (priv->sending)
+  {
+    g_mutex_unlock (priv->mutex);
     return TRUE;
+  }
 
   priv->sending = TRUE;
+  g_mutex_unlock (priv->mutex);
 
   return _fsu_session_start_sending (priv->session);
 }
@@ -448,10 +469,15 @@ fsu_stream_stop_sending (FsuStream *self)
 {
   FsuStreamPrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
   if (!priv->sending)
+  {
+    g_mutex_unlock (priv->mutex);
     return;
+  }
 
   priv->sending = FALSE;
+  g_mutex_unlock (priv->mutex);
 
   _fsu_session_stop_sending (priv->session);
 }
@@ -462,12 +488,15 @@ fsu_stream_start_receiving (FsuStream *self)
   FsuStreamPrivate *priv = self->priv;
   gboolean ret = TRUE;
 
+  g_mutex_lock (priv->mutex);
   if (!priv->receiving)
   {
     GstIterator *iter = NULL;
     gboolean done = FALSE;
 
     priv->receiving = TRUE;
+    g_mutex_unlock (priv->mutex);
+
     iter = fs_stream_get_src_pads_iterator (priv->stream);
     while (!done)
     {
@@ -480,7 +509,9 @@ fsu_stream_start_receiving (FsuStream *self)
           break;
         case GST_ITERATOR_RESYNC:
           fsu_stream_stop_receiving (self);
+          g_mutex_lock (priv->mutex);
           priv->receiving = TRUE;
+          g_mutex_unlock (priv->mutex);
           gst_iterator_resync (iter);
           break;
         case GST_ITERATOR_ERROR:
@@ -494,7 +525,10 @@ fsu_stream_start_receiving (FsuStream *self)
     }
     gst_iterator_free (iter);
   }
-
+  else
+  {
+    g_mutex_unlock (priv->mutex);
+  }
 
   return ret;
 }
@@ -506,7 +540,10 @@ fsu_stream_stop_receiving (FsuStream *self)
   GstIterator *iter = NULL;
   gboolean done = FALSE;
 
+  g_mutex_lock (priv->mutex);
   priv->receiving = FALSE;
+  g_mutex_unlock (priv->mutex);
+
   iter = fs_stream_get_src_pads_iterator (priv->stream);
   while (!done)
   {
@@ -544,5 +581,11 @@ _fsu_stream_handle_message (FsuStream *self,
     GstMessage *message)
 {
   FsuStreamPrivate *priv = self->priv;
-  return fsu_filter_manager_handle_message (priv->filters, message);
+  gboolean ret;
+
+  g_mutex_lock (priv->mutex);
+  ret = fsu_filter_manager_handle_message (priv->filters, message);
+  g_mutex_unlock (priv->mutex);
+
+  return ret;
 }

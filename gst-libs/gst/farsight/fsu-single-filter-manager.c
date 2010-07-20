@@ -113,6 +113,7 @@ struct _FsuSingleFilterManagerPrivate
   GstPad *applied_pad;
   GstPad *out_pad;
   GQueue *modifications;
+  GMutex *mutex;
 };
 
 struct _FsuFilterId
@@ -185,6 +186,7 @@ fsu_single_filter_manager_init (FsuSingleFilterManager *self)
 
   self->priv = priv;
   priv->modifications = g_queue_new ();
+  priv->mutex = g_mutex_new ();
 }
 
 
@@ -195,6 +197,7 @@ fsu_single_filter_manager_dispose (GObject *object)
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
 
+  g_mutex_lock (priv->mutex);
   if (!g_queue_is_empty (priv->modifications))
   {
     if (GST_PAD_IS_SRC (priv->applied_pad))
@@ -244,6 +247,13 @@ fsu_single_filter_manager_dispose (GObject *object)
   if (priv->out_pad)
     gst_object_unref (priv->out_pad);
 
+  g_mutex_unlock (priv->mutex);
+
+
+  if (priv->mutex)
+    g_mutex_free (priv->mutex);
+  priv->mutex = NULL;
+
   G_OBJECT_CLASS (fsu_single_filter_manager_parent_class)->dispose (object);
 }
 
@@ -259,16 +269,24 @@ fsu_single_filter_manager_get_property (GObject *object,
   switch (property_id)
   {
     case PROP_APPLIED:
+      g_mutex_lock (priv->mutex);
       g_value_set_boolean (value, priv->applied_bin ? TRUE : FALSE);
+      g_mutex_unlock (priv->mutex);
       break;
     case PROP_APPLIED_BIN:
+      g_mutex_lock (priv->mutex);
       g_value_set_object (value, priv->applied_bin);
+      g_mutex_unlock (priv->mutex);
       break;
     case PROP_APPLIED_PAD:
+      g_mutex_lock (priv->mutex);
       g_value_set_object (value, priv->applied_pad);
+      g_mutex_unlock (priv->mutex);
       break;
     case PROP_OUT_PAD:
+      g_mutex_lock (priv->mutex);
       g_value_set_object (value, priv->out_pad);
+      g_mutex_unlock (priv->mutex);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -324,7 +342,7 @@ apply_modifs (GstPad *pad,
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
 
-  /* TODO: mutex */
+  g_mutex_lock (priv->mutex);
   while (!g_queue_is_empty (priv->modifications))
   {
     FilterModification *modif = g_queue_pop_head (priv->modifications);
@@ -359,7 +377,6 @@ apply_modifs (GstPad *pad,
       /* Do not set remove to TRUE because we don't know yet if the filter
          to remove had failed or not */
     }
-
 
     /* Find the last successfully applied filter after the current one if
        the one at our position had failed to apply */
@@ -426,6 +443,7 @@ apply_modifs (GstPad *pad,
         }
       }
     }
+    g_mutex_unlock (priv->mutex);
 
     /* We may have nothing to do and no need to unlink if we want to REMOVE a
        filter which had failed to apply previously */
@@ -434,6 +452,7 @@ apply_modifs (GstPad *pad,
       // unlink
       gst_pad_unlink (srcpad, sinkpad);
 
+      g_mutex_lock (priv->mutex);
       if (remove)
         out_pad = fsu_filter_revert (to_remove->filter, priv->applied_bin,
             current_pad);
@@ -498,6 +517,7 @@ apply_modifs (GstPad *pad,
           gst_object_unref (modif->id->out_pad);
         modif->id->in_pad = modif->id->out_pad = NULL;
       }
+      g_mutex_unlock (priv->mutex);
 
       gst_object_unref (current_pad);
 
@@ -508,6 +528,7 @@ apply_modifs (GstPad *pad,
       gst_object_unref (sinkpad);
     }
 
+    g_mutex_lock (priv->mutex);
     /* Synchronize our applied_filters list with the filters list */
     if (modif->action == REPLACE)
       insert_position = g_list_index (priv->applied_filters, to_remove);
@@ -522,6 +543,7 @@ apply_modifs (GstPad *pad,
       priv->applied_filters = g_list_remove (priv->applied_filters, to_remove);
       free_filter_id (to_remove);
     }
+    g_mutex_unlock (priv->mutex);
 
 
     g_slice_free (FilterModification, modif);
@@ -546,7 +568,7 @@ new_modification (FsuSingleFilterManager *self,
   modif->insert_position = insert_position;
   modif->replace_id = replace_id;
 
-  /* TODO: mutex */
+  g_mutex_lock (priv->mutex);
   g_queue_push_tail (priv->modifications, modif);
 
   if (GST_PAD_IS_SRC (priv->applied_pad))
@@ -559,6 +581,7 @@ new_modification (FsuSingleFilterManager *self,
     gst_pad_set_blocked_async (src_pad, TRUE, apply_modifs, self);
     gst_object_unref (src_pad);
   }
+  g_mutex_unlock (priv->mutex);
 }
 
 static FsuFilterId *
@@ -567,7 +590,12 @@ fsu_single_filter_manager_insert_filter_before (FsuFilterManager *iface,
     FsuFilterId *before)
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
-  gint index = g_list_index (self->priv->filters, before);
+  FsuSingleFilterManagerPrivate *priv = self->priv;
+  gint index = -1;
+
+  g_mutex_lock (priv->mutex);
+  index = g_list_index (priv->filters, before);
+  g_mutex_unlock (priv->mutex);
 
   if (index < 0)
     return NULL;
@@ -581,7 +609,12 @@ fsu_single_filter_manager_insert_filter_after (FsuFilterManager *iface,
     FsuFilterId *after)
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
-  gint index = g_list_index (self->priv->filters, after);
+  FsuSingleFilterManagerPrivate *priv = self->priv;
+  gint index = -1;
+
+  g_mutex_lock (priv->mutex);
+  index = g_list_index (priv->filters, after);
+  g_mutex_unlock (priv->mutex);
 
   if (index < 0)
     return NULL;
@@ -596,8 +629,12 @@ fsu_single_filter_manager_replace_filter (FsuFilterManager *iface,
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
   FsuSingleFilterManagerPrivate *priv = self->priv;
-  gint index = g_list_index (priv->filters, replace);
+  gint index = -1;
   FsuFilterId *id = NULL;
+
+  g_mutex_lock (priv->mutex);
+  index = g_list_index (priv->filters, replace);
+  g_mutex_unlock (priv->mutex);
 
   if (index < 0)
     return NULL;
@@ -605,13 +642,20 @@ fsu_single_filter_manager_replace_filter (FsuFilterManager *iface,
   id = g_slice_new0 (FsuFilterId);
   id->filter = g_object_ref (filter);
 
+  g_mutex_lock (priv->mutex);
   priv->filters = g_list_remove (priv->filters, replace);
   priv->filters = g_list_insert (priv->filters, id, index);
 
   if (priv->applied_bin)
+  {
+    g_mutex_unlock (priv->mutex);
     new_modification (self, REPLACE, id, 0, replace);
+  }
   else
+  {
+    g_mutex_unlock (priv->mutex);
     free_filter_id (replace);
+  }
 
   return id;
 }
@@ -625,6 +669,7 @@ fsu_single_filter_manager_insert_filter (FsuFilterManager *iface,
   FsuSingleFilterManagerPrivate *priv = self->priv;
   FsuFilterId *id = g_slice_new0 (FsuFilterId);
 
+  g_mutex_lock (priv->mutex);
   if (position < 0 || position > g_list_length (priv->filters))
     position = g_list_length (priv->filters);
 
@@ -633,7 +678,14 @@ fsu_single_filter_manager_insert_filter (FsuFilterManager *iface,
   priv->filters = g_list_insert (priv->filters, id, position);
 
   if (priv->applied_bin)
+  {
+    g_mutex_unlock (priv->mutex);
     new_modification (self, INSERT, id, position, NULL);
+  }
+  else
+  {
+    g_mutex_unlock (priv->mutex);
+  }
 
   return id;
 }
@@ -642,7 +694,14 @@ static GList *
 fsu_single_filter_manager_list_filters (FsuFilterManager *iface)
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
-  return g_list_copy (self->priv->filters);
+  FsuSingleFilterManagerPrivate *priv = self->priv;
+  GList *ret = NULL;
+
+  g_mutex_lock (priv->mutex);
+  ret = g_list_copy (priv->filters);
+  g_mutex_unlock (priv->mutex);
+
+  return ret;
 }
 
 static gboolean
@@ -651,17 +710,28 @@ fsu_single_filter_manager_remove_filter (FsuFilterManager *iface,
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
   FsuSingleFilterManagerPrivate *priv = self->priv;
-  gint index = g_list_index (priv->filters, id);
+  gint index = -1;
+
+  g_mutex_lock (priv->mutex);
+  index = g_list_index (priv->filters, id);
+  g_mutex_unlock (priv->mutex);
 
   if (index < 0)
     return FALSE;
 
+  g_mutex_lock (priv->mutex);
   priv->filters = g_list_remove (priv->filters, id);
 
   if (priv->applied_bin)
+  {
+    g_mutex_unlock (priv->mutex);
     new_modification (self, REMOVE, id, 0, NULL);
+  }
   else
+  {
+    g_mutex_unlock (priv->mutex);
     free_filter_id (id);
+  }
 
   return TRUE;
 }
@@ -671,7 +741,12 @@ fsu_single_filter_manager_get_filter_by_id (FsuFilterManager *iface,
     FsuFilterId *id)
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
-  gint index = g_list_index (self->priv->filters, id);
+  FsuSingleFilterManagerPrivate *priv = self->priv;
+  gint index = -1;
+
+  g_mutex_lock (priv->mutex);
+  index = g_list_index (priv->filters, id);
+  g_mutex_unlock (priv->mutex);
 
   if (index < 0)
     return NULL;
@@ -689,17 +764,19 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
   FsuSingleFilterManagerPrivate *priv = self->priv;
   GList *i = NULL;
 
-  if (priv->applied_bin)
-  {
-    //g_debug ("Can only apply the filters once");
-    return NULL;
-  }
   if (!bin || !pad)
   {
     //g_debug ("Bin and/or pad NULL. Cannot apply");
     return NULL;
   }
 
+  g_mutex_lock (priv->mutex);
+  if (priv->applied_bin)
+  {
+    g_mutex_unlock (priv->mutex);
+    //g_debug ("Can only apply the filters once");
+    return NULL;
+  }
 
   priv->applied_pad = gst_object_ref (pad);
 
@@ -707,6 +784,8 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
     i = priv->filters;
   else
     i = g_list_last (priv->filters);
+
+  g_mutex_unlock (priv->mutex);
 
   pad = gst_object_ref (pad);
   while (i)
@@ -737,9 +816,11 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
   }
 
 
+  g_mutex_lock (priv->mutex);
   priv->out_pad = gst_object_ref (pad);
   priv->applied_bin = gst_object_ref (bin);
   priv->applied_filters = g_list_copy (self->priv->filters);
+  g_mutex_unlock (priv->mutex);
 
   return pad;
 }
@@ -759,13 +840,17 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
     //g_debug ("Bin and/or pad NULL. Cannot revert");
     return NULL;
   }
+
+  g_mutex_lock (priv->mutex);
   if (!priv->applied_bin)
   {
+    g_mutex_unlock (priv->mutex);
     //g_debug ("Can not revert unapplied filters");
     return NULL;
   }
   if (priv->applied_bin != bin || priv->out_pad != pad)
   {
+    g_mutex_unlock (priv->mutex);
     //g_debug ("Cannot revert filters from a different bin/pad");
     return NULL;
   }
@@ -787,13 +872,13 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
         gst_object_unref (src_pad);
       }
     }
-
   }
 
   if (GST_PAD_IS_SRC (pad))
     i = g_list_last (priv->applied_filters);
   else
     i = priv->applied_filters;
+  g_mutex_unlock (priv->mutex);
 
   pad = gst_object_ref (pad);
 
@@ -824,6 +909,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
       i = i->next;
   }
 
+  g_mutex_lock (priv->mutex);
   if (priv->applied_pad != pad)
   {
     g_warning ("Reverting failed, result pad different from applied pad");
@@ -852,6 +938,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
   if (priv->applied_filters)
     g_list_free (priv->applied_filters);
   priv->applied_filters = NULL;
+  g_mutex_unlock (priv->mutex);
 
   return pad;
 }
@@ -865,6 +952,7 @@ fsu_single_filter_manager_handle_message (FsuFilterManager *iface,
   GList *i = NULL;
   gboolean drop = FALSE;
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->applied_filters; i && !drop; i = i->next)
   {
     FsuFilterId *id = i->data;
@@ -873,6 +961,7 @@ fsu_single_filter_manager_handle_message (FsuFilterManager *iface,
     if (id->in_pad)
       drop = fsu_filter_handle_message (id->filter, message);
   }
+  g_mutex_unlock (priv->mutex);
 
   return drop;
 }

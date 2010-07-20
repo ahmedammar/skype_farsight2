@@ -73,6 +73,7 @@ struct _FsuMultiFilterManagerPrivate
 {
   GList *filters;
   GList *filter_managers;
+  GMutex *mutex;
 };
 
 struct _FsuFilterId
@@ -116,6 +117,7 @@ fsu_multi_filter_manager_init (FsuMultiFilterManager *self)
           FsuMultiFilterManagerPrivate);
 
   self->priv = priv;
+  priv->mutex = g_mutex_new ();
 }
 
 
@@ -127,6 +129,7 @@ fsu_multi_filter_manager_dispose (GObject *object)
   GList *i;
 
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *fm = i->data;
@@ -144,6 +147,11 @@ fsu_multi_filter_manager_dispose (GObject *object)
   }
   g_list_free (priv->filters);
   priv->filters = NULL;
+  g_mutex_unlock (priv->mutex);
+
+  if (priv->mutex)
+    g_mutex_free (priv->mutex);
+  priv->mutex = NULL;
 
   G_OBJECT_CLASS (fsu_multi_filter_manager_parent_class)->dispose (object);
 }
@@ -167,7 +175,14 @@ static GList *
 fsu_multi_filter_manager_list_filters (FsuFilterManager *iface)
 {
   FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
-  return g_list_copy (self->priv->filters);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  GList *ret = NULL;
+
+  g_mutex_lock (priv->mutex);
+  ret = g_list_copy (priv->filters);
+  g_mutex_unlock (priv->mutex);
+
+  return ret;
 }
 
 
@@ -178,9 +193,13 @@ fsu_multi_filter_manager_insert_filter_before (FsuFilterManager *iface,
 {
   FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
   FsuMultiFilterManagerPrivate *priv = self->priv;
-  GList *pos = g_list_find (priv->filters, before);
+  GList *pos = NULL;
   FsuFilterId *id = NULL;
   GList *i = NULL;
+
+  g_mutex_lock (priv->mutex);
+  pos = g_list_find (priv->filters, before);
+  g_mutex_unlock (priv->mutex);
 
   if (!pos)
     return NULL;
@@ -189,11 +208,15 @@ fsu_multi_filter_manager_insert_filter_before (FsuFilterManager *iface,
   id->filter = g_object_ref (filter);
   id->associations = g_hash_table_new (NULL, NULL);
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *sub_fm = i->data;
     FsuFilterId *before_sub_id = NULL;
     FsuFilterId *sub_id = NULL;
+
+    g_mutex_unlock (priv->mutex);
+
     before_sub_id = g_hash_table_lookup (before->associations, sub_fm);
     if (before_sub_id)
     {
@@ -201,9 +224,11 @@ fsu_multi_filter_manager_insert_filter_before (FsuFilterManager *iface,
           before_sub_id);
       g_hash_table_insert (id->associations, sub_fm, sub_id);
     }
+    g_mutex_lock (priv->mutex);
   }
 
   priv->filters = g_list_insert_before (priv->filters, pos, id);
+  g_mutex_unlock (priv->mutex);
 
   return id;
 }
@@ -216,9 +241,13 @@ fsu_multi_filter_manager_insert_filter_after (FsuFilterManager *iface,
 {
   FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
   FsuMultiFilterManagerPrivate *priv = self->priv;
-  GList *pos = g_list_find (priv->filters, after);
+  GList *pos = NULL;
   FsuFilterId *id = NULL;
   GList *i = NULL;
+
+  g_mutex_lock (priv->mutex);
+  pos = g_list_find (priv->filters, after);
+  g_mutex_unlock (priv->mutex);
 
   if (!pos)
     return NULL;
@@ -227,11 +256,15 @@ fsu_multi_filter_manager_insert_filter_after (FsuFilterManager *iface,
   id->filter = g_object_ref (filter);
   id->associations = g_hash_table_new (NULL, NULL);
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *sub_fm = i->data;
     FsuFilterId *after_sub_id = NULL;
     FsuFilterId *sub_id = NULL;
+
+    g_mutex_unlock (priv->mutex);
+
     after_sub_id = g_hash_table_lookup (after->associations, sub_fm);
     if (after_sub_id)
     {
@@ -239,9 +272,11 @@ fsu_multi_filter_manager_insert_filter_after (FsuFilterManager *iface,
           after_sub_id);
       g_hash_table_insert (id->associations, sub_fm, sub_id);
     }
+    g_mutex_lock (priv->mutex);
   }
 
   priv->filters = g_list_insert_before (priv->filters, pos->next, id);
+  g_mutex_unlock (priv->mutex);
 
   return id;
 }
@@ -254,9 +289,13 @@ fsu_multi_filter_manager_replace_filter (FsuFilterManager *iface,
 {
   FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
   FsuMultiFilterManagerPrivate *priv = self->priv;
-  gint index = g_list_index (priv->filters, replace);
+  gint index = -1;
   FsuFilterId *id = NULL;
   GList *i = NULL;
+
+  g_mutex_lock (priv->mutex);
+  index = g_list_index (priv->filters, replace);
+  g_mutex_unlock (priv->mutex);
 
   if (index < 0)
     return NULL;
@@ -265,11 +304,15 @@ fsu_multi_filter_manager_replace_filter (FsuFilterManager *iface,
   id->filter = g_object_ref (filter);
   id->associations = g_hash_table_new (NULL, NULL);
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *sub_fm = i->data;
     FsuFilterId *replace_sub_id = NULL;
     FsuFilterId *sub_id = NULL;
+
+    g_mutex_unlock (priv->mutex);
+
     replace_sub_id = g_hash_table_lookup (replace->associations, sub_fm);
     if (replace_sub_id)
     {
@@ -277,10 +320,13 @@ fsu_multi_filter_manager_replace_filter (FsuFilterManager *iface,
           replace_sub_id);
       g_hash_table_insert (id->associations, sub_fm, sub_id);
     }
+    g_mutex_lock (priv->mutex);
   }
 
   priv->filters = g_list_remove (priv->filters, replace);
   priv->filters = g_list_insert (priv->filters, id, index);
+  g_mutex_unlock (priv->mutex);
+
   free_filter_id (replace);
 
   return id;
@@ -301,15 +347,20 @@ fsu_multi_filter_manager_insert_filter (FsuFilterManager *iface,
   id->filter = g_object_ref (filter);
   id->associations = g_hash_table_new (NULL, NULL);
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *sub_fm = i->data;
-    FsuFilterId *sub_id =  fsu_filter_manager_insert_filter (sub_fm, filter,
-        position);
+    FsuFilterId *sub_id = NULL;
+
+    g_mutex_unlock (priv->mutex);
+    sub_id = fsu_filter_manager_insert_filter (sub_fm, filter, position);
     g_hash_table_insert (id->associations, sub_fm, sub_id);
+    g_mutex_lock (priv->mutex);
   }
 
   priv->filters = g_list_insert (priv->filters, id, position);
+  g_mutex_unlock (priv->mutex);
 
   return id;
 }
@@ -322,25 +373,35 @@ fsu_multi_filter_manager_remove_filter (FsuFilterManager *iface,
 
   FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
   FsuMultiFilterManagerPrivate *priv = self->priv;
-  GList *pos = g_list_find (priv->filters, id);
+  GList *pos = NULL;
   GList *i = NULL;
+
+  g_mutex_lock (priv->mutex);
+  pos = g_list_find (priv->filters, id);
+  g_mutex_unlock (priv->mutex);
 
   if (!pos)
     return FALSE;
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *sub_fm = i->data;
     FsuFilterId *remove_sub_id = NULL;
     gboolean ret = TRUE;
 
+    g_mutex_unlock (priv->mutex);
+
     remove_sub_id = g_hash_table_lookup (id->associations, sub_fm);
     if (remove_sub_id)
       ret = fsu_filter_manager_remove_filter (sub_fm, remove_sub_id);
     g_assert (ret == TRUE);
+    g_mutex_lock (priv->mutex);
   }
 
   priv->filters = g_list_remove (priv->filters, id);
+  g_mutex_unlock (priv->mutex);
+
   free_filter_id (id);
 
   return TRUE;
@@ -352,7 +413,12 @@ fsu_multi_filter_manager_get_filter_by_id (FsuFilterManager *iface,
     FsuFilterId *id)
 {
   FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
-  gint index = g_list_index (self->priv->filters, id);
+  FsuMultiFilterManagerPrivate *priv = self->priv;
+  gint index = -1;
+
+  g_mutex_lock (priv->mutex);
+  index = g_list_index (self->priv->filters, id);
+  g_mutex_unlock (priv->mutex);
 
   if (index < 0)
     return NULL;
@@ -372,24 +438,33 @@ fsu_multi_filter_manager_apply (FsuFilterManager *iface,
   GstPad * ret = NULL;
   GList *i = NULL;
 
-
+  g_mutex_lock (priv->mutex);
   priv->filter_managers = g_list_append (priv->filter_managers, fm);
   for (i = priv->filters; i; i = i->next)
   {
     FsuFilterId *id = i->data;
-    FsuFilterId *sub_id = fsu_filter_manager_append_filter (fm, id->filter);
+    FsuFilterId *sub_id = NULL;
+
+    g_mutex_unlock (priv->mutex);
+    sub_id = fsu_filter_manager_append_filter (fm, id->filter);
     g_hash_table_insert (id->associations, fm, sub_id);
+    g_mutex_lock (priv->mutex);
   }
+  g_mutex_unlock (priv->mutex);
 
   ret = fsu_filter_manager_apply (fm, bin, pad);
 
   if (!ret)
   {
+    g_mutex_lock (priv->mutex);
     for (i = priv->filters; i; i = i->next)
     {
       FsuFilterId *id = i->data;
+      g_mutex_unlock (priv->mutex);
       g_hash_table_remove (id->associations, fm);
+      g_mutex_lock (priv->mutex);
     }
+    g_mutex_unlock (priv->mutex);
     g_object_unref (fm);
     return NULL;
   }
@@ -408,11 +483,15 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
   GList *i = NULL;
   GstPad *ret = NULL;
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *fm = i->data;
     GstBin *applied_bin = NULL;
     GstPad *out_pad = NULL;
+
+    g_mutex_unlock (priv->mutex);
+
     g_object_get (fm,
         "applied-bin", &applied_bin,
         "out-pad", &out_pad,
@@ -422,11 +501,14 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
       revert_fm = fm;
       gst_object_unref (applied_bin);
       gst_object_unref (out_pad);
+      g_mutex_lock (priv->mutex);
       break;
     }
     gst_object_unref (applied_bin);
     gst_object_unref (out_pad);
+    g_mutex_lock (priv->mutex);
   }
+  g_mutex_unlock (priv->mutex);
 
   if (revert_fm == NULL)
   {
@@ -434,12 +516,16 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
     return NULL;
   }
 
+  g_mutex_lock (priv->mutex);
   priv->filter_managers = g_list_remove (priv->filter_managers, revert_fm);
   for (i = priv->filters; i; i = i->next)
   {
     FsuFilterId *id = i->data;
+    g_mutex_unlock (priv->mutex);
     g_hash_table_remove (id->associations, revert_fm);
+    g_mutex_lock (priv->mutex);
   }
+  g_mutex_unlock (priv->mutex);
 
   ret = fsu_filter_manager_revert (revert_fm, bin, pad);
   g_object_unref (revert_fm);
@@ -456,11 +542,16 @@ fsu_multi_filter_manager_handle_message (FsuFilterManager *iface,
   GList *i = NULL;
   gboolean ret = FALSE;
 
+  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i && !ret; i = i->next)
   {
     FsuFilterManager *sub_fm = i->data;
+
+    g_mutex_unlock (priv->mutex);
     ret = fsu_filter_manager_handle_message (sub_fm, message);
+    g_mutex_lock (priv->mutex);
   }
+  g_mutex_unlock (priv->mutex);
 
   return ret;
 }
