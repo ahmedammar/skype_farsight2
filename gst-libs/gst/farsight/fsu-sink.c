@@ -282,8 +282,8 @@ fsu_sink_element_added (FsuSink *self,
     GstBin *bin,
     GstElement *sink)
 {
-  if (g_object_has_property (G_OBJECT (sink), "sync") &&
-      g_object_has_property (G_OBJECT (sink), "async"))
+  if (_fsu_g_object_has_property (G_OBJECT (sink), "sync") &&
+      _fsu_g_object_has_property (G_OBJECT (sink), "async"))
   {
     FsuSinkPrivate *priv = self->priv;
     gboolean sync, async;

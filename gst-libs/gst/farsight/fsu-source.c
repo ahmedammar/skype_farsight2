@@ -589,18 +589,18 @@ fsu_source_release_pad (GstElement * element,
 static const gchar *
 get_device_property_name (GstElement *element)
 {
-  if (g_object_has_property (G_OBJECT (element), "device") &&
-      !g_object_has_property (G_OBJECT (element), "device-name"))
+  if (_fsu_g_object_has_property (G_OBJECT (element), "device") &&
+      !_fsu_g_object_has_property (G_OBJECT (element), "device-name"))
   {
     return "device";
   }
-  else if (!g_object_has_property (G_OBJECT (element), "device") &&
-      g_object_has_property (G_OBJECT (element), "device-name"))
+  else if (!_fsu_g_object_has_property (G_OBJECT (element), "device") &&
+      _fsu_g_object_has_property (G_OBJECT (element), "device-name"))
   {
     return "device-name";
   }
-  else if (g_object_has_property (G_OBJECT (element), "device") &&
-      g_object_has_property (G_OBJECT (element), "device-name"))
+  else if (_fsu_g_object_has_property (G_OBJECT (element), "device") &&
+      _fsu_g_object_has_property (G_OBJECT (element), "device-name"))
   {
     if (!strcmp (GST_ELEMENT_NAME (element), "dshowaudiosrc") ||
         !strcmp (GST_ELEMENT_NAME (element), "dshowvideosrc"))
@@ -946,7 +946,8 @@ create_source (FsuSource *self)
       if (!walk && !priv->filtered_sources_done)
       {
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
-        walk = get_plugins_filtered (FSU_SOURCE_GET_CLASS (self)->klass_check);
+        walk = _fsu_get_plugins_filtered (
+            FSU_SOURCE_GET_CLASS (self)->klass_check);
 
         GST_OBJECT_LOCK (GST_OBJECT (self));
         priv->filtered_sources = walk;
@@ -1001,10 +1002,10 @@ create_source (FsuSource *self)
   {
     GST_OBJECT_FLAG_UNSET (src, GST_ELEMENT_IS_SINK);
     real_src = find_source (src);
-    if (g_object_has_property (G_OBJECT (real_src), "buffer-time"))
+    if (_fsu_g_object_has_property (G_OBJECT (real_src), "buffer-time"))
       g_object_set(real_src, "buffer-time", G_GINT64_CONSTANT(20000), NULL);
 
-    if (g_object_has_property (G_OBJECT (real_src), "is-live"))
+    if (_fsu_g_object_has_property (G_OBJECT (real_src), "is-live"))
       g_object_set(real_src, "is-live", TRUE, NULL);
 
     gst_object_unref (real_src);

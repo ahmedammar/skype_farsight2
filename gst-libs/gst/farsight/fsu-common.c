@@ -30,7 +30,7 @@
 
 
 gboolean
-g_object_has_property (GObject *object,
+_fsu_g_object_has_property (GObject *object,
     const gchar *property)
 {
   GObjectClass *klass;
@@ -61,7 +61,7 @@ compare_ranks (GstPluginFeature * f1,
 }
 
 GList *
-get_plugins_filtered (klass_check check)
+_fsu_get_plugins_filtered (klass_check check)
 {
   GList *walk, *registry, *result = NULL;
   GstElementFactory *factory;
