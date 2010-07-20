@@ -143,11 +143,7 @@ fsu_filter_apply (FsuFilter *self,
 
   g_assert (klass->apply);
 
-  g_debug ("Applying on filter %s (%p) : %p", FSU_FILTER_GET_CLASS (self)->name,
-      self, pad);
   out_pad = klass->apply (self, bin, pad);
-  g_debug ("Applied filter %s (%p) : %p", FSU_FILTER_GET_CLASS (self)->name,
-      self, out_pad);
 
   if (out_pad)
   {
@@ -181,9 +177,7 @@ fsu_filter_revert (FsuFilter *self,
   }
   expected = gst_pad_get_peer (in_pad);
 
-  g_debug ("Reverting on filter %s (%p) : %p", klass->name, self, pad);
   out_pad = klass->revert (self, bin, pad);
-  g_debug ("Reverted filter %s (%p) : %p", klass->name, self, out_pad);
 
   if (out_pad != expected)
   {

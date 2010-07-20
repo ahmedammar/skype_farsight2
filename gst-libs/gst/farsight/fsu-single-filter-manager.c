@@ -300,7 +300,6 @@ pad_block_do_nothing (GstPad *pad,
     gboolean blocked,
     gpointer user_data)
 {
-  g_debug ("Pad unblocked");
 }
 
 static void
@@ -324,11 +323,6 @@ apply_modifs (GstPad *pad,
   FsuSingleFilterManager *self = user_data;
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
-  g_debug ("Pad blocked, now modifying pipeline with %d modifications",
-      g_queue_get_length (priv->modifications));
-
-  g_debug ("Currently : applied pad %p and output pad %p", priv->applied_pad,
-      priv->out_pad);
 
   /* TODO: mutex */
   while (!g_queue_is_empty (priv->modifications))
@@ -491,7 +485,6 @@ apply_modifs (GstPad *pad,
         /* Update the out pad*/
         if (current_pad == priv->out_pad)
         {
-          g_debug ("out pad changed from %p to %p", priv->out_pad, out_pad);
           gst_object_unref (priv->out_pad);
           priv->out_pad = gst_object_ref (out_pad);
         }
@@ -506,7 +499,6 @@ apply_modifs (GstPad *pad,
         modif->id->in_pad = modif->id->out_pad = NULL;
       }
 
-      g_debug ("Applied filter on pad %p got %p", current_pad, out_pad);
       gst_object_unref (current_pad);
 
       // Link
@@ -553,11 +545,6 @@ new_modification (FsuSingleFilterManager *self,
   modif->id = id;
   modif->insert_position = insert_position;
   modif->replace_id = replace_id;
-
-  g_debug ("New modification, %s filter %p (%d - %p). blocking pad %p",
-      action == REMOVE?"Removing":action == REPLACE?"Replacing":"Inserting",
-      id->filter, insert_position, replace_id ? replace_id->filter: NULL,
-      GST_PAD_IS_SRC (priv->applied_pad)?priv->applied_pad:priv->out_pad);
 
   /* TODO: mutex */
   g_queue_push_tail (priv->modifications, modif);
@@ -704,16 +691,15 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
 
   if (priv->applied_bin)
   {
-    g_debug ("Can only apply the filters once");
+    //g_debug ("Can only apply the filters once");
     return NULL;
   }
   if (!bin || !pad)
   {
-    g_debug ("Bin and/or pad NULL. Cannot apply");
+    //g_debug ("Bin and/or pad NULL. Cannot apply");
     return NULL;
   }
 
-  g_debug ("Applying on filter manager %p", self);
 
   priv->applied_pad = gst_object_ref (pad);
 
@@ -750,7 +736,6 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
       i = i->prev;
   }
 
-  g_debug ("Applied");
 
   priv->out_pad = gst_object_ref (pad);
   priv->applied_bin = gst_object_ref (bin);
@@ -771,22 +756,19 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
 
   if (!bin || !pad)
   {
-    g_debug ("Bin and/or pad NULL. Cannot revert");
+    //g_debug ("Bin and/or pad NULL. Cannot revert");
     return NULL;
   }
   if (!priv->applied_bin)
   {
-    g_debug ("Can not revert unapplied filters");
+    //g_debug ("Can not revert unapplied filters");
     return NULL;
   }
   if (priv->applied_bin != bin || priv->out_pad != pad)
   {
-    g_debug ("Cannot revert filters from a different bin/pad");
+    //g_debug ("Cannot revert filters from a different bin/pad");
     return NULL;
   }
-
-  g_debug ("Reverting on filter manager %p", self);
-
 
   if (!g_queue_is_empty (priv->modifications))
   {
@@ -847,8 +829,6 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
     g_warning ("Reverting failed, result pad different from applied pad");
     //pad = priv->applied_pad;
   }
-
-  g_debug ("Reverted");
 
   gst_object_unref (priv->applied_pad);
   priv->applied_pad = NULL;
