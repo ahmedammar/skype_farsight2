@@ -26,6 +26,16 @@
 #include <gst/farsight/fsu-audioconverter-filter.h>
 #include <gst/farsight/fsu-filter-helper.h>
 
+/**
+ * SECTION:fsu-filters
+ * @short_description: A set of filters
+ *
+ * Many filters come with Farsigh-utils, and you can use them directly or with
+ * the #FsuFitlterManager in order to easily create your pipelines.
+ * These are the filters currently available and shipped with Farsight
+ */
+
+
 FSU_DEFINE_FILTER (FsuAudioconverterFilter, audioconverter);
 
 static void
@@ -33,6 +43,16 @@ fsu_audioconverter_filter_init (FsuAudioconverterFilter *self)
 {
 }
 
+/**
+ * fsu_audioconverter_filter_new:
+ *
+ * Creates a new audioconverter filter or reuse an existing one.
+ * This filter will take care of converting audio from one format to another.
+ * It will basically add 'audioconvert ! audioresample ! audioconvert'
+ * to the pipeline.
+ *
+ * Returns: A new #FsuAudioconverterFilter
+ */
 FsuAudioconverterFilter *
 fsu_audioconverter_filter_new (void)
 {

@@ -31,6 +31,15 @@
 G_DEFINE_TYPE (FsuConference, fsu_conference, G_TYPE_OBJECT);
 
 
+/**
+ * SECTION:fsu-conference
+ * @short_description: A wrapper class around #FsConference
+ *
+ * This class is the main class of Farsight-Utils. It is meant to wrap the
+ * #FsConference and add it to the pipeline
+ */
+
+
 static void fsu_conference_constructed (GObject *object);
 static void fsu_conference_dispose (GObject *object);
 static void fsu_conference_get_property (GObject *object,
@@ -225,6 +234,19 @@ fsu_conference_dispose (GObject *object)
   G_OBJECT_CLASS (fsu_conference_parent_class)->dispose (object);
 }
 
+/**
+ * fsu_conference_new:
+ * @conference: The #FsConference to wrap
+ * @pipeline: A Gstreamer pipeline in which to add the @conference.
+ * Can be #NULL if you want the #FsuConference to create the pipeline for you.
+ * @error: A GError to be returned in case an error occurs while trying to
+ * create the pipeline or add the @conference in the @pipeline.
+ *
+ * This will create a new #FsuConference wrapping @conference and adding it to
+ * the @pipeline.
+ *
+ * Returns: A new #FsuConference or #NULL if an error occured.
+ */
 FsuConference *
 fsu_conference_new (FsConference *conference,
     GstElement *pipeline,
@@ -270,7 +292,17 @@ remove_weakref (gpointer data,
   g_object_weak_unref (G_OBJECT (data), session_destroyed, user_data);
 }
 
-
+/**
+ * fsu_conference_handle_session:
+ * @self: The #FsuConference
+ * @session: The @FsSession to handle
+ * @source: The @FsuSource to use with the session
+ *
+ * This will let the #FsuConference handle a new session with the corresponding
+ * #FsuSource.
+ *
+ * Returns: A new #FsuSession object.
+ */
 FsuSession *
 fsu_conference_handle_session (FsuConference *self,
     FsSession *session,
@@ -290,7 +322,18 @@ fsu_conference_handle_session (FsuConference *self,
   return sess;
 }
 
-
+/**
+ * fsu_conference_handle_message:
+ * @self: The #FsuConference
+ * @message: The message to handle
+ *
+ * This will try to handle a message received on the Gstreamer bus. It will pass
+ * the message to all sessions and streams being handled and will dispatch the
+ * message to all the #FsuFilterManager objects.
+ *
+ * Returns: #TRUE if the message was handled and needs to be dropped. #FALSE if
+ * the message could not be handled by any session or stream.
+ */
 gboolean
 fsu_conference_handle_message (FsuConference *self,
     GstMessage *message)

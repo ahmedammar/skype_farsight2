@@ -37,9 +37,16 @@ struct _FsuSourceClass
       FsuFilterManager *manager);
 };
 
+/**
+ * FsuSource:
+ *
+ * A Gstreamer Element that derives from FsuSource.
+ * Currently, either 'fsuaudiosource' or 'fsuvideosource'
+ */
 struct _FsuSource
 {
   GstBin parent;
+
   /*< private >*/
   FsuSourcePrivate *priv;
 };

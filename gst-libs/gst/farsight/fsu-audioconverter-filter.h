@@ -56,6 +56,13 @@ struct _FsuAudioconverterFilterClass
   FsuFilterClass parent_class;
 };
 
+/**
+ * FsuAudioConverterFilter:
+ *
+ * A filter that will take care of converting audio from one format to another.
+ * This filter will basically add 'audioconvert ! audioresample ! audioconvert'
+ * to the pipeline.
+ */
 struct _FsuAudioconverterFilter
 {
   FsuFilter parent;

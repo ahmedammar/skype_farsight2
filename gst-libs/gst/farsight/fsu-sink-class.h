@@ -36,6 +36,12 @@ struct _FsuSinkClass
       FsuFilterManager *manager);
 };
 
+/**
+ * FsuSink:
+ *
+ * A Gstreamer Element that derives from FsuSink.
+ * Currently, either 'fsuaudiosink' or 'fsuvideosink'
+ */
 struct _FsuSink
 {
   GstBin parent;
