@@ -167,7 +167,7 @@ add_filters  (gpointer data)
   guint *wids = create_grid (ROWS, COLUMNS);
   int i = 0;
   FsuFilter *f1 = FSU_FILTER (fsu_videoconverter_filter_new ());
-  FsuFilter *f2 = FSU_FILTER (fsu_resolution_filter_new (1280, 960));
+  FsuFilter *f2 = FSU_FILTER (fsu_resolution_filter_new (640, 320));
   FsuFilter *f3 = FSU_FILTER (fsu_resolution_filter_new (WIDTH, HEIGHT));
 
   preview = FSU_FILTER (fsu_preview_filter_new (0));
