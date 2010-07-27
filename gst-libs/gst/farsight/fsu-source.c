@@ -1166,6 +1166,7 @@ fsu_source_handle_message (GstBin *bin,
   DEBUG ("Got message of type %s from %s", GST_MESSAGE_TYPE_NAME(message),
       GST_ELEMENT_NAME (GST_MESSAGE_SRC (message)));
 
+  /* TODO: handle_message on the filter manager */
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
   {
     GError *error;

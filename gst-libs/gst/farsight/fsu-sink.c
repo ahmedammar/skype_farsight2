@@ -128,6 +128,8 @@ fsu_sink_class_init (FsuSinkClass *klass)
   gobject_class->set_property = fsu_sink_set_property;
   gobject_class->dispose = fsu_sink_dispose;
 
+  /* TODO: handle_message on the filter manager */
+
   gstelement_class->request_new_pad =
       GST_DEBUG_FUNCPTR (fsu_sink_request_new_pad);
   gstelement_class->release_pad = GST_DEBUG_FUNCPTR (fsu_sink_release_pad);
