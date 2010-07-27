@@ -1174,6 +1174,11 @@ fsu_source_handle_message (GstBin *bin,
     GstElement *real_source = NULL;
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
+    if (!priv->source)
+    {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
+      goto done;
+    }
     source = gst_object_ref (priv->source);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
@@ -1193,5 +1198,6 @@ fsu_source_handle_message (GstBin *bin,
     }
     gst_object_unref (real_source);
   }
+ done:
   GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }
