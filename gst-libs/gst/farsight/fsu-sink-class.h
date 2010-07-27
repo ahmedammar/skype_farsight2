@@ -49,4 +49,9 @@ struct _FsuSink
   FsuSinkPrivate *priv;
 };
 
+
+void fsu_sink_element_added (FsuSink *self,
+    GstBin *bin,
+    GstElement *sink);
+
 #endif /* __FSU_SINK_CLASS_H__ */

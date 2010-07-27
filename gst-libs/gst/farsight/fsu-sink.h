@@ -55,11 +55,6 @@ typedef struct _FsuSinkPrivate FsuSinkPrivate;
 
 GType fsu_sink_get_type (void) G_GNUC_CONST;
 
-
-void fsu_sink_element_added (FsuSink *self,
-    GstBin *bin,
-    GstElement *sink);
-
 G_END_DECLS
 
 #endif /* __FSU_SINK_H__ */
