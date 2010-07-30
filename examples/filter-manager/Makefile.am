@@ -3,7 +3,7 @@ noinst_PROGRAMS = test-level
 
 if HAVE_GTK
 if HAVE_GNOME_EFFECTS
- noinst_PROGRAMS += test-video-filters grid-effects
+ noinst_PROGRAMS += test-video-filters grid-effects grid-effects2
 endif
 endif
 
