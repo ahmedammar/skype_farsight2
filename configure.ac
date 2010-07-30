@@ -384,7 +384,11 @@ fi
 PKG_CHECK_MODULES(GTK, gtk+-2.0,
 		       [ HAVE_GTK=yes ], [ HAVE_GTK=no ])
 
+PKG_CHECK_MODULES(GNOME_VIDEO_EFFECTS, gnome-video-effects,
+		       [ HAVE_GNOME_EFFECTS=yes ], [ HAVE_GNOME_EFFECTS=no ])
+
 AM_CONDITIONAL(HAVE_GTK, test "x$HAVE_GTK" = "xyes")
+AM_CONDITIONAL(HAVE_GNOME_EFFECTS, test "x$HAVE_GNOME_EFFECTS" = "xyes")
 
 dnl *** output files ***
 
