@@ -1,8 +1,10 @@
 
-noinst_PROGRAMS = test-video-filters test-level
+noinst_PROGRAMS = test-level
 
 if HAVE_GTK
- noinst_PROGRAMS += grid-effects
+if HAVE_GNOME_EFFECTS
+ noinst_PROGRAMS += test-video-filters grid-effects
+endif
 endif
 
 AM_CFLAGS = \

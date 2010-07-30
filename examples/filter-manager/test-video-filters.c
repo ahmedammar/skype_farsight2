@@ -2,7 +2,7 @@
 #include <gst/farsight/fsu-multi-filter-manager.h>
 #include <gst/farsight/fsu-videoconverter-filter.h>
 #include <gst/farsight/fsu-resolution-filter.h>
-#include <gst/farsight/fsu-effectv-filter.h>
+#include <gst/farsight/fsu-gnome-effect-filter.h>
 #include <gst/farsight/fsu-framerate-filter.h>
 #include <gst/farsight/fsu-preview-filter.h>
 
@@ -40,20 +40,23 @@ add_effects  (gpointer data)
 {
   FsuFilterManager *filters = data;
   static gint idx = 0;
-  static gchar *effects[] = {"agingtv",
-                             "dicetv",
-                             "warptv",
-                             "quarktv",
-                             "rippletv",
-  };
-  FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
+  static GList *effects = NULL;
+  FsuFilter *filter = NULL;
+  gchar *effect_name = NULL;
 
-  g_debug ("Insert filter %s", effects[idx]);
+  if (effects == NULL)
+    effects = fsu_gnome_effect_list_effects (".");
+
+  filter = FSU_FILTER (fsu_gnome_effect_filter_new ((const gchar *)g_list_nth_data (effects, idx), NULL));
+  g_object_get (filter, "name", &effect_name, NULL);
+  g_debug ("Insert filter %s", effect_name);
+  g_free (effect_name);
+
   fsu_filter_manager_insert_filter_before (filters, filter, last_converter_id);
   g_object_unref (filter);
 
   idx++;
-  if (idx > 4) {
+  if (idx >= g_list_length (effects)) {
     GList *f = fsu_filter_manager_list_filters (filters);
     GList *i;
     gboolean remove = FALSE;
@@ -66,8 +69,11 @@ add_effects  (gpointer data)
       if (remove)
         fsu_filter_manager_remove_filter (filters, i->data);
       g_list_free (f);
-      g_timeout_add (TIMEOUT, done, NULL);
+
     }
+    g_list_foreach (effects, (GFunc) g_free, NULL);
+    g_list_free (effects);
+    g_timeout_add (TIMEOUT, done, NULL);
 
     return FALSE;
   }
@@ -80,20 +86,13 @@ change_effect  (gpointer data)
 {
   FsuFilterManager *filters = data;
   static gint idx = 0;
-  static gchar *effects[] = {"bullshit",
-                             "edgetv",
-                             "agingtv",
-                             "dicetv",
-                             "warptv",
-                             "shagadelictv",
-                             "vertigotv",
-                             "revtv",
-                             "quarktv",
-                             "optv",
-                             "streaktv",
-                             "rippletv",
-  };
+  static GList *effects = NULL;
   FsuFilter *filter;
+  gchar *effect_name = NULL;
+
+
+  if (effects == NULL)
+    effects = fsu_gnome_effect_list_effects (".");
 
   if (effect_id == NULL)
   {
@@ -101,14 +100,19 @@ change_effect  (gpointer data)
     return TRUE;
   }
 
-  filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
-  g_debug ("Changing effect to %s", effects[idx]);
+  filter = FSU_FILTER (fsu_gnome_effect_filter_new ((const gchar *)g_list_nth_data (effects, idx), NULL));
+  g_object_get (filter, "name", &effect_name, NULL);
+  g_debug ("Changing effect to %s", effect_name);
+  g_free (effect_name);
   effect_id = fsu_filter_manager_replace_filter (filters, filter, effect_id);
   g_object_unref (filter);
 
   idx++;
   if (idx > 10) {
     g_timeout_add (TIMEOUT, add_effects, filters);
+    g_list_foreach (effects, (GFunc) g_free, NULL);
+    g_list_free (effects);
+    effects = NULL;
     return FALSE;
   }
 
@@ -198,7 +202,7 @@ add_filters  (gpointer data)
   FsuFilter *f1 = FSU_FILTER (fsu_videoconverter_filter_new ());
   FsuFilter *f2 = FSU_FILTER (fsu_resolution_filter_new (640, 480));
   FsuFilter *f3 = FSU_FILTER (fsu_framerate_filter_new (30));
-  FsuFilter *f4 = FSU_FILTER (fsu_effectv_filter_new ("vertigotv"));
+  FsuFilter *f4 = FSU_FILTER (fsu_gnome_effect_filter_new ("identity.effect", NULL));
 
   g_debug ("timeout triggered");
 

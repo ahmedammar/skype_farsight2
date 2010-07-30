@@ -4,7 +4,7 @@
 #include <gst/farsight/fsu-single-filter-manager.h>
 #include <gst/farsight/fsu-videoconverter-filter.h>
 #include <gst/farsight/fsu-resolution-filter.h>
-#include <gst/farsight/fsu-effectv-filter.h>
+#include <gst/farsight/fsu-gnome-effect-filter.h>
 #include <gst/farsight/fsu-preview-filter.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
@@ -19,17 +19,7 @@ static GMainLoop *mainloop = NULL;
 static GtkWidget *window = NULL;
 static FsuFilter *preview = NULL;
 static FsuFilterId *effect_id = NULL;
-
-static gchar *effects[] = {"edgetv",
-                           "agingtv",
-                           "dicetv",
-                           "warptv",
-                           "shagadelictv",
-                           "vertigotv",
-                           "revtv",
-                           "quarktv",
-                           "rippletv",
-                           NULL};
+static GList *effects = NULL;
 
 gboolean
 dump  (gpointer data)
@@ -54,6 +44,7 @@ button_clicked (GtkButton *button, gpointer user_data)
 {
   guint idx = GPOINTER_TO_UINT (user_data);
   FsuFilterManager *preview_manager = NULL;
+  const gchar *filename = (const gchar *)g_list_nth_data (effects, idx);
 
   g_debug ("Button %d clicked", idx);
   g_object_get (preview, "filter-manager", &preview_manager, NULL);
@@ -66,9 +57,9 @@ button_clicked (GtkButton *button, gpointer user_data)
     previous_effect = fsu_filter_manager_get_filter_by_id (preview_manager,
         effect_id);
 
-    g_object_get (previous_effect, "effect", &effect, NULL);
-    g_debug ("Previous effect %s. New effect %s", effect, effects[idx]);
-    if (!strcmp (effects[idx], effect))
+    g_object_get (previous_effect, "filename", &effect, NULL);
+    g_debug ("Previous effect %s. New effect %s", effect, filename);
+    if (!strcmp (filename, effect))
     {
       g_debug ("Removing effect");
       fsu_filter_manager_remove_filter (preview_manager, effect_id);
@@ -76,9 +67,12 @@ button_clicked (GtkButton *button, gpointer user_data)
     }
     else
     {
-      FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
+      FsuFilter *filter = FSU_FILTER (fsu_gnome_effect_filter_new (filename, NULL));
+      gchar *name = NULL;
 
-      g_debug ("Replacing effect : %s", effects[idx]);
+      g_object_get (filter, "name", &name, NULL);
+      g_debug ("Replacing effect : %s", name);
+      g_free (name);
       effect_id = fsu_filter_manager_replace_filter (preview_manager, filter,
           effect_id);
       g_object_unref (filter);
@@ -88,9 +82,12 @@ button_clicked (GtkButton *button, gpointer user_data)
   }
   else
   {
-    FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effects[idx]));
+    FsuFilter *filter = FSU_FILTER (fsu_gnome_effect_filter_new (filename, NULL));
+    gchar *name = NULL;
 
-    g_debug ("Adding new effect : %s", effects[idx]);
+    g_object_get (filter, "name", &name, NULL);
+    g_debug ("Adding new effect : %s", name);
+    g_free (name);
     effect_id = fsu_filter_manager_append_filter (preview_manager, filter);
     g_object_unref (filter);
   }
@@ -143,16 +140,15 @@ add_effect  (FsuFilterManager *filters, const gchar *effect, gint id)
 {
   FsuFilter *preview = FSU_FILTER (fsu_preview_filter_new (id));
   FsuFilterManager *preview_manager = NULL;
-  FsuFilter *queue = FSU_FILTER (fsu_effectv_filter_new ("queue"));
-  FsuFilter *filter = FSU_FILTER (fsu_effectv_filter_new (effect));
+  FsuFilter *filter = FSU_FILTER (fsu_gnome_effect_filter_new (effect, NULL));
+  FsuFilter *conv = FSU_FILTER (fsu_videoconverter_filter_new ());
 
   fsu_filter_manager_append_filter (filters, preview);
   g_object_get (preview, "filter-manager", &preview_manager, NULL);
   g_object_unref (preview);
 
-  fsu_filter_manager_append_filter (preview_manager, queue);
+  fsu_filter_manager_append_filter (preview_manager, conv);
   fsu_filter_manager_append_filter (preview_manager, filter);
-  g_object_unref (queue);
   g_object_unref (filter);
   g_object_unref (preview_manager);
 
@@ -166,6 +162,7 @@ add_filters  (gpointer data)
   FsuFilterManager *filters = data;
   guint *wids = create_grid (ROWS, COLUMNS);
   int i = 0;
+  GList *l = NULL;
   FsuFilter *f1 = FSU_FILTER (fsu_videoconverter_filter_new ());
   FsuFilter *f2 = FSU_FILTER (fsu_resolution_filter_new (640, 320));
   FsuFilter *f3 = FSU_FILTER (fsu_resolution_filter_new (WIDTH, HEIGHT));
@@ -176,13 +173,14 @@ add_filters  (gpointer data)
   fsu_filter_manager_append_filter (filters, f2);
   fsu_filter_manager_append_filter (filters, preview);
   fsu_filter_manager_append_filter (filters, f3);
+  fsu_filter_manager_append_filter (filters, f1);
 
   g_object_unref (f1);
   g_object_unref (f2);
   g_object_unref (f3);
 
-  for (i = 0; effects[i]; i++)
-    add_effect (filters, effects[i], wids[i]);
+  for (l = effects; i < ROWS * COLUMNS && l; l = l->next, i++)
+    add_effect (filters, l->data, wids[i]);
 
   g_free (wids);
 
@@ -215,6 +213,14 @@ int main (int argc, char *argv[]) {
   }
 
   g_option_context_free (optcontext);
+
+  effects = fsu_gnome_effect_list_effects ("/usr/local/share/gnome-video-effects");
+  {
+    GList *i = effects;
+    g_debug ("Got effects");
+    for (;i; i=i->next)
+      g_debug ("%s", (gchar *)i->data);
+  }
 
   mainloop = g_main_loop_new (NULL, FALSE);
   pipeline = gst_pipeline_new (NULL);
@@ -271,6 +277,9 @@ int main (int argc, char *argv[]) {
   gst_object_unref (sink_pad);
   gst_object_unref (out_pad);
   gst_bin_remove (GST_BIN (pipeline), sink);
+
+
+  fsu_gnome_effect_effects_list_destroy (effects);
 
   g_object_unref (preview);
   g_object_unref (filters);
