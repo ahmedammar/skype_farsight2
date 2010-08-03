@@ -351,6 +351,19 @@ check_and_remove_tee (FsuSource *self)
     GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->source = NULL;
   }
+  priv->current_filtered_source = NULL;
+
+  for (item = priv->filtered_sources; item; item = g_list_next (item))
+  {
+    if (item->data)
+      gst_object_unref (GST_ELEMENT_FACTORY (item->data));
+  }
+  g_list_free (priv->filtered_sources);
+  priv->filtered_sources = NULL;
+  priv->priority_source_ptr = NULL;
+  priv->filtered_sources_done = FALSE;
+  priv->probe_idx = -1;
+
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 }
 
@@ -1026,6 +1039,7 @@ fsu_source_change_state (GstElement *element,
   FsuSource *self = FSU_SOURCE (element);
   FsuSourcePrivate *priv = self->priv;
   GstStateChangeReturn ret;
+  GList *walk;
 
   switch (transition)
   {
@@ -1070,6 +1084,18 @@ fsu_source_change_state (GstElement *element,
         GST_OBJECT_LOCK (GST_OBJECT (self));
         priv->source = NULL;
       }
+      priv->current_filtered_source = NULL;
+
+      for (walk = priv->filtered_sources; walk; walk = g_list_next (walk))
+      {
+        if (walk->data)
+          gst_object_unref (GST_ELEMENT_FACTORY (walk->data));
+      }
+      g_list_free (priv->filtered_sources);
+      priv->filtered_sources = NULL;
+      priv->priority_source_ptr = NULL;
+      priv->filtered_sources_done = FALSE;
+      priv->probe_idx = -1;
       GST_OBJECT_UNLOCK (GST_OBJECT (self));
       break;
     default:
