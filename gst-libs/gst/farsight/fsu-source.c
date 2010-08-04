@@ -105,6 +105,8 @@ struct _FsuSourcePrivate
   GstElement *source;
   /* The src tee coming out of the source element */
   GstElement *tee;
+  /* The fakesink linked to the tee to prevent not-linked issues */
+  GstElement *fakesink;
   /* Which priority source we are trying */
   const gchar **priority_source_ptr;
   /* plugins filtered */
@@ -294,6 +296,9 @@ fsu_source_dispose (GObject *object)
   if (priv->tee)
     gst_object_unref (priv->tee);
   priv->tee = NULL;
+  if (priv->fakesink)
+    gst_object_unref (priv->fakesink);
+  priv->fakesink = NULL;
 
   priv->priority_source_ptr = NULL;
 
@@ -328,9 +333,12 @@ check_and_remove_tee (FsuSource *self)
   if (priv->tee)
   {
     GstElement *tee = priv->tee;
+    GstElement *fakesink = priv->fakesink;
 
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
+    if(fakesink)
+      gst_element_unlink (tee, fakesink);
     gst_bin_remove (GST_BIN (self), tee);
     gst_element_set_state (tee, GST_STATE_NULL);
     gst_object_unref (tee);
@@ -338,6 +346,21 @@ check_and_remove_tee (FsuSource *self)
     GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->tee = NULL;
   }
+
+  if (priv->fakesink)
+  {
+    GstElement *fakesink = priv->fakesink;
+
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    gst_bin_remove (GST_BIN (self), fakesink);
+    gst_element_set_state (fakesink, GST_STATE_NULL);
+    gst_object_unref (fakesink);
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    priv->fakesink = NULL;
+  }
+
   if (priv->source)
   {
     GstElement *source = priv->source;
@@ -452,8 +475,10 @@ create_tee (FsuSource *self)
 {
   FsuSourcePrivate *priv = self->priv;
   GstElement *tee = NULL;
+  GstElement *fakesink = NULL;
 
   tee = gst_element_factory_make ("tee", "srctee");
+  fakesink = gst_element_factory_make ("fakesink", NULL);
 
   if (!tee)
   {
@@ -466,8 +491,20 @@ create_tee (FsuSource *self)
     gst_object_unref (tee);
     return;
   }
+  if (fakesink && !gst_bin_add (GST_BIN (self), fakesink))
+  {
+    gst_object_unref (fakesink);
+    fakesink = NULL;
+  }
+  if (fakesink && !gst_element_link (tee, fakesink))
+  {
+    gst_bin_remove (GST_BIN (self), fakesink);
+    fakesink = NULL;
+  }
+
   GST_OBJECT_LOCK (GST_OBJECT (self));
   priv->tee = gst_object_ref (tee);
+  priv->fakesink = gst_object_ref (fakesink);
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
