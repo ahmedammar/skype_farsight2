@@ -119,6 +119,18 @@ fsu_level_filter_dispose (GObject *object)
 }
 
 
+/**
+ * fsu_level_filter_new:
+ *
+ * Creates a new level filter.
+ * This filter will add a 'level' element to the pipeline and will transform
+ * its result from the #GstMessage on the bus into a signal with the RMS average
+ * for all channels.
+ *
+ * Returns: A new #FsuLevelFilter
+ * See also: #FsuLevelFilter:level
+ * See also: fsu_filter_handle_message()
+ */
 FsuLevelFilter *
 fsu_level_filter_new (void)
 {

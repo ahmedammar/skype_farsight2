@@ -235,9 +235,15 @@ fsu_gnome_effect_filter_dispose (GObject *object)
 
 /**
  * fsu_gnome_effect_filter_new:
+ * @filename: The filename to the .effect file representing the
+ * Gnome Video Effect
+ * @error: A pointer to a #GError to be set if the .effect file is invalid
  *
- * Creates a new Gnome effect filter
- * Returns: A new #FsuGnomeEffectFilter
+ * Creates a new Gnome Video Effect filter
+ * This filter will add the video effect pipeline description with an
+ * ffmpegcolorspace to the pipeline when applied.
+ *
+ * Returns: A new #FsuGnomeEffectFilter or #NULL if an error occured
  */
 FsuGnomeEffectFilter *
 fsu_gnome_effect_filter_new (const gchar *filename,
@@ -297,9 +303,13 @@ fsu_gnome_effect_filter_revert (FsuFilter *filter,
   return fsu_filter_revert_bin (bin, pad);
 }
 
-
-
-
+/**
+ * fsu_gnome_effect_categories_list_destroy:
+ * @categories_list: The #GList of categories to free
+ *
+ * Frees and destroys the #GList of categories returned by the property
+ * #FsuGnomeEffectFilter:categories
+ */
 void
 fsu_gnome_effect_categories_list_destroy (GList *categories_list)
 {
@@ -307,6 +317,14 @@ fsu_gnome_effect_categories_list_destroy (GList *categories_list)
   g_list_free (categories_list);
 }
 
+/**
+ * fsu_gnome_effect_categories_list_copy:
+ * @categories_list: The #GList of categories to copy
+ *
+ * Creates a #GList copy of the categories list
+ *
+ * Returns: The copy of the categories list
+ */
 GList *
 fsu_gnome_effect_categories_list_copy (const GList *categories_list)
 {
@@ -337,6 +355,15 @@ fsu_gnome_effect_categories_list_get_type (void)
 }
 
 
+/**
+ * fsu_gnome_effect_list_effects:
+ * @directory: The directory to search for effects
+ *
+ * Searches in a directory for all .effect files and returns a #GList of strings
+ * with the full path to the .effect files in it.
+ *
+ * Returns: A #GList of the filenames of the .effect files in the @directory
+ */
 GList *
 fsu_gnome_effect_list_effects (const gchar *directory)
 {
@@ -366,6 +393,13 @@ fsu_gnome_effect_list_effects (const gchar *directory)
 }
 
 
+/**
+ * fsu_gnome_effect_effects_list_destroy:
+ * @effects_list: The #GList of effects to free
+ *
+ * Frees and destroys the #GList of effects returned by
+ * fsu_gnome_effect_list_effects()
+ */
 void
 fsu_gnome_effect_effects_list_destroy (GList *effects_list)
 {

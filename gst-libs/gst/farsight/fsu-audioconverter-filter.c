@@ -19,21 +19,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
-#include <gst/farsight/fsu-audioconverter-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
-
 /**
  * SECTION:fsu-filters
  * @short_description: A set of filters
  *
  * Many filters come with Farsigh-utils, and you can use them directly or with
  * the #FsuFitlterManager in order to easily create your pipelines.
- * These are the filters currently available and shipped with Farsight
+ * These are the filters currently available and shipped with Farsight.
  */
+
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include <gst/farsight/fsu-audioconverter-filter.h>
+#include <gst/farsight/fsu-filter-helper.h>
 
 
 FSU_DEFINE_FILTER (FsuAudioconverterFilter, audioconverter);

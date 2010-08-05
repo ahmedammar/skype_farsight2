@@ -201,6 +201,19 @@ fsu_resolution_filter_constructed (GObject *object)
       NULL);
 }
 
+/**
+ * fsu_resolution_filter_new:
+ * @width: The requested width of the video
+ * @height: The requested height of the video
+ *
+ * Creates a new resolution filter.
+ * This filter will force the video output to have a specific resolution. It
+ * will add a videoscale element to the pipeline as well as a capsfilter.
+ * If the source can use the new resolution, it will do it, otherwise, the
+ * videoscale will scale the video to make sure it has the right resolution.
+ *
+ * Returns: A new #FsuResolutionFilter
+ */
 FsuResolutionFilter *
 fsu_resolution_filter_new (guint width,
     guint height)

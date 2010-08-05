@@ -174,6 +174,18 @@ fsu_preview_filter_dispose (GObject *object)
   G_OBJECT_CLASS (fsu_preview_filter_parent_class)->dispose (object);
 }
 
+
+/**
+ * fsu_preview_filter_new:
+ * @xid: The window x-id in which to embed the video output
+ *
+ * Creates a new video preview filter.
+ * This filter allows you to preview your video stream into a preview window by
+ * creating a tee and linking it with an fsuvideosink to which it sets the
+ * specified @xid value
+ *
+ * Returns: A new #FsuPreviewFilter
+ */
 FsuPreviewFilter *
 fsu_preview_filter_new (gint xid)
 {

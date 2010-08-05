@@ -19,6 +19,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:fsu-session
+ * @short_description: A wrapper class around #FsSession
+ *
+ * This class is part of Farsight-Utils. It is meant to wrap the
+ * #FsSession and link the source with the #FsConference.
+ * It also provides access to a #FsuFilterManager that sits between the source
+ * and the sink pad of the #FsSession in the conference.
+ */
+
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -304,6 +314,18 @@ remove_weakref (gpointer data,
   g_object_weak_unref (G_OBJECT (data), stream_destroyed, user_data);
 }
 
+/**
+ * fsu_session_handle_stream:
+ * @self: The #FsuSession
+ * @stream: The #FsStream to handle
+ * @sink: The #FsuSink to use with the stream
+ *
+ * This will let the #FsuSession handle a new stream with the corresponding
+ * #FsuSink.
+ * The @stream will take care of linking the @sink when needed
+ *
+ * Returns: A new #FsuStream object.
+ */
 FsuStream *
 fsu_session_handle_stream (FsuSession *self,
     FsStream *stream,

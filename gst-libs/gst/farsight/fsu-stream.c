@@ -20,6 +20,16 @@
  */
 
 
+/**
+ * SECTION:fsu-stream
+ * @short_description: A wrapper class around #FsStream
+ *
+ * This class is part of Farsight-Utils. It is meant to wrap the
+ * #FsStream and link the sink with the #FsConference.
+ * It also provides access to a #FsuFilterManager that sits between the source
+ * pads of the #FsStream and the sink.
+ */
+
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
@@ -446,6 +456,16 @@ src_pad_added (FsStream *stream,
   return;
 }
 
+
+/**
+ * fsu_stream_start_sending:
+ * @self: The #FsuStream
+ *
+ * This tells the #FsuStream that you want to start sending the data to this
+ * stream. It will let the session know and the source will be activated.
+ *
+ * Returns: #TRUE on success, #FALSE otherwise
+ */
 gboolean
 fsu_stream_start_sending (FsuStream *self)
 {
@@ -464,6 +484,15 @@ fsu_stream_start_sending (FsuStream *self)
   return _fsu_session_start_sending (priv->session);
 }
 
+/**
+ * fsu_stream_stop_sending:
+ * @self: The #FsuStream
+ *
+ * This tells the #FsuStream that you want to stop sending the data to this
+ * stream. It will let the session know and the source will be disabled if
+ * unused.
+ *
+ */
 void
 fsu_stream_stop_sending (FsuStream *self)
 {
@@ -482,6 +511,17 @@ fsu_stream_stop_sending (FsuStream *self)
   _fsu_session_stop_sending (priv->session);
 }
 
+/**
+ * fsu_stream_start_receiving:
+ * @self: The #FsuStream
+ *
+ * This tells the #FsuStream that you want to start receiving data from this
+ * stream. It will link all the output pads from the conference and start the
+ * sink if necessary. It will also start handling new source pads being created
+ * by the conference.
+ *
+ * Returns: #TRUE on success, #FALSE otherwise
+ */
 gboolean
 fsu_stream_start_receiving (FsuStream *self)
 {
@@ -533,6 +573,15 @@ fsu_stream_start_receiving (FsuStream *self)
   return ret;
 }
 
+/**
+ * fsu_stream_stop_receiving:
+ * @self: The #FsuStream
+ *
+ * This tells the #FsuStream that you want to stop receiving data from this
+ * stream. It will unlink all the output pads from the conference and stop the
+ * sink if necessary.
+ *
+ */
 void
 fsu_stream_stop_receiving (FsuStream *self)
 {

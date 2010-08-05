@@ -20,17 +20,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
-
-#include <gst/farsight/fsu-conference.h>
-#include <gst/farsight/fsu-session-priv.h>
-
-G_DEFINE_TYPE (FsuConference, fsu_conference, G_TYPE_OBJECT);
-
-
 /**
  * SECTION:fsu-conference
  * @short_description: A wrapper class around #FsConference
@@ -44,6 +33,17 @@ G_DEFINE_TYPE (FsuConference, fsu_conference, G_TYPE_OBJECT);
  * the process so you can concentrate on the signaling part.
  */
 
+
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+
+#include <gst/farsight/fsu-conference.h>
+#include <gst/farsight/fsu-session-priv.h>
+
+G_DEFINE_TYPE (FsuConference, fsu_conference, G_TYPE_OBJECT);
 
 static void fsu_conference_constructed (GObject *object);
 static void fsu_conference_dispose (GObject *object);
@@ -306,6 +306,7 @@ remove_weakref (gpointer data,
  *
  * This will let the #FsuConference handle a new session with the corresponding
  * #FsuSource.
+ * The @session will take care of linking the @source when needed.
  *
  * Returns: A new #FsuSession object.
  */

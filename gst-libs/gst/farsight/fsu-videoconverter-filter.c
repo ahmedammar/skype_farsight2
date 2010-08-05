@@ -35,6 +35,15 @@ fsu_videoconverter_filter_init (FsuVideoconverterFilter *self)
 {
 }
 
+/**
+ * fsu_videoconverter_filter_new:
+ *
+ * Creates a new videoconverter filter or reuse an existing one.
+ * This filter will take care of converting video from one format to another.
+ * It will basically just add an ffmpegcolorspace element the pipeline.
+ *
+ * Returns: A new #FsuAudioconverterFilter
+ */
 FsuVideoconverterFilter *
 fsu_videoconverter_filter_new (void)
 {

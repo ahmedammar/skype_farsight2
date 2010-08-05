@@ -308,6 +308,14 @@ fsu_single_filter_manager_set_property (GObject *object,
   }
 }
 
+/**
+ * fsu_single_filter_manager_new:
+ *
+ * Creates a Single filter manager.
+ * The Single filter manager is a filter manager that can only be applied once.
+ *
+ * Returns: A new #FsuFilterManager
+ */
 FsuFilterManager *fsu_single_filter_manager_new (void)
 {
   return g_object_new (FSU_TYPE_SINGLE_FILTER_MANAGER, NULL);

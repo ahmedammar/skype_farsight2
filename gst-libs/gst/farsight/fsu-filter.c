@@ -20,6 +20,21 @@
  */
 
 
+/**
+ * SECTION:fsu-filter
+ * @short_description: Filters to apply on a pipeline
+ *
+ * This base class represents filters that can be applied on a pipeline or that
+ * can be inserted in a #FsuFilterManager. Each filter does a specific task
+ * and provides an easy to use API or properties/signals to control your
+ * pipeline.
+ * It also provides some helper functions to more easily add/revert elements
+ * or bins to the pipeline.
+ *
+ * See also #FsuFilterManager
+ */
+
+
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif

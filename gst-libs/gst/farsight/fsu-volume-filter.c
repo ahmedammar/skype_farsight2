@@ -179,6 +179,16 @@ fsu_volume_filter_dispose (GObject *object)
 }
 
 
+/**
+ * fsu_volume_filter_new:
+ *
+ * Creates a new volume filter.
+ * This filter will allow you to change the audio volume in the pipeline by
+ * controlling it through the #FsuVolumeFilter:volume and #FsuVolumeFilter:mute
+ * properties.
+ *
+ * Returns: A new #FsuVolumeFilter
+ */
 FsuVolumeFilter *
 fsu_volume_filter_new (void)
 {

@@ -52,6 +52,13 @@ typedef struct _FsuFilter      FsuFilter;
 typedef struct _FsuFilterClass FsuFilterClass;
 typedef struct _FsuFilterPrivate FsuFilterPrivate;
 
+/**
+ * FsuFilterClass:
+ * @apply: Apply the filter on the #GstPad
+ * @revert: Revert the filter from the #GstPad
+ * @handle_message: Handle the #GstMessage
+ * @name: The name of the filter
+ */
 struct _FsuFilterClass
 {
   GObjectClass parent_class;
@@ -75,7 +82,16 @@ struct _FsuFilter
 
 GType fsu_filter_get_type (void) G_GNUC_CONST;
 
-
+/**
+ * FSU_DEFINE_FILTER:
+ * @type: The type of the class to be defined
+ * @filter_name: The name of the filter to define
+ *
+ * This will define a new #FsuFilter derived class by calling G_DEFINE_TYPE()
+ * and by declaring and setting the apply, revert and name fields of the
+ * #FsuFilter parent class. The defined apply/revert methods will be
+ * fsu_$(filter_name)_filter_apply and fsu_$(filter_name)_filter_revert
+ */
 #define FSU_DEFINE_FILTER(type, filter_name) \
   G_DEFINE_TYPE (type, fsu_##filter_name##_filter, FSU_TYPE_FILTER);    \
                                                                         \

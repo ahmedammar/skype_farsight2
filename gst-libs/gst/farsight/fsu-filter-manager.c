@@ -20,17 +20,6 @@
  */
 
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
-
-#include <gst/farsight/fsu-filter-manager.h>
-
-
-G_DEFINE_INTERFACE (FsuFilterManager, fsu_filter_manager, G_TYPE_OBJECT);
-
-
 /**
  * SECTION:fsu-filter-manager
  * @short_description: The filter manager to handle #FsuFilter objects
@@ -44,6 +33,17 @@ G_DEFINE_INTERFACE (FsuFilterManager, fsu_filter_manager, G_TYPE_OBJECT);
  *
  * See also #FsuFilter
  */
+
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+
+#include <gst/farsight/fsu-filter-manager.h>
+
+
+G_DEFINE_INTERFACE (FsuFilterManager, fsu_filter_manager, G_TYPE_OBJECT);
 
 static void
 fsu_filter_manager_default_init (FsuFilterManagerInterface *iface)

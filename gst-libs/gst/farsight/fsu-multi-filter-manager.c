@@ -156,7 +156,17 @@ fsu_multi_filter_manager_dispose (GObject *object)
   G_OBJECT_CLASS (fsu_multi_filter_manager_parent_class)->dispose (object);
 }
 
-
+/**
+ * fsu_multi_filter_manager_new:
+ *
+ * Creates a Multi filter manager.
+ * The Multi filter manager is a filter manager that can be applied on multiple
+ * pads on multiple bins. It will create a new #FsuSingleFilterManager each time
+ * fsu_filter_manager_apply() is called and will make sure to sync up the
+ * filters between it and all the filter managers it creates
+ *
+ * Returns: A new #FsuFilterManager
+ */
 FsuFilterManager *
 fsu_multi_filter_manager_new (void)
 {

@@ -207,7 +207,18 @@ fsu_framerate_filter_constructed (GObject *object)
       NULL);
 }
 
-
+/**
+ * fsu_framerate_filter_new:
+ * @fps: The maximum FPS allowed
+ *
+ * Creates a new framerate filter.
+ * This filter will make sure that the stream does not output more frames than
+ * the specified FPS. It will not generate duplicate frames, so this filter is
+ * mainly to be used in a streaming pipeline.
+ * It will basically add 'videomaxrate ! capsfilter' to the pipeline.
+ *
+ * Returns: A new #FsuFramerateFilter
+ */
 FsuFramerateFilter *
 fsu_framerate_filter_new (guint fps)
 {

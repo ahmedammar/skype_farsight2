@@ -46,6 +46,21 @@ typedef struct _FsuFilterManager      FsuFilterManager;
 typedef struct _FsuFilterManagerInterface FsuFilterManagerInterface;
 typedef struct _FsuFilterId FsuFilterId;
 
+/**
+ * FsuFilterManagerInterface:
+ * @list_filters: List the #FsuFilterId in the filter manager
+ * @insert_filter_before: Insert the #FsuFilter before the #FsuFilterId
+ * @insert_filter_after:  Insert the #FsuFilter after the #FsuFilterId
+ * @replace_filter: Remove the #FsuFilterId and replace it with the #FsuFilter
+ * @insert_filter: Insert the #FsuFilter at the specified position
+ * @remove_filter: Remove the #fsuFilterId from the filter manager
+ * @get_filter_by_id: Return the #FsuFilter associated with the #FsuFilterId
+ * @apply: Apply the filter manager on the #GstPad on the #GstBin
+ * @revert: Revert the filter manager from the #GstPad on the #GstBin
+ * @handle_message: Handle the #GstMessage by all the filters
+ *
+ * This is the interface for the #FsuFilterManager that needs to be implemented
+ */
 struct _FsuFilterManagerInterface
 {
   GTypeInterface parent;
