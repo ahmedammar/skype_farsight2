@@ -370,6 +370,14 @@ src_pad_added (FsStream *stream,
       "pipeline", &pipeline,
       NULL);
 
+  g_mutex_lock (priv->mutex);
+  if (!priv->receiving)
+  {
+    g_mutex_unlock (priv->mutex);
+    return;
+  }
+  g_mutex_unlock (priv->mutex);
+
   if (priv->sink)
   {
     sink = GST_ELEMENT (priv->sink);
