@@ -235,8 +235,6 @@ fsu_preview_filter_apply (FsuFilter *filter,
   if (!tee_pad || !out_pad ||
       !preview_pad || !sink_pad)
   {
-    gst_object_unref (tee);
-    gst_object_unref (sink);
     if (GST_PAD_IS_SRC (pad) && out_pad)
       gst_element_release_request_pad (tee, out_pad);
     if (GST_PAD_IS_SINK (pad) && tee_pad)
@@ -255,6 +253,10 @@ fsu_preview_filter_apply (FsuFilter *filter,
       gst_element_release_request_pad (sink, sink_pad);
       gst_object_unref (sink_pad);
     }
+
+    gst_object_unref (tee);
+    gst_object_unref (sink);
+
     g_debug ("Failed trying to add tee");
     return NULL;
   }
