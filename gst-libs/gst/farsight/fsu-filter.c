@@ -140,6 +140,22 @@ fsu_filter_dispose (GObject *object)
 }
 
 
+/**
+ * fsu_filter_apply:
+ * @self: The #FsuFilterManager
+ * @bin: The #GstBin to apply the filter to
+ * @pad: The #GstPad to apply the filter to
+ *
+ * This will apply the filter to a bin on a specific pad.
+ * This will make the filter add elements to the @bin and link them with @pad.
+ * It will return an output pad at the end of the inserted elements.
+ * The filter can be applied on either a source pad or a sink pad, it
+ * will still work the same.
+ *
+ * Returns: The new applied #GstPad to link with the rest of the pipeline or
+ * #NULL in case of an error.
+ * See also: fsu_filter_revert()
+ */
 GstPad *
 fsu_filter_apply (FsuFilter *self,
     GstBin *bin,
@@ -164,6 +180,25 @@ fsu_filter_apply (FsuFilter *self,
   return out_pad;
 }
 
+/**
+ * fsu_filter_revert:
+ * @self: The #FsuFilterManager
+ * @bin: The #GstBin to revert the filter from
+ * @pad: The #GstPad to revert the filter from
+ *
+ * This will revert the filter from a bin on the specified pad.
+ * This should remove any elements the filter previously added to the bin and
+ * return the original pad it received in the fsu_filter_apply()
+ * The pad to revert should be the output pad returned from fsu_filter_apply().
+ * Note that the returned pad may not be the same as the input pad of
+ * fsu_filter_apply() because if the pad before the filter's application
+ * point was unlinked and relinked somewhere else, that might change (as in the
+ * case of adding/removing a filter from a #FsuFilterManager in which this
+ * filter resides)
+ *
+ * Returns: The original #GstPad from which the filter manager was applied
+ * See also: fsu_filter_manager_apply()
+ */
 GstPad *
 fsu_filter_revert (FsuFilter *self,
     GstBin *bin,
@@ -211,6 +246,23 @@ fsu_filter_revert (FsuFilter *self,
   return out_pad;
 }
 
+
+/**
+ * fsu_filter_follow:
+ * @self: The #FsuFilterManager
+ * @bin: The #GstBin to follow the filter from
+ * @pad: The #GstPad to follow the filter from
+ *
+ * This will not do anything but it will give you the expected output result
+ * from fsu_filter_revert().
+ * It basically will follow the filter from it's output pad all the way to the
+ * other side of the elements that it added and will give you the input pad that
+ * it should return if fsu_filter_revert() was called but without modifying
+ * the pipeline.
+ *
+ * Returns: The original #GstPad from which the filter manager was applied
+ * See also: fsu_filter_manager_revert()
+ */
 GstPad *
 fsu_filter_follow (FsuFilter *self,
     GstPad *pad)
@@ -228,6 +280,16 @@ fsu_filter_follow (FsuFilter *self,
     return NULL;
 }
 
+/**
+ * fsu_filter_handle_message:
+ * @self: The #FsuFilterManager
+ * @message: The message to handle
+ *
+ * Try to handle a message originally received on the #GstBus to the filter.
+ *
+ * Returns: #TRUE if the message has been handled and should be dropped,
+ * #FALSE otherwise.
+ */
 gboolean
 fsu_filter_handle_message (FsuFilter *self,
     GstMessage *message)

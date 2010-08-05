@@ -36,7 +36,12 @@ G_DEFINE_TYPE (FsuConference, fsu_conference, G_TYPE_OBJECT);
  * @short_description: A wrapper class around #FsConference
  *
  * This class is the main class of Farsight-Utils. It is meant to wrap the
- * #FsConference and add it to the pipeline
+ * #FsConference and add it to the pipeline.
+ * Farsight-utils is meant to act as a layer on top of Farsight and GStreamer
+ * as it will allow you to set up complex pipelines without having to play too
+ * much with the GStreamer API.
+ * This class will wrap the #FsConference and take care of the GStreamer part of
+ * the process so you can concentrate on the signaling part.
  */
 
 
@@ -243,7 +248,8 @@ fsu_conference_dispose (GObject *object)
  * create the pipeline or add the @conference in the @pipeline.
  *
  * This will create a new #FsuConference wrapping @conference and adding it to
- * the @pipeline.
+ * the @pipeline. Set the pipeline to #NULL to have it created for you, you can
+ * then access it through the #FsuConference:pipeline property.
  *
  * Returns: A new #FsuConference or #NULL if an error occured.
  */
@@ -295,8 +301,8 @@ remove_weakref (gpointer data,
 /**
  * fsu_conference_handle_session:
  * @self: The #FsuConference
- * @session: The @FsSession to handle
- * @source: The @FsuSource to use with the session
+ * @session: The #FsSession to handle
+ * @source: The #FsuSource to use with the session
  *
  * This will let the #FsuConference handle a new session with the corresponding
  * #FsuSource.

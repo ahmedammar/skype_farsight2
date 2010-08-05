@@ -27,6 +27,21 @@
 
 #include <gst/farsight/fsu-filter-helper.h>
 
+/**
+ * fsu_filter_add_element:
+ * @bin: The #GstBin to add the element to
+ * @pad: The #GstPad to link the element to
+ * @element: The #GstElement to add
+ * @element_pad: The #GstPad from the @element to link to the @pad
+ *
+ * This helper function will add an element to the @bin and link it's
+ * @element_pad with the @pad.
+ * Make sure the @pad and @element_pad pads have the correct directions and
+ * can be linked together.
+ * This will sink the reference on the element on success.
+ *
+ * Returns: #TRUE if successful, #FALSE if an error occured
+ */
 gboolean
 fsu_filter_add_element (GstBin *bin,
     GstPad *pad,
@@ -64,6 +79,25 @@ fsu_filter_add_element (GstBin *bin,
 }
 
 
+/**
+ * fsu_filter_add_element_by_name:
+ * @bin: The #GstBin to add the element to
+ * @pad: The #GstPad to link the element to
+ * @element_name: The name of the element to create and add
+ * @pad_name: The name of the pad to get from the @element to link to the @pad
+ * @out_pad: The output pad from the added element. Can be set to #NULL if no
+ * output pad is needed
+ * @out_pad_name: The name of the @out_pad to get from the element
+ *
+ * This helper function will create a new #GstElement by name (@element_name)
+ * and add it to the @bin and link it's pad (@pad_name) with the @pad. It will
+ * also return the output pad from the element through @out_pad if set by using
+ * the @out_pad_name.
+ * Make sure the @pad_name specifies the correct pad direction to link with @pad
+ *
+ * Returns: The #GstElement created or #NULL if an error occured.
+ * gst_object_unref() the returned element if not needed.
+ */
 GstElement *
 fsu_filter_add_element_by_name (GstBin *bin,
     GstPad *pad,
@@ -116,6 +150,25 @@ fsu_filter_add_element_by_name (GstBin *bin,
   return gst_object_ref (element);
 }
 
+/**
+ * fsu_filter_add_element_by_description:
+ * @bin: The #GstBin to add the element to
+ * @pad: The #GstPad to link the element to
+ * @description: The pipeline description of the bin to create and add
+ * @out_pad: The output pad from the created bin. Can be set to #NULL if no
+ * output pad is needed
+ *
+ * This helper function will create a new #GstElement described the the pipeline
+ * description in @description and add it to the @bin and link it's pad
+ * with the @pad. It will also return the output pad from the element through
+ * @out_pad if set.
+ * Since gst_parse_bin_from_description() is used, it already knows the name of
+ * the source and sink pads, so it is unnecessary to specify them. It will also
+ * use the pad direction from @pad to know in which direction to link.
+ *
+ * Returns: The #GstElement created or #NULL if an error occured.
+ * gst_object_unref() the returned element if not needed.
+ */
 GstElement *
 fsu_filter_add_element_by_description (GstBin *bin,
     GstPad *pad,
@@ -175,6 +228,27 @@ fsu_filter_add_element_by_description (GstBin *bin,
   return gst_object_ref (filter);
 }
 
+/**
+ * fsu_filter_add_standard_element:
+ * @bin: The #GstBin to add the element to
+ * @pad: The #GstPad to link the element to
+ * @element_name: The name of the standard element to create and add
+ * @element: A pointer to store the created element. Can be #NULL if the element
+ * is not needed.
+ * @elements: A list to which to add the created element or #NULL if not needed.
+ * If the element is added to the list, it will hold a reference to it.
+ *
+ * This helper function will create a new #GstElement by its name and add it
+ * to the @bin and link it's appropriate pad with the @pad.
+ * The difference between this and fsu_filter_add_element_by_name() is that this
+ * expects the created element to have 'standard' pads, which means a 'src' pad
+ * for the source pad and a 'sink' pad for the sink pad. Both pads would need to
+ * be ALWAYS pads.
+ *
+ * Returns: The output #GstPad from the element or #NULL if an error occured.
+ * gst_object_unref() the returned pad if not needed as well as the returned
+ * element if @element is set.
+ */
 GstPad *
 fsu_filter_add_standard_element (GstBin *bin,
     GstPad *pad,
@@ -209,6 +283,24 @@ fsu_filter_add_standard_element (GstBin *bin,
   return NULL;
 }
 
+/**
+ * fsu_filter_revert_standard_element:
+ * @bin: The #GstBin to revert the element from
+ * @pad: The #GstPad from the element to revert
+ * @elements: A list to which the element was previously added in order to
+ * gst_object_unref it and remove it from the list. Can be set to #NULL if not
+ * needed.
+ *
+ * This helper function will automatically revert a 'standard' #GstElement from
+ * the @bin and return the expected output pad.
+ * This expects the element to have 'standard' pads, which means a 'src' pad
+ * for the source pad and a 'sink' pad for the sink pad. Both pads would need to
+ * be ALWAYS pads.
+ *
+ * Returns: The output #GstPad from the reverted element or #NULL if an error
+ * occured.
+ * gst_object_unref() the returned pad if not needed.
+ */
 GstPad *
 fsu_filter_revert_standard_element (GstBin *bin,
     GstPad *pad,
@@ -236,7 +328,19 @@ fsu_filter_revert_standard_element (GstBin *bin,
   return out_pad;
 }
 
-
+/**
+ * fsu_filter_revert_bin:
+ * @bin: The #GstBin to revert the bin from
+ * @pad: The #GstPad from the bin to revert
+ *
+ * This helper function will automatically revert a bin previously created by
+ * fsu_filter_add_element_by_description() from the @bin and return the expected
+ * output pad.
+ *
+ * Returns: The output #GstPad from the reverted bin or #NULL if an error
+ * occured.
+ * gst_object_unref() the returned pad if not needed.
+ */
 GstPad *
 fsu_filter_revert_bin (GstBin *bin,
     GstPad *pad)
