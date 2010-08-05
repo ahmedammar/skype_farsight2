@@ -257,14 +257,12 @@ fsu_preview_filter_apply (FsuFilter *filter,
     gst_object_unref (tee);
     gst_object_unref (sink);
 
-    g_debug ("Failed trying to add tee");
+    g_debug ("Failed trying to request pads");
     return NULL;
   }
 
   if (!fsu_filter_add_element (bin, pad, tee, tee_pad))
   {
-    gst_object_unref (tee);
-    gst_object_unref (sink);
     if (GST_PAD_IS_SRC (pad) && out_pad)
       gst_element_release_request_pad (tee, out_pad);
     if (GST_PAD_IS_SINK (pad) && tee_pad)
@@ -276,6 +274,8 @@ fsu_preview_filter_apply (FsuFilter *filter,
     gst_object_unref (tee_pad);
     gst_object_unref (out_pad);
     g_debug ("Failed trying to add tee");
+    gst_object_unref (tee);
+    gst_object_unref (sink);
     return NULL;
   }
 
@@ -293,8 +293,6 @@ fsu_preview_filter_apply (FsuFilter *filter,
 
   if (!fsu_filter_add_element (bin, filter_pad, sink, sink_pad))
   {
-    gst_bin_remove (bin, tee);
-    gst_object_unref (sink);
     if (GST_PAD_IS_SRC (pad) && out_pad)
       gst_element_release_request_pad (tee, out_pad);
     if (GST_PAD_IS_SINK (pad) && tee_pad)
@@ -305,6 +303,8 @@ fsu_preview_filter_apply (FsuFilter *filter,
     gst_object_unref (sink_pad);
     gst_object_unref (tee_pad);
     gst_object_unref (out_pad);
+    gst_bin_remove (bin, tee);
+    gst_object_unref (sink);
     g_debug ("Failed trying to add sink");
     return NULL;
   }
