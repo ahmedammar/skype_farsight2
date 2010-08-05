@@ -70,6 +70,8 @@ static void fsu_sink_set_property (GObject *object,
     const GValue *value,
     GParamSpec *pspec);
 
+static void fsu_sink_handle_message (GstBin *bin,
+    GstMessage *message);
 static GstPad *fsu_sink_request_new_pad (GstElement * element,
     GstPadTemplate * templ,
     const gchar * name);
@@ -121,6 +123,7 @@ fsu_sink_class_init (FsuSinkClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
+  GstBinClass *gstbin_class = GST_BIN_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (FsuSinkPrivate));
 
@@ -128,8 +131,8 @@ fsu_sink_class_init (FsuSinkClass *klass)
   gobject_class->set_property = fsu_sink_set_property;
   gobject_class->dispose = fsu_sink_dispose;
 
-  /* TODO: handle_message on the filter manager */
-
+  gstbin_class->handle_message =
+      GST_DEBUG_FUNCPTR (fsu_sink_handle_message);
   gstelement_class->request_new_pad =
       GST_DEBUG_FUNCPTR (fsu_sink_request_new_pad);
   gstelement_class->release_pad = GST_DEBUG_FUNCPTR (fsu_sink_release_pad);
@@ -596,7 +599,30 @@ fsu_sink_request_new_pad (GstElement * element,
     }
     gst_bin_remove (GST_BIN (self), sink);
     gst_object_unref (sink);
-    return NULL;
+
+    DEBUG ("Replacing sink with fakesink");
+    sink = gst_element_factory_make ("fakesink", NULL);
+    if (!sink)
+    {
+      WARNING ("Could not create sink or fakesink elements");
+      return NULL;
+    }
+    if (!gst_bin_add (GST_BIN (self), sink))
+    {
+      WARNING ("Could not add fakesink element to Sink");
+      gst_object_unref (sink);
+      return NULL;
+    }
+
+    /* A fakesink never needs a mixer */
+    sink_pad = gst_element_get_static_pad (sink, "sink");
+    if (!sink_pad)
+    {
+      WARNING ("Could not get sink pad from fakesink");
+      gst_object_unref (sink);
+      return NULL;
+    }
+    gst_object_ref (sink);
   }
 
   /* First sink, we don't know yet if we need a mixer */
@@ -820,4 +846,23 @@ create_sink (FsuSink *self)
   g_free (sink_device);
 
   return sink;
+}
+
+static void
+fsu_sink_handle_message (GstBin *bin,
+    GstMessage *message)
+{
+  FsuSink *self = FSU_SINK (bin);
+  //FsuSinkPrivate *priv = self->priv;
+
+  DEBUG ("Got message of type %s from %s", GST_MESSAGE_TYPE_NAME(message),
+      GST_ELEMENT_NAME (GST_MESSAGE_SRC (message)));
+
+  /* TODO: handle_message on the filter manager */
+  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
+  {
+    gst_message_unref (message);
+    return;
+  }
+  GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }
