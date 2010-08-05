@@ -353,6 +353,7 @@ fsu_preview_filter_revert (FsuFilter *filter,
   gst_element_release_request_pad (tee, tee_pad);
   gst_object_unref (tee_pad);
   gst_bin_remove (bin, tee);
+  gst_element_set_state (tee, GST_STATE_NULL);
   gst_object_unref (tee);
 
   gst_element_release_request_pad (priv->sink, priv->sink_pad);
