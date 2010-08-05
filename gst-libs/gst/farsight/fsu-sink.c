@@ -790,6 +790,7 @@ create_sink (FsuSink *self)
     GstBin *bin = NULL;
     gchar *desc = NULL;
     GError *error  = NULL;
+    GstElement *real_sink = NULL;
 
     /* parse the pipeline to a bin */
     desc = g_strdup_printf ("bin.( queue ! %s )", sink_pipeline);
@@ -816,6 +817,15 @@ create_sink (FsuSink *self)
     }
 
     sink = GST_ELEMENT (bin);
+    real_sink = find_sink (sink);
+    if (_fsu_g_object_has_property (G_OBJECT (real_sink), "sync") &&
+        _fsu_g_object_has_property (G_OBJECT (real_sink), "async"))
+      g_object_set(real_sink,
+          "sync", sync,
+          "async", async,
+          NULL);
+    gst_object_unref (real_sink);
+
     goto done;
   }
   else if (sink_name &&
