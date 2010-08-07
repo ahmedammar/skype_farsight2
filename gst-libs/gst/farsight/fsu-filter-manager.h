@@ -48,6 +48,7 @@ typedef struct _FsuFilterId FsuFilterId;
 
 /**
  * FsuFilterManagerInterface:
+ * @parent: parent interface type.
  * @list_filters: List the #FsuFilterId in the filter manager
  * @insert_filter_before: Insert the #FsuFilter before the #FsuFilterId
  * @insert_filter_after:  Insert the #FsuFilter after the #FsuFilterId

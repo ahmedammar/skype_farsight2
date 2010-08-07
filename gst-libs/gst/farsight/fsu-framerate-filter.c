@@ -81,6 +81,11 @@ fsu_framerate_filter_class_init (FsuFramerateFilterClass *klass)
   fsufilter_class->revert = fsu_framerate_filter_revert;
   fsufilter_class->name = "framerate";
 
+  /**
+   * FsuFramerateFilter:fps:
+   *
+   * The maximum framerate allowed
+   */
   g_object_class_install_property (gobject_class, PROP_FPS,
       g_param_spec_uint ("fps", "Frames per second",
           "The framerate per second to set",

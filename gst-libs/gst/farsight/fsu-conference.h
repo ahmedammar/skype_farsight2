@@ -59,6 +59,11 @@ struct _FsuConferenceClass
   GObjectClass parent_class;
 };
 
+/**
+ * FsuConference:
+ *
+ * A wrapper class around #FsConference
+ */
 struct _FsuConference
 {
   GObject parent;

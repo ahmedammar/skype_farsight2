@@ -57,6 +57,11 @@ struct _FsuResolutionFilterClass
   FsuFilterClass parent_class;
 };
 
+/**
+ * FsuResolutionFilter:
+ *
+ * A video resolution filter
+ */
 struct _FsuResolutionFilter
 {
   FsuFilter parent;

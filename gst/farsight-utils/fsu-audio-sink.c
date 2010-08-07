@@ -19,6 +19,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:element-fsuaudiosink
+ * @short_description: Farsight-Utils Magic Audio Sink
+ *
+ * This element is an audio sink for Farsight-utils.
+ *
+ * See also #FsuSink
+ */
+
 #ifdef HAVE_CONFIG_H
   #include "config.h"
 #endif

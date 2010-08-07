@@ -57,6 +57,11 @@ struct _FsuPreviewFilterClass
   FsuFilterClass parent_class;
 };
 
+/**
+ * FsuPreviewFilter:
+ *
+ * A video preview filter
+ */
 struct _FsuPreviewFilter
 {
   FsuFilter parent;

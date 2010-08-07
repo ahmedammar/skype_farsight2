@@ -39,7 +39,7 @@ struct _FsuSinkClass
 /**
  * FsuSink:
  *
- * A Gstreamer Element that derives from FsuSink.
+ * A Gstreamer Element that acts as a sink.
  * Currently, either 'fsuaudiosink' or 'fsuvideosink'
  */
 struct _FsuSink

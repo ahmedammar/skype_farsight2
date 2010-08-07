@@ -19,6 +19,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:element-fsuvideosink
+ * @short_description: Farsight-Utils Magic Video Sink
+ *
+ * This element is a video sink for Farsight-utils.
+ *
+ * See also #FsuSink
+ */
+
+
 #ifdef HAVE_CONFIG_H
   #include "config.h"
 #endif

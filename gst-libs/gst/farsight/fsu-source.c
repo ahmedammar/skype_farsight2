@@ -19,6 +19,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:fsu-source
+ * @short_description: A magical source specific for Farsight-utils
+ *
+ * The #FsuSource elements are just standard GStreamer element that act a bit
+ * like autoaudiosrc and autovideosrc but have a slightly different behavior.
+ * The purpose of the #FsuSource is to find the best suitable source for your
+ * needs and allow you to use the same exclusive-access source multiple times.
+ * The #FsuSource elements only have request pads so you can request the source
+ * data as many times as you want. It also serves as some kind of refcounting
+ * for the source access, you never need to set the element to NULL when you
+ * stop using it (because someone else might still be using it), you only need
+ * to release its request pad, and if no request pads are used by the source,
+ * then the internal source will be stopped and destroyed automatically.
+ * <para>
+     Current available sources as 'fsuaudiosrc' and 'fsuvideosrc'.
+ * </para>
+ *
+ */
+
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"

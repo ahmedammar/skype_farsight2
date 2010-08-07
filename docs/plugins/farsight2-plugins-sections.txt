@@ -28,6 +28,67 @@ GST_IS_VIDEOANYRATE_CLASS
 </SECTION>
 
 <SECTION>
+<FILE>element-fsuaudiosource</FILE>
+<TITLE>FsuAudioSource</TITLE>
+FsuAudioSource
+<SUBSECTION Standard>
+FsuAudioSourceClass
+FSU_AUDIO_SOURCE
+FSU_AUDIO_SOURCE_CLASS
+FSU_AUDIO_SOURCE_GET_CLASS
+FSU_IS_AUDIO_SOURCE
+FSU_IS_AUDIO_SOURCE_CLASS
+FSU_TYPE_AUDIO_SOURCE
+fsu_audio_source_get_type
+</SECTION>
+
+<SECTION>
+<FILE>element-fsuaudiosink</FILE>
+<TITLE>FsuAudioSink</TITLE>
+FsuAudioSink
+<SUBSECTION Standard>
+FsuAudioSinkClass
+FSU_AUDIO_SINK
+FSU_AUDIO_SINK_CLASS
+FSU_AUDIO_SINK_GET_CLASS
+FSU_IS_AUDIO_SINK
+FSU_IS_AUDIO_SINK_CLASS
+FSU_TYPE_AUDIO_SINK
+fsu_audio_sink_get_type
+</SECTION>
+
+<SECTION>
+<FILE>element-fsuvideosource</FILE>
+<TITLE>FsuVideoSource</TITLE>
+FsuVideoSource
+<SUBSECTION Standard>
+FsuVideoSourceClass
+FSU_VIDEO_SOURCE
+FSU_VIDEO_SOURCE_CLASS
+FSU_VIDEO_SOURCE_GET_CLASS
+FSU_IS_VIDEO_SOURCE
+FSU_IS_VIDEO_SOURCE_CLASS
+FSU_TYPE_VIDEO_SOURCE
+fsu_video_source_get_type
+</SECTION>
+
+<SECTION>
+<FILE>element-fsuvideosink</FILE>
+<TITLE>FsuVideoSink</TITLE>
+FsuVideoSink
+<SUBSECTION Standard>
+FsuVideoSinkClass
+FsuVideoSinkPrivate
+FSU_VIDEO_SINK
+FSU_VIDEO_SINK_CLASS
+FSU_VIDEO_SINK_GET_CLASS
+FSU_IS_VIDEO_SINK
+FSU_IS_VIDEO_SINK_CLASS
+FSU_TYPE_VIDEO_SINK
+fsu_video_sink_get_type
+</SECTION>
+
+<SECTION>
 <FILE>element-fsrtpconference</FILE>
 <TITLE>FsRtpConference</TITLE>
 FsRtpConference

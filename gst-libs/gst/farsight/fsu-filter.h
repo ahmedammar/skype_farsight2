@@ -54,6 +54,7 @@ typedef struct _FsuFilterPrivate FsuFilterPrivate;
 
 /**
  * FsuFilterClass:
+ * @parent_class: The parent class
  * @apply: Apply the filter on the #GstPad
  * @revert: Revert the filter from the #GstPad
  * @handle_message: Handle the #GstMessage
@@ -73,6 +74,11 @@ struct _FsuFilterClass
   gchar *name;
 };
 
+/**
+ * FsuFilter:
+ *
+ * A Filter
+ */
 struct _FsuFilter
 {
   GObject parent;

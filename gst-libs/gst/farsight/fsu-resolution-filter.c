@@ -84,16 +84,26 @@ fsu_resolution_filter_class_init (FsuResolutionFilterClass *klass)
   fsufilter_class->revert = fsu_resolution_filter_revert;
   fsufilter_class->name = "resolution";
 
+  /**
+   * FsuResolutionFilter:width:
+   *
+   * The width of the video
+   */
   g_object_class_install_property (gobject_class, PROP_WIDTH,
       g_param_spec_uint ("width", "The width",
-          "Set requested width of the image",
+          "The width of the image",
           0, G_MAXINT,
           DEFAULT_WIDTH,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuResolutionFilter:height:
+   *
+   * The height of the video
+   */
   g_object_class_install_property (gobject_class, PROP_HEIGHT,
       g_param_spec_uint ("height", "The height",
-          "Set requested height of the image",
+          "The height of the image",
           0, G_MAXINT,
           DEFAULT_HEIGHT,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));

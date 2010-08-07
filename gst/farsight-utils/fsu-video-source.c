@@ -19,6 +19,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+
+/**
+ * SECTION:element-fsuvideosource
+ * @short_description: Farsight-Utils Magic Video Source
+ *
+ * This element is a video source for Farsight-utils.
+ *
+ * See also #FsuSource
+ */
+
 #ifdef HAVE_CONFIG_H
   #include "config.h"
 #endif

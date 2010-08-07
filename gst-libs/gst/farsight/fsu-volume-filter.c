@@ -80,12 +80,24 @@ fsu_volume_filter_class_init (FsuVolumeFilterClass *klass)
   fsufilter_class->revert = fsu_volume_filter_revert;
   fsufilter_class->name = "volume";
 
+  /**
+   * FsuVolumeFilter:volume:
+   *
+   * The current volume being set by the filter. 1.0 represents a 100% volume
+   * and the volume can be amplified up to 10 times.
+   */
   g_object_class_install_property (gobject_class, PROP_VOLUME,
       g_param_spec_double ("volume", "Volume",
           "The volume up to 10x amplificaton. 1.0 = 100%",
           0.0, 10.0,
           1.0,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FsuVolumeFilter:mute:
+   *
+   * Whether or not the sound is being muted.
+   */
   g_object_class_install_property (gobject_class, PROP_MUTE,
       g_param_spec_boolean ("mute", "Mute volume",
           "Set to mute the sound",

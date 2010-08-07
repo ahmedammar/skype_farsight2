@@ -255,7 +255,7 @@ fsu_filter_manager_remove_filter (FsuFilterManager *self,
  * @self: The #FsuFilterManager
  * @id: The id of the filter
  *
- * Get the #FsuFilter identified by the @id #FsuFilteRId from the list of
+ * Get the #FsuFilter identified by the @id #FsuFilterId from the list of
  * filters in the filter manager
  *
  * Returns: The #FsuFilter representing @id or #NULL if @id is invalid.
@@ -318,8 +318,8 @@ fsu_filter_manager_apply (FsuFilterManager *self,
  * added to the start or end of the filter manager, that pad might change.
  * The best way to get the correct pad to revert from is to use get the peer pad
  * of the element that was linked after the filter manager.
- * You can also get the out-pad by querrying the filter manager's
- * #FsuFilterManager:out-pad property.
+ * In the case of #FsuSingleFilterManager, you can also get the out-pad by
+ * querrying the filter manager's #FsuSingleFilterManager:out-pad property.
  *
  * Returns: The original #GstPad from which the filter manager was applied
  * See also: fsu_filter_manager_apply()

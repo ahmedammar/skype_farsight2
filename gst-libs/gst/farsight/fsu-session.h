@@ -60,6 +60,11 @@ struct _FsuSessionClass
   GObjectClass parent_class;
 };
 
+/**
+ * FsuSession:
+ *
+ * A wrapper class around #FsSession
+ */
 struct _FsuSession
 {
   GObject parent;

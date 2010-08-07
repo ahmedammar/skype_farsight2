@@ -57,6 +57,11 @@ struct _FsuLevelFilterClass
   FsuFilterClass parent_class;
 };
 
+/**
+ * FsuLevelFilter:
+ *
+ * An audio level filter
+ */
 struct _FsuLevelFilter
 {
   FsuFilter parent;

@@ -40,7 +40,7 @@ struct _FsuSourceClass
 /**
  * FsuSource:
  *
- * A Gstreamer Element that derives from FsuSource.
+ * A Gstreamer Element that acts as a source.
  * Currently, either 'fsuaudiosource' or 'fsuvideosource'
  */
 struct _FsuSource

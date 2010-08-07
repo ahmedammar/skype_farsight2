@@ -57,6 +57,11 @@ struct _FsuSingleFilterManagerClass
   GObjectClass parent_class;
 };
 
+/**
+ * FsuSingleFilterManager:
+ *
+ * A filter manager that can only be applied once at a time
+ */
 struct _FsuSingleFilterManager
 {
   GObject parent;

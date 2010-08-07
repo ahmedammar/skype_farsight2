@@ -56,6 +56,11 @@ struct _FsuStreamClass
   GObjectClass parent_class;
 };
 
+/**
+ * FsuStream:
+ *
+ * A wrapper class around #FsStream
+ */
 struct _FsuStream
 {
   GObject parent;

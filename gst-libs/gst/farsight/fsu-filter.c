@@ -265,7 +265,6 @@ fsu_filter_revert (FsuFilter *self,
 /**
  * fsu_filter_follow:
  * @self: The #FsuFilterManager
- * @bin: The #GstBin to follow the filter from
  * @pad: The #GstPad to follow the filter from
  *
  * This will not do anything but it will give you the expected output result

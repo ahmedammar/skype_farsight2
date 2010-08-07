@@ -51,5 +51,9 @@
     <title>Utility elements</title>
     <xi:include href="xml/element-fsfunnel.xml"/>
     <xi:include href="xml/element-fsvideoanyrate.xml"/>
+    <xi:include href="xml/element-fsuaudiosource.xml"/>
+    <xi:include href="xml/element-fsuaudiosink.xml"/>
+    <xi:include href="xml/element-fsuvideosource.xml"/>
+    <xi:include href="xml/element-fsuvideosink.xml"/>
   </part>
 </book>

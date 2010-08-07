@@ -407,27 +407,34 @@ FsuMultiFilterManagerPrivate
 <FILE>fsu-filters</FILE>
 <TITLE>Farsight-Utils Filters</TITLE>
 <INCLUDE>gst/farsight-utils/fsu-audioconverter-filter.h,gst/farsight-utils/fsu-volume-filter.h,gst/farsight-utils/fsu-level-filter.h,gst/farsight-utils/fsu-videoconverter-filter.h,gst/farsight-utils/fsu-resolution-filter.h,gst/farsight-utils/fsu-framerate-filter.h,gst/farsight-utils/fsu-effectv-filter.h,gst/farsight-utils/fsu-preview-filter.h</INCLUDE>
+<SUBSECTION FsuAudioconverterFilter>
 FsuAudioconverterFilter
-FsuVolumeFilter
-FsuLevelFilter
-FsuVideoconverterFilter
-FsuResolutionFilter
-FsuFramerateFilter
-FsuGnomeEffectFilter
-FsuPreviewFilter
-
 fsu_audioconverter_filter_new
+<SUBSECTION FsuVolumeFilter>
+FsuVolumeFilter
 fsu_volume_filter_new
+<SUBSECTION FsuLevelFilter>
+FsuLevelFilter
 fsu_level_filter_new
+<SUBSECTION FsuVideoconverterFilter>
+FsuVideoconverterFilter
 fsu_videoconverter_filter_new
+<SUBSECTION FsuResolutionFilter>
+FsuResolutionFilter
 fsu_resolution_filter_new
+<SUBSECTION FsuFramerateFilter>
+FsuFramerateFilter
 fsu_framerate_filter_new
+<SUBSECTION FsuPreviewFilter>
+FsuPreviewFilter
+fsu_preview_filter_new
+<SUBSECTION FsuGnomeEffectFilter>
+FsuGnomeEffectFilter
 fsu_gnome_effect_filter_new
 fsu_gnome_effect_categories_list_copy
 fsu_gnome_effect_categories_list_destroy
 fsu_gnome_effect_list_effects
 fsu_gnome_effect_effects_list_destroy
-fsu_preview_filter_new
 <SUBSECTION Standard>
 FSU_AUDIOCONVERTER_FILTER
 FSU_AUDIOCONVERTER_FILTER_CLASS

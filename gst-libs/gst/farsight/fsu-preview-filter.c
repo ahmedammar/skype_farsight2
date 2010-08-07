@@ -83,12 +83,25 @@ fsu_preview_filter_class_init (FsuPreviewFilterClass *klass)
   fsufilter_class->revert = fsu_preview_filter_revert;
   fsufilter_class->name = "preview";
 
+  /**
+   * FsuPreviewFilter:xid:
+   *
+   * The X window id to use for embedding the preview window
+   */
   g_object_class_install_property (gobject_class, PROP_XID,
       g_param_spec_int ("xid", "The X window id for the preview",
           "The X Window id to use for embedding the preview window",
           G_MININT, G_MAXINT, 0,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuPreviewFilter:filter-manager:
+   *
+   * The filter manager to apply on the preview window.
+   * This preview filter has a filter manager of its own which allows you to
+   * add custom filters specific to a preview window. You can access it through
+   * this property and modify the filter manager as you see fit.
+   */
   g_object_class_install_property (gobject_class, PROP_FILTER_MANAGER,
       g_param_spec_object ("filter-manager", "Filter manager",
           "The filter manager to apply on the preview window",

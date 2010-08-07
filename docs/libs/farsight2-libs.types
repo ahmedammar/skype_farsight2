@@ -14,6 +14,24 @@
 #include "../../gst-libs/gst/farsight/fs-stream-transmitter.h"
 #include "../../gst-libs/gst/farsight/fs-element-added-notifier.h"
 
+#include "../../gst-libs/gst/farsight/fsu-conference.h"
+#include "../../gst-libs/gst/farsight/fsu-session.h"
+#include "../../gst-libs/gst/farsight/fsu-stream.h"
+#include "../../gst-libs/gst/farsight/fsu-source.h"
+#include "../../gst-libs/gst/farsight/fsu-sink.h"
+#include "../../gst-libs/gst/farsight/fsu-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-filter-manager.h"
+#include "../../gst-libs/gst/farsight/fsu-single-filter-manager.h"
+#include "../../gst-libs/gst/farsight/fsu-multi-filter-manager.h"
+#include "../../gst-libs/gst/farsight/fsu-audioconverter-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-framerate-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-gnome-effect-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-level-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-preview-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-resolution-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-videoconverter-filter.h"
+#include "../../gst-libs/gst/farsight/fsu-volume-filter.h"
+
 fs_participant_get_type
 fs_session_get_type
 fs_stream_get_type
@@ -21,3 +39,22 @@ fs_base_conference_get_type
 fs_transmitter_get_type
 fs_stream_transmitter_get_type
 fs_element_added_notifier_get_type
+
+fsu_conference_get_type
+fsu_session_get_type
+fsu_stream_get_type
+fsu_source_get_type
+fsu_sink_get_type
+fsu_filter_get_type
+fsu_filter_manager_get_type
+fsu_single_filter_manager_get_type
+fsu_multi_filter_manager_get_type
+fsu_audioconverter_filter_get_type
+fsu_framerate_filter_get_type
+fsu_gnome_effect_filter_get_type
+fsu_gnome_effect_categories_list_get_type
+fsu_level_filter_get_type
+fsu_preview_filter_get_type
+fsu_resolution_filter_get_type
+fsu_videoconverter_filter_get_type
+fsu_volume_filter_get_type

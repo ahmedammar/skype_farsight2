@@ -24,7 +24,7 @@
  * @short_description: A set of filters
  *
  * Many filters come with Farsigh-utils, and you can use them directly or with
- * the #FsuFitlterManager in order to easily create your pipelines.
+ * the #FsuFilterManager in order to easily create your pipelines.
  * These are the filters currently available and shipped with Farsight.
  */
 

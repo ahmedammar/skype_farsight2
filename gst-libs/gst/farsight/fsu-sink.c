@@ -19,6 +19,25 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * SECTION:fsu-sink
+ * @short_description: A magical sink specific for Farsight-utils
+ *
+ * The #FsuSink elements are just standard GStreamer element that act a bit
+ * like autoaudiosink and autovideosink but have a slightly different behavior.
+ * The purpose of the #FsuSink is to find the best suitable sink for your
+ * needs and allow you to use the same exclusive-access sink multiple times.
+ * The #FsuSink elements only have request pads so you can request access to the
+ * sink as many times as you want. It also serves as some kind of refcounting
+ * for the sink access, you never need to set the element to NULL when you
+ * stop using it (because someone else might still be using it), you only need
+ * to release its request pad, and if no request pads are used by the sink,
+ * then the internal sink will be stopped and destroyed automatically.
+ * <para>
+     Current available sinks as 'fsuaudiosink' and 'fsuvideosink'.
+ * </para>
+ */
+
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif

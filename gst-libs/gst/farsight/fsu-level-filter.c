@@ -128,7 +128,7 @@ fsu_level_filter_dispose (GObject *object)
  * for all channels.
  *
  * Returns: A new #FsuLevelFilter
- * See also: #FsuLevelFilter:level
+ * See also: #FsuLevelFilter::level
  * See also: fsu_filter_handle_message()
  */
 FsuLevelFilter *

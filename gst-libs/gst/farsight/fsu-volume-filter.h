@@ -57,6 +57,12 @@ struct _FsuVolumeFilterClass
   FsuFilterClass parent_class;
 };
 
+
+/**
+ * FsuVolumeFilter:
+ *
+ * An audio volume filter
+ */
 struct _FsuVolumeFilter
 {
   FsuFilter parent;

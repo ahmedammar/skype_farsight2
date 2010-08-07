@@ -60,6 +60,11 @@ struct _FsuGnomeEffectFilterClass
   FsuFilterClass parent_class;
 };
 
+/**
+ * FsuGnomeEffectFilter:
+ *
+ * A Gnome Video Effect filter
+ */
 struct _FsuGnomeEffectFilter
 {
   FsuFilter parent;

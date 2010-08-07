@@ -57,6 +57,11 @@ struct _FsuMultiFilterManagerClass
   GObjectClass parent_class;
 };
 
+/**
+ * FsuMultiFilterManager:
+ *
+ * A filter manager that can be applied multiple times
+ */
 struct _FsuMultiFilterManager
 {
   GObject parent;

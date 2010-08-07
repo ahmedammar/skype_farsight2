@@ -56,6 +56,12 @@ struct _FsuVideoconverterFilterClass
   FsuFilterClass parent_class;
 };
 
+
+/**
+ * FsuVideoconverterFilter:
+ *
+ * A video converter filter
+ */
 struct _FsuVideoconverterFilter
 {
   FsuFilter parent;

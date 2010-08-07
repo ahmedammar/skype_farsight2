@@ -62,6 +62,7 @@ SCANOBJ_DEPS = \
 	$(top_builddir)/gst/fsmsnconference/libfsmsnconference_doc.la \
 	$(top_builddir)/gst/funnel/libfsfunnel.la \
 	$(top_builddir)/gst/videoanyrate/libfsvideoanyrate.la 
+	$(top_builddir)/gst/farsight-utils/libfsutils.la 
 
 # Header files to ignore when scanning.
 IGNORE_HFILES = 
@@ -76,6 +77,10 @@ IGNORE_CFILES =
 # the registry won't have the element
 
 EXTRA_HFILES = \
+	$(top_srcdir)/gst/farsight-utils/fsu-audio-source.h \
+	$(top_srcdir)/gst/farsight-utils/fsu-audio-sink.h \
+	$(top_srcdir)/gst/farsight-utils/fsu-video-source.h \
+	$(top_srcdir)/gst/farsight-utils/fsu-video-sink.h \
 	$(top_srcdir)/gst/funnel/fs-funnel.h \
 	$(top_srcdir)/gst/videoanyrate/videoanyrate.h \
 	$(top_srcdir)/gst/fsrtpconference/fs-rtp-conference.h \

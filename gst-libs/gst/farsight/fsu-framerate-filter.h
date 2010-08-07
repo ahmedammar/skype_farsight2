@@ -57,6 +57,11 @@ struct _FsuFramerateFilterClass
   FsuFilterClass parent_class;
 };
 
+/**
+ * FsuFramerateFilter:
+ *
+ * A video framerate filter
+ */
 struct _FsuFramerateFilter
 {
   FsuFilter parent;

@@ -19,6 +19,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+
+/**
+ * SECTION:element-fsuaudiosource
+ * @short_description: Farsight-Utils Magic Audio Source
+ *
+ * This element is an audio source for Farsight-utils.
+ *
+ * See also #FsuSource
+ */
+
+
 #ifdef HAVE_CONFIG_H
   #include "config.h"
 #endif

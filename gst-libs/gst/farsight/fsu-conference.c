@@ -87,11 +87,22 @@ fsu_conference_class_init (FsuConferenceClass *klass)
   gobject_class->constructed = fsu_conference_constructed;
   gobject_class->dispose = fsu_conference_dispose;
 
+  /**
+   * FsuConference:fs-conference:
+   *
+   * The #FsConference element being wrapped by this object
+   */
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
       g_param_spec_object ("fs-conference", "The farsight conference",
           "The farsight conference element",
           FS_TYPE_CONFERENCE,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FsuConference:pipeline:
+   *
+   * The pipeline in which the #FsConference resides
+   */
   g_object_class_install_property (gobject_class, PROP_PIPELINE,
       g_param_spec_object ("pipeline", "The pipeline",
           "The pipeline holding the conference",

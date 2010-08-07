@@ -85,18 +85,34 @@ fsu_gnome_effect_filter_class_init (FsuGnomeEffectFilterClass *klass)
   fsufilter_class->revert = fsu_gnome_effect_filter_revert;
   fsufilter_class->name = "gnome-effect";
 
+  /**
+   * FsuGnomeEffectFilter:filename:
+   *
+   * The filename to the Gnome Video Effect .effect file to parse
+   */
   g_object_class_install_property (gobject_class, PROP_FILENAME,
       g_param_spec_string ("filename", "The filename of the Gnome effect",
           "The filename of the Gnome effect to read and build",
           NULL,
           G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuGnomeEffectFilter:name:
+   *
+   * The user-friendly name to the Gnome Video Effect
+   */
   g_object_class_install_property (gobject_class, PROP_NAME,
       g_param_spec_string ("name", "The name of the effect",
           "The name of the Gnome effect taken from the file",
           NULL,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuGnomeEffectFilter:pipeline-description:
+   *
+   * The pipeline description of the Gnome Video Effect as taken from
+   * the .effect file
+   */
   g_object_class_install_property (gobject_class, PROP_PIPELINE_DESCRIPTION,
       g_param_spec_string ("pipeline-description",
           "The pipeline description of the effect",
@@ -104,6 +120,13 @@ fsu_gnome_effect_filter_class_init (FsuGnomeEffectFilterClass *klass)
           NULL,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuGnomeEffectFilter:categories:
+   *
+   * The list of categories as specified in the .effect file.
+   * This returns a #GList of strings, each representing a category for this
+   * Gnome Video Effect.
+   */
   g_object_class_install_property (gobject_class, PROP_CATEGORIES,
       g_param_spec_boxed ("categories",
           "The categories of the effect",

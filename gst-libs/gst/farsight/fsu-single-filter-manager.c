@@ -135,24 +135,47 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
   gobject_class->get_property = fsu_single_filter_manager_get_property;
   gobject_class->set_property = fsu_single_filter_manager_set_property;
 
+  /**
+   * FsuSingleFilterManager:applied:
+   *
+   * Whether or not this filter manager has been applied on a pad or not
+   */
   g_object_class_install_property (gobject_class, PROP_APPLIED,
       g_param_spec_boolean ("applied", "Applied status",
           "Whether the filter manager has been applied",
           FALSE,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuSingleFilterManager:applied-bin:
+   *
+   * The #GstBin this filter manager was applied on or #NULL if not applied yet
+   */
   g_object_class_install_property (gobject_class, PROP_APPLIED_BIN,
       g_param_spec_object ("applied-bin", "Applied bin",
           "If applied, the bin it was applied on",
           GST_TYPE_BIN,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuSingleFilterManager:applied-pad:
+   *
+   * The #GstPad this filter manager was applied on or #NULL if not applied yet
+   */
   g_object_class_install_property (gobject_class, PROP_APPLIED_PAD,
       g_param_spec_object ("applied-pad", "Applied pad",
           "If applied, the pad it was applied on",
           GST_TYPE_PAD,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * FsuSingleFilterManager:out-pad:
+   *
+   * The output #GstPad at the end of this filter manager or #NULL if not
+   * applied yet.
+   *
+   * See also: fsu_filter_manager_revert()
+   */
   g_object_class_install_property (gobject_class, PROP_OUT_PAD,
       g_param_spec_object ("out-pad", "Output pad",
           "If applied, the output pad it applied",
