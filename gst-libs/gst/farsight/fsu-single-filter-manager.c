@@ -481,15 +481,21 @@ apply_modifs (GstPad *pad,
     if (insert || remove)
     {
       // unlink
-      gst_pad_unlink (srcpad, sinkpad);
-
-      g_mutex_lock (priv->mutex);
-      if (remove)
-        out_pad = fsu_filter_revert (to_remove->filter, priv->applied_bin,
-            current_pad);
-      else if (insert)
-        out_pad = fsu_filter_apply (modif->id->filter, priv->applied_bin,
-            current_pad);
+      if (gst_pad_unlink (srcpad, sinkpad))
+      {
+        g_mutex_lock (priv->mutex);
+        if (remove)
+          out_pad = fsu_filter_revert (to_remove->filter, priv->applied_bin,
+              current_pad);
+        else if (insert)
+          out_pad = fsu_filter_apply (modif->id->filter, priv->applied_bin,
+              current_pad);
+      }
+      else
+      {
+        out_pad = NULL;
+        g_mutex_lock (priv->mutex);
+      }
 
       if (out_pad)
       {
@@ -553,10 +559,13 @@ apply_modifs (GstPad *pad,
       gst_object_unref (current_pad);
 
       // Link
-      /* TODO: handle unable to link */
-      gst_pad_link (srcpad, sinkpad);
-      gst_object_unref (srcpad);
-      gst_object_unref (sinkpad);
+      if (GST_PAD_LINK_SUCCESSFUL(gst_pad_link (srcpad, sinkpad)))
+      {
+        gst_object_unref (srcpad);
+        gst_object_unref (sinkpad);
+      } else {
+        /* TODO: what should we do here???? */
+      }
     }
 
     g_mutex_lock (priv->mutex);
