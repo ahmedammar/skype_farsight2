@@ -583,11 +583,10 @@ apply_modifs (GstPad *pad,
       priv->applied_filters = g_list_remove (priv->applied_filters, to_remove);
       free_filter_id (to_remove);
     }
-    g_mutex_unlock (priv->mutex);
-
 
     g_slice_free (FilterModification, modif);
   }
+  g_mutex_unlock (priv->mutex);
 
 
   gst_pad_set_blocked_async (pad, FALSE, pad_block_do_nothing, NULL);
