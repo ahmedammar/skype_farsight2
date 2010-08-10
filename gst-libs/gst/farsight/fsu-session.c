@@ -388,7 +388,7 @@ _fsu_session_start_sending (FsuSession *self)
       "sink-pad", &sinkpad,
       NULL);
 
-  if (gst_pad_link (filter_pad, sinkpad) != GST_PAD_LINK_OK)
+  if (GST_PAD_LINK_FAILED (gst_pad_link (filter_pad, sinkpad)))
   {
     g_mutex_lock (priv->mutex);
     srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),

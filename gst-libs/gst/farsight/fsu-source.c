@@ -452,7 +452,7 @@ create_source_and_link_tee (FsuSource *self)
 
     if (tee_pad)
     {
-      if (gst_pad_link (src_pad, tee_pad) != GST_PAD_LINK_OK)
+      if (GST_PAD_LINK_FAILED (gst_pad_link (src_pad, tee_pad)))
       {
         WARNING ("Couldn't link source pad with src tee");
         gst_object_unref (tee_pad);

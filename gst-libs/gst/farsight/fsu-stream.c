@@ -363,7 +363,6 @@ src_pad_added (FsStream *stream,
   GstElement *sink = NULL;
   GstPad *sink_pad = NULL;
   GstPad *filter_pad = NULL;
-  GstPadLinkReturn ret;
   gchar *error = NULL;
 
   g_object_get (priv->conference,
@@ -419,9 +418,7 @@ src_pad_added (FsStream *stream,
     filter_pad = gst_object_ref (sink_pad);
   gst_object_unref (sink_pad);
 
-  ret = gst_pad_link (pad, filter_pad);
-
-  if (ret != GST_PAD_LINK_OK)
+  if (GST_PAD_LINK_FAILED (gst_pad_link (pad, filter_pad)))
   {
     g_mutex_lock (priv->mutex);
     sink_pad = fsu_filter_manager_revert (priv->filters,

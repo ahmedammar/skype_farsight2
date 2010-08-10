@@ -432,7 +432,7 @@ create_mixer (FsuSink *self,
       gst_object_unref (mixer_pad);
     return NULL;
   }
-  else if (gst_pad_link (mixer_pad, sink_pad) != GST_PAD_LINK_OK)
+  else if (GST_PAD_LINK_FAILED (gst_pad_link (mixer_pad, sink_pad)))
   {
     WARNING ("Couldn't link mixer pad with sink pad");
     gst_bin_remove (GST_BIN (self), mixer);

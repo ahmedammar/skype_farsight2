@@ -63,9 +63,9 @@ fsu_filter_add_element (GstBin *bin,
   }
 
   if ((GST_PAD_IS_SRC (pad) &&
-          gst_pad_link(pad, element_pad) != GST_PAD_LINK_OK) ||
+          GST_PAD_LINK_FAILED (gst_pad_link(pad, element_pad))) ||
       (GST_PAD_IS_SINK (pad) &&
-          gst_pad_link(element_pad, pad) != GST_PAD_LINK_OK))
+          GST_PAD_LINK_FAILED (gst_pad_link(element_pad, pad))))
   {
     gst_object_ref (element);
     gst_bin_remove (bin, element);
