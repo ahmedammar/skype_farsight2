@@ -73,7 +73,16 @@ fsu_filter_add_element (GstBin *bin,
       GST_OBJECT_FLAG_SET (GST_OBJECT (element), GST_OBJECT_FLOATING);
     return FALSE;
   }
-  gst_element_sync_state_with_parent (element);
+  if (!gst_element_sync_state_with_parent (element))
+  {
+    gst_pad_unlink (GST_PAD_IS_SRC (pad) ? pad : element_pad,
+        GST_PAD_IS_SRC (pad) ? element_pad : pad);
+    gst_object_ref (element);
+    gst_bin_remove (bin, element);
+    if (floating)
+      GST_OBJECT_FLAG_SET (GST_OBJECT (element), GST_OBJECT_FLOATING);
+    return FALSE;
+  }
 
   return TRUE;
 }

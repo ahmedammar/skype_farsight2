@@ -465,7 +465,16 @@ create_source_and_link_tee (FsuSource *self)
       if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
       {
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
-        gst_element_sync_state_with_parent  (src);
+        if (!gst_element_sync_state_with_parent  (src))
+        {
+          WARNING ("Couldn't sync src state with parent");
+          gst_pad_unlink (src_pad, tee_pad);
+          gst_object_unref (tee_pad);
+          gst_object_unref (src_pad);
+          gst_bin_remove (GST_BIN (self), src);
+          check_and_remove_tee (self);
+          return;
+        }
       }
       else
       {
@@ -503,12 +512,16 @@ create_tee (FsuSource *self)
   if (!tee)
   {
     WARNING ("Could not create src tee");
+    if (fakesink)
+      gst_object_unref (fakesink);
     return;
   }
   if (!gst_bin_add (GST_BIN (self), tee))
   {
     WARNING ("Could not add src tee to Source");
     gst_object_unref (tee);
+    if (fakesink)
+      gst_object_unref (fakesink);
     return;
   }
   if (fakesink && !gst_bin_add (GST_BIN (self), fakesink))
@@ -530,22 +543,30 @@ create_tee (FsuSource *self)
   }
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
-  priv->tee = gst_object_ref (tee);
-  priv->fakesink = gst_object_ref (fakesink);
-  GST_OBJECT_UNLOCK (GST_OBJECT (self));
-
-  GST_OBJECT_LOCK (GST_OBJECT (self));
   if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
-    gst_element_sync_state_with_parent  (tee);
+    if (!gst_element_sync_state_with_parent  (tee))
+    {
+      if (fakesink)
+      {
+        gst_element_unlink (tee, fakesink);
+        gst_bin_remove (GST_BIN (self), fakesink);
+      }
+      gst_bin_remove (GST_BIN (self), tee);
+      return;
+    }
     create_source_and_link_tee (self);
+    GST_OBJECT_LOCK (GST_OBJECT (self));
   }
   else
   {
-    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     DEBUG ("State NULL, not creating source now...");
   }
+
+  priv->tee = gst_object_ref (tee);
+  priv->fakesink = fakesink? gst_object_ref (fakesink) : NULL;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
 }
 
@@ -1196,18 +1217,6 @@ replace_source_thread (gpointer data)
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     create_source_and_link_tee (self);
-
-    GST_OBJECT_LOCK (GST_OBJECT (self));
-    source = priv->source;
-    if (source && GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
-    {
-      GST_OBJECT_UNLOCK (GST_OBJECT (self));
-      gst_element_sync_state_with_parent  (source);
-    }
-    else
-    {
-      GST_OBJECT_UNLOCK (GST_OBJECT (self));
-    }
   }
 
   GST_OBJECT_LOCK (GST_OBJECT (self));

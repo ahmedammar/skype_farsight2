@@ -424,8 +424,21 @@ _fsu_session_start_sending (FsuSession *self)
   gst_object_unref (sinkpad);
 
   gst_element_get_state (pipeline, &state, NULL, GST_CLOCK_TIME_NONE);
-  if (state > GST_STATE_NULL)
-    gst_element_sync_state_with_parent (GST_ELEMENT (priv->source));
+  if (state > GST_STATE_NULL &&
+      !gst_element_sync_state_with_parent (GST_ELEMENT (priv->source)))
+  {
+    gst_pad_unlink (filter_pad, sinkpad);
+    srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
+        filter_pad);
+    if (srcpad)
+    {
+      gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
+      gst_object_unref (srcpad);
+    }
+    gst_object_unref (sinkpad);
+    gst_object_unref (filter_pad);
+    goto no_source;
+  }
 
  done:
   g_atomic_int_inc (&priv->sending);
