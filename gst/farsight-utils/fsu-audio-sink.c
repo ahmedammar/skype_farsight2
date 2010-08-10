@@ -85,8 +85,8 @@ create_auto_sink (FsuSink *self)
 {
   GstElement *sink = gst_element_factory_make ("autoaudiosink", NULL);
 
-  g_signal_connect (sink, "element-added",
-      G_CALLBACK (sink_element_added), self);
+  g_signal_connect_object (sink, "element-added",
+      G_CALLBACK (sink_element_added), self, 0);
 
   return sink;
 }

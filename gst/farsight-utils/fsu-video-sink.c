@@ -103,8 +103,8 @@ create_auto_sink (FsuSink *self)
   return gst_element_factory_make ("osxvideosink", NULL);
 #else
   GstElement *sink = gst_element_factory_make ("autovideosink", NULL);
-  g_signal_connect (sink, "element-added",
-      G_CALLBACK (sink_element_added), self);
+  g_signal_connect_object (sink, "element-added",
+      G_CALLBACK (sink_element_added), self, 0);
   return sink;
 #endif
 }

@@ -208,8 +208,8 @@ fsu_stream_constructed (GObject *object)
   if (G_OBJECT_CLASS (fsu_stream_parent_class)->constructed)
     G_OBJECT_CLASS (fsu_stream_parent_class)->constructed (object);
 
-  g_signal_connect (priv->stream, "src-pad-added",
-        G_CALLBACK (src_pad_added), self);
+  g_signal_connect_object (priv->stream, "src-pad-added",
+      G_CALLBACK (src_pad_added), self, 0);
 
   if (priv->sink)
   {
@@ -458,7 +458,8 @@ src_pad_added (FsStream *stream,
   }
   gst_object_unref (filter_pad);
 
-  g_signal_connect (pad, "unlinked", (GCallback) src_pad_unlinked, self);
+  g_signal_connect_object (pad, "unlinked", (GCallback) src_pad_unlinked,
+      self, 0);
 
  error:
   return;
