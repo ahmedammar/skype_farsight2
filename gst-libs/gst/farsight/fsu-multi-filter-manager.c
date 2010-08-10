@@ -129,7 +129,6 @@ fsu_multi_filter_manager_dispose (GObject *object)
   GList *i;
 
 
-  g_mutex_lock (priv->mutex);
   for (i = priv->filter_managers; i; i = i->next)
   {
     FsuFilterManager *fm = i->data;
@@ -147,7 +146,6 @@ fsu_multi_filter_manager_dispose (GObject *object)
   }
   g_list_free (priv->filters);
   priv->filters = NULL;
-  g_mutex_unlock (priv->mutex);
 
   if (priv->mutex)
     g_mutex_free (priv->mutex);

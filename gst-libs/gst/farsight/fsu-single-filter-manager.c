@@ -219,38 +219,7 @@ fsu_single_filter_manager_dispose (GObject *object)
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
-
-  g_mutex_lock (priv->mutex);
-  if (!g_queue_is_empty (priv->modifications))
-  {
-    if (GST_PAD_IS_SRC (priv->applied_pad))
-    {
-      gst_pad_set_blocked_async (priv->applied_pad, FALSE,
-          pad_block_do_nothing, NULL);
-    }
-    else
-    {
-      GstPad *src_pad = gst_pad_get_peer (priv->out_pad);
-      /* The source might have been removed already */
-      if (src_pad)
-      {
-        gst_pad_set_blocked_async (src_pad, FALSE, pad_block_do_nothing, NULL);
-        gst_object_unref (src_pad);
-      }
-    }
-
-    while (!g_queue_is_empty (priv->modifications))
-    {
-      FilterModification *modif = g_queue_pop_head (priv->modifications);
-
-      if (modif->action == REMOVE)
-        free_filter_id (modif->id);
-      else if (modif->action == REPLACE)
-        free_filter_id (modif->replace_id);
-
-      g_slice_free (FilterModification, modif);
-    }
-  }
+  g_assert (g_queue_is_empty (priv->modifications));
   g_queue_free (priv->modifications);
 
   if (priv->applied_filters)
@@ -269,8 +238,6 @@ fsu_single_filter_manager_dispose (GObject *object)
     gst_object_unref (priv->applied_pad);
   if (priv->out_pad)
     gst_object_unref (priv->out_pad);
-
-  g_mutex_unlock (priv->mutex);
 
 
   if (priv->mutex)
@@ -374,6 +341,19 @@ apply_modifs (GstPad *pad,
 
 
   g_mutex_lock (priv->mutex);
+
+  /* There could be a race where this thread and a _revert get called at the
+   * same time. In which case the _revert will unblock the pad and unref our
+   * reference on self. Once it releases the lock, we might get here, in which
+   * case we need to check if the pad is blocked, and if it's not, then just
+   * return and ignore we were ever called.
+   */
+  if (!gst_pad_is_blocked (pad))
+  {
+    g_mutex_unlock (priv->mutex);
+    return;
+  }
+
   while (!g_queue_is_empty (priv->modifications))
   {
     FilterModification *modif = g_queue_pop_head (priv->modifications);
@@ -588,6 +568,7 @@ apply_modifs (GstPad *pad,
   }
   g_mutex_unlock (priv->mutex);
 
+  g_object_unref (self);
 
   gst_pad_set_blocked_async (pad, FALSE, pad_block_do_nothing, NULL);
 }
@@ -620,6 +601,7 @@ new_modification (FsuSingleFilterManager *self,
     gst_pad_set_blocked_async (src_pad, TRUE, apply_modifs, self);
     gst_object_unref (src_pad);
   }
+  g_object_ref (self);
   g_mutex_unlock (priv->mutex);
 }
 
@@ -911,6 +893,8 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
         gst_object_unref (src_pad);
       }
     }
+    /* Unref the reference that was held by the pad_block*/
+    g_object_unref (self);
   }
 
   if (GST_PAD_IS_SRC (pad))

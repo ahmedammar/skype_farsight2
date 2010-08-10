@@ -141,11 +141,9 @@ fsu_filter_dispose (GObject *object)
   FsuFilter *self = FSU_FILTER (object);
   FsuFilterPrivate *priv = self->priv;
 
-  g_mutex_lock (priv->mutex);
   if (priv->pads)
     g_hash_table_destroy (priv->pads);
   priv->pads = NULL;
-  g_mutex_unlock (priv->mutex);
 
   if (priv->mutex)
     g_mutex_free (priv->mutex);

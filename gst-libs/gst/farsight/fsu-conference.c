@@ -216,15 +216,12 @@ fsu_conference_dispose (GObject *object)
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
 
-  g_mutex_lock (priv->mutex);
   if (priv->sessions)
   {
     g_list_foreach (priv->sessions, remove_weakref, self);
     g_list_free (priv->sessions);
   }
   priv->sessions = NULL;
-
-  g_mutex_unlock (priv->mutex);
 
   if (priv->conference)
   {

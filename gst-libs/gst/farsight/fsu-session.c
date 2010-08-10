@@ -219,14 +219,7 @@ fsu_session_dispose (GObject *object)
   FsuSession *self = FSU_SESSION (object);
   FsuSessionPrivate *priv = self->priv;
 
-  g_mutex_lock (priv->mutex);
-  while (priv->sending > 0)
-  {
-    g_mutex_unlock (priv->mutex);
-    _fsu_session_stop_sending (self);
-    g_mutex_lock (priv->mutex);
-  }
-  g_mutex_unlock (priv->mutex);
+  while (_fsu_session_stop_sending (self));
 
   if (priv->source)
   {
@@ -247,7 +240,6 @@ fsu_session_dispose (GObject *object)
   }
   priv->source = NULL;
 
-  g_mutex_lock (priv->mutex);
   if (priv->filters)
     g_object_unref (priv->filters);
   priv->filters = NULL;
@@ -258,7 +250,6 @@ fsu_session_dispose (GObject *object)
     g_list_free (priv->streams);
   }
   priv->streams = NULL;
-  g_mutex_unlock (priv->mutex);
 
   if (priv->session)
     gst_object_unref (priv->session);
@@ -448,7 +439,7 @@ _fsu_session_start_sending (FsuSession *self)
   return FALSE;
 }
 
-void
+gboolean
 _fsu_session_stop_sending (FsuSession *self)
 {
   FsuSessionPrivate *priv = self->priv;
@@ -457,7 +448,7 @@ _fsu_session_stop_sending (FsuSession *self)
   GstPad *srcpad = NULL;
   GstPad *sinkpad = NULL;
 
-  if (priv->sending > 0)
+  if (g_atomic_int_get (&priv->sending) > 0)
   {
     if (g_atomic_int_dec_and_test (&priv->sending))
     {
@@ -480,7 +471,9 @@ _fsu_session_stop_sending (FsuSession *self)
       gst_object_unref (sinkpad);
       gst_object_unref (pipeline);
     }
+    return TRUE;
   }
+  return FALSE;
 }
 
 gboolean

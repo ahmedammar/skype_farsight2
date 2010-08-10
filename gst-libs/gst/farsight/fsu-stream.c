@@ -262,11 +262,9 @@ fsu_stream_dispose (GObject *object)
   }
   priv->sink = NULL;
 
-  g_mutex_lock (priv->mutex);
   if (priv->filters)
     g_object_unref (priv->filters);
   priv->filters = NULL;
-  g_mutex_unlock (priv->mutex);
 
   if (priv->stream)
     gst_object_unref (priv->stream);
