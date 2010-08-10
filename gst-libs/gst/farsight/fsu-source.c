@@ -543,6 +543,9 @@ create_tee (FsuSource *self)
   }
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
+  priv->tee = gst_object_ref (tee);
+  priv->fakesink = fakesink? gst_object_ref (fakesink) : NULL;
+
   if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
@@ -554,6 +557,15 @@ create_tee (FsuSource *self)
         gst_bin_remove (GST_BIN (self), fakesink);
       }
       gst_bin_remove (GST_BIN (self), tee);
+
+      GST_OBJECT_LOCK (GST_OBJECT (self));
+      if (priv->tee)
+        gst_object_unref (priv->tee);
+      priv->tee = NULL;
+      if (priv->fakesink)
+        gst_object_unref (priv->fakesink);
+      priv->fakesink = NULL;
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       return;
     }
     create_source_and_link_tee (self);
@@ -564,8 +576,6 @@ create_tee (FsuSource *self)
     DEBUG ("State NULL, not creating source now...");
   }
 
-  priv->tee = gst_object_ref (tee);
-  priv->fakesink = fakesink? gst_object_ref (fakesink) : NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
 }
