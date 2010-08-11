@@ -214,6 +214,17 @@ fsu_single_filter_manager_dispose (GObject *object)
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
+  if (priv->applied_bin)
+  {
+    g_critical ("Disposing of FsuSingleFilterManager while applied.\n"
+        "Make sure to properly revert any filter manager before\n"
+        "disposing it. Unexpected behavior to be expected!");
+    /* Force the revert to make sure the priv->modifications gets emptied and
+     * the pad block is unblocked if it was.. */
+    fsu_filter_manager_revert (FSU_FILTER_MANAGER (self),
+        priv->applied_bin, priv->out_pad);
+  }
+
   g_assert (g_queue_is_empty (priv->modifications));
   g_queue_free (priv->modifications);
 
