@@ -440,27 +440,22 @@ apply_modifs (GstPad *pad,
         }
       }
     }
-    g_mutex_unlock (priv->mutex);
 
     /* We may have nothing to do and no need to unlink if we want to REMOVE a
        filter which had failed to apply previously */
     if (insert || remove)
     {
+      out_pad = NULL;
+
       // unlink
       if (gst_pad_unlink (srcpad, sinkpad))
       {
-        g_mutex_lock (priv->mutex);
         if (remove)
           out_pad = fsu_filter_revert (to_remove->filter, priv->applied_bin,
               current_pad);
         else if (insert)
           out_pad = fsu_filter_apply (modif->id->filter, priv->applied_bin,
               current_pad);
-      }
-      else
-      {
-        out_pad = NULL;
-        g_mutex_lock (priv->mutex);
       }
 
       if (out_pad)
@@ -520,7 +515,6 @@ apply_modifs (GstPad *pad,
           gst_object_unref (modif->id->out_pad);
         modif->id->in_pad = modif->id->out_pad = NULL;
       }
-      g_mutex_unlock (priv->mutex);
 
       gst_object_unref (current_pad);
 
@@ -534,7 +528,6 @@ apply_modifs (GstPad *pad,
       }
     }
 
-    g_mutex_lock (priv->mutex);
     /* Synchronize our applied_filters list with the filters list */
     if (modif->action == REPLACE)
       insert_position = g_list_index (priv->applied_filters, to_remove);
@@ -587,6 +580,7 @@ new_modification (FsuSingleFilterManager *self,
     gst_pad_set_blocked_async (src_pad, TRUE, apply_modifs, self);
     gst_object_unref (src_pad);
   }
+  /* Keep a reference to self for the pad block thread */
   g_object_ref (self);
   g_mutex_unlock (priv->mutex);
 }
