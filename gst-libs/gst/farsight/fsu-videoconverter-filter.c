@@ -48,7 +48,9 @@ FsuVideoconverterFilter *
 fsu_videoconverter_filter_new (void)
 {
   static FsuVideoconverterFilter *singleton = NULL;
+  GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 
+  g_static_mutex_lock (&mutex);
   if (!singleton)
   {
     singleton = g_object_new (FSU_TYPE_VIDEOCONVERTER_FILTER, NULL);
@@ -58,6 +60,7 @@ fsu_videoconverter_filter_new (void)
   {
     g_object_ref (singleton);
   }
+  g_static_mutex_unlock (&mutex);
 
   return singleton;
 }
