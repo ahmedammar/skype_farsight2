@@ -41,10 +41,6 @@ static void fsu_single_filter_manager_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec);
-static void fsu_single_filter_manager_set_property (GObject *object,
-    guint property_id,
-    const GValue *value,
-    GParamSpec *pspec);
 static void free_filter_id (FsuFilterId *id);
 static void pad_block_do_nothing (GstPad *pad,
     gboolean blocked,
@@ -133,7 +129,6 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
 
   gobject_class->dispose = fsu_single_filter_manager_dispose;
   gobject_class->get_property = fsu_single_filter_manager_get_property;
-  gobject_class->set_property = fsu_single_filter_manager_set_property;
 
   /**
    * FsuSingleFilterManager:applied:
@@ -276,20 +271,6 @@ fsu_single_filter_manager_get_property (GObject *object,
       break;
   }
   g_mutex_unlock (priv->mutex);
-}
-
-static void
-fsu_single_filter_manager_set_property (GObject *object,
-    guint property_id,
-    const GValue *value,
-    GParamSpec *pspec)
-{
-  switch (property_id)
-  {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
-  }
 }
 
 /**
