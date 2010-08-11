@@ -256,32 +256,26 @@ fsu_single_filter_manager_get_property (GObject *object,
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
   switch (property_id)
   {
     case PROP_APPLIED:
-      g_mutex_lock (priv->mutex);
       g_value_set_boolean (value, priv->applied_bin ? TRUE : FALSE);
-      g_mutex_unlock (priv->mutex);
       break;
     case PROP_APPLIED_BIN:
-      g_mutex_lock (priv->mutex);
       g_value_set_object (value, priv->applied_bin);
-      g_mutex_unlock (priv->mutex);
       break;
     case PROP_APPLIED_PAD:
-      g_mutex_lock (priv->mutex);
       g_value_set_object (value, priv->applied_pad);
-      g_mutex_unlock (priv->mutex);
       break;
     case PROP_OUT_PAD:
-      g_mutex_lock (priv->mutex);
       g_value_set_object (value, priv->out_pad);
-      g_mutex_unlock (priv->mutex);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
   }
+  g_mutex_unlock (priv->mutex);
 }
 
 static void
