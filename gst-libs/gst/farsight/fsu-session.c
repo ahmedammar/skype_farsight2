@@ -366,10 +366,8 @@ _fsu_session_start_sending (FsuSession *self)
     goto no_source;
   }
 
-  g_mutex_lock (priv->mutex);
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), srcpad);
-  g_mutex_unlock (priv->mutex);
 
   if (!filter_pad)
     filter_pad = gst_object_ref (srcpad);
@@ -381,10 +379,8 @@ _fsu_session_start_sending (FsuSession *self)
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (filter_pad, sinkpad)))
   {
-    g_mutex_lock (priv->mutex);
     srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
         filter_pad);
-    g_mutex_unlock (priv->mutex);
     if (srcpad)
     {
       gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
@@ -461,10 +457,8 @@ _fsu_session_stop_sending (FsuSession *self)
 
       filter_pad = gst_pad_get_peer (sinkpad);
       gst_pad_unlink (filter_pad, sinkpad);
-      g_mutex_lock (priv->mutex);
       srcpad = fsu_filter_manager_revert (priv->filters,
           GST_BIN (pipeline), filter_pad);
-      g_mutex_unlock (priv->mutex);
       gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
       gst_object_unref (srcpad);
       gst_object_unref (filter_pad);

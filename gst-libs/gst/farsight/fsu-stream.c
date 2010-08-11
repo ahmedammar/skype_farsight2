@@ -321,10 +321,8 @@ src_pad_unlinked (GstPad  *pad,
       "pipeline", &pipeline,
       NULL);
 
-  g_mutex_lock (priv->mutex);
   sink_pad = fsu_filter_manager_revert (priv->filters,
       GST_BIN (pipeline), filter_pad);
-  g_mutex_unlock (priv->mutex);
 
   if (!sink_pad)
     sink_pad = gst_object_ref (filter_pad);
@@ -407,10 +405,8 @@ src_pad_added (FsStream *stream,
     goto error;
   }
 
-  g_mutex_lock (priv->mutex);
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), sink_pad);
-  g_mutex_unlock (priv->mutex);
 
   if (!filter_pad)
     filter_pad = gst_object_ref (sink_pad);
@@ -418,10 +414,8 @@ src_pad_added (FsStream *stream,
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (pad, filter_pad)))
   {
-    g_mutex_lock (priv->mutex);
     sink_pad = fsu_filter_manager_revert (priv->filters,
         GST_BIN (pipeline), filter_pad);
-    g_mutex_unlock (priv->mutex);
     if (!sink_pad)
       sink_pad = gst_object_ref (filter_pad);
     if (priv->sink)
@@ -437,10 +431,8 @@ src_pad_added (FsStream *stream,
       GST_STATE_CHANGE_FAILURE)
   {
     gst_pad_unlink (pad, filter_pad);
-    g_mutex_lock (priv->mutex);
     sink_pad = fsu_filter_manager_revert (priv->filters,
         GST_BIN (pipeline), filter_pad);
-    g_mutex_unlock (priv->mutex);
     if (!sink_pad)
       sink_pad = gst_object_ref (filter_pad);
     if (priv->sink)
@@ -633,12 +625,5 @@ gboolean
 _fsu_stream_handle_message (FsuStream *self,
     GstMessage *message)
 {
-  FsuStreamPrivate *priv = self->priv;
-  gboolean ret;
-
-  g_mutex_lock (priv->mutex);
-  ret = fsu_filter_manager_handle_message (priv->filters, message);
-  g_mutex_unlock (priv->mutex);
-
-  return ret;
+  return fsu_filter_manager_handle_message (self->priv->filters, message);
 }
