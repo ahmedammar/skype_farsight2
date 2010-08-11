@@ -72,6 +72,7 @@ struct _FsuSessionPrivate
   FsSession *session;
   FsuSource *source;
   GList *streams;
+  gint streams_id;
   FsuFilterManager *filters;
   gint sending;
   GMutex *mutex;
@@ -250,6 +251,7 @@ fsu_session_dispose (GObject *object)
     g_list_free (priv->streams);
   }
   priv->streams = NULL;
+  priv->streams_id = -1;
 
   if (priv->session)
     gst_object_unref (priv->session);
@@ -295,6 +297,7 @@ stream_destroyed (gpointer data,
 
   g_mutex_lock (priv->mutex);
   priv->streams = g_list_remove (priv->streams, destroyed_stream);
+  priv->streams_id++;
   g_mutex_unlock (priv->mutex);
 }
 
@@ -329,6 +332,7 @@ fsu_session_handle_stream (FsuSession *self,
   {
     g_mutex_lock (priv->mutex);
     priv->streams = g_list_prepend (priv->streams, str);
+    priv->streams_id++;
     g_mutex_unlock (priv->mutex);
     g_object_weak_ref (G_OBJECT (str), stream_destroyed, self);
   }
@@ -477,18 +481,25 @@ _fsu_session_handle_message (FsuSession *self,
   FsuSessionPrivate *priv = self->priv;
   GList *i;
   gboolean drop = FALSE;
+  gint list_id = 0;
 
-  g_mutex_lock (priv->mutex);
   drop = fsu_filter_manager_handle_message (priv->filters, message);
 
-  for (i = priv->streams; i && !drop; i = i->next)
+  g_mutex_lock (priv->mutex);
+ retry:
+  for (i = priv->streams, list_id = priv->streams_id;
+       i && !drop && list_id == priv->streams_id;
+       i = i->next)
   {
     FsuStream *stream = i->data;
     g_mutex_unlock (priv->mutex);
     drop = _fsu_stream_handle_message (stream, message);
     g_mutex_lock (priv->mutex);
   }
+  if (list_id != priv->streams_id)
+    goto retry;
   g_mutex_unlock (priv->mutex);
+
 
   return drop;
 }

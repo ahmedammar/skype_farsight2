@@ -71,6 +71,7 @@ struct _FsuConferencePrivate
   GstElement *pipeline;
   GstElement *conference;
   GList *sessions;
+  gint sessions_id;
   GError *error;
   GMutex *mutex;
 };
@@ -222,6 +223,7 @@ fsu_conference_dispose (GObject *object)
     g_list_free (priv->sessions);
   }
   priv->sessions = NULL;
+  priv->sessions_id = -1;
 
   if (priv->conference)
   {
@@ -296,6 +298,7 @@ session_destroyed (gpointer data,
 
   g_mutex_lock (priv->mutex);
   priv->sessions = g_list_remove (priv->sessions, destroyed_session);
+  priv->sessions_id++;
   g_mutex_unlock (priv->mutex);
 }
 
@@ -330,6 +333,7 @@ fsu_conference_handle_session (FsuConference *self,
   {
     g_mutex_lock (priv->mutex);
     priv->sessions = g_list_prepend (priv->sessions, sess);
+    priv->sessions_id++;
     g_mutex_unlock (priv->mutex);
     g_object_weak_ref (G_OBJECT (sess), session_destroyed, self);
   }
@@ -356,13 +360,21 @@ fsu_conference_handle_message (FsuConference *self,
   FsuConferencePrivate *priv = self->priv;
   GList *i;
   gboolean drop = FALSE;
+  gint list_id = 0;
 
   g_mutex_lock (priv->mutex);
-  for (i = priv->sessions; i && !drop; i = i->next)
+ retry:
+  for (i = priv->sessions, list_id = priv->sessions_id;
+       i && !drop && list_id == priv->sessions_id;
+       i = i->next)
   {
     FsuSession *session = i->data;
+    g_mutex_unlock (priv->mutex);
     drop = _fsu_session_handle_message (session, message);
+    g_mutex_lock (priv->mutex);
   }
+  if (list_id != priv->sessions_id)
+    goto retry;
   g_mutex_unlock (priv->mutex);
 
   return drop;
