@@ -338,15 +338,10 @@ check_and_remove_tee (FsuSource *self)
   GList *item;
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
-  for (item = GST_ELEMENT_PADS (self); item; item = g_list_next (item))
+  if (GST_ELEMENT (self)->numsrcpads != 0)
   {
-    GstPad *pad = GST_PAD (item->data);
-
-    if (GST_PAD_IS_SRC (pad))
-    {
-      GST_OBJECT_UNLOCK (GST_OBJECT (self));
-      return;
-    }
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    return;
   }
 
   DEBUG ("No more request source pads");
