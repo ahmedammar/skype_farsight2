@@ -50,10 +50,6 @@ static void fsu_filter_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec);
-static void fsu_filter_set_property (GObject *object,
-    guint property_id,
-    const GValue *value,
-    GParamSpec *pspec);
 
 
 /* properties */
@@ -77,7 +73,6 @@ fsu_filter_class_init (FsuFilterClass *klass)
   g_type_class_add_private (klass, sizeof (FsuFilterPrivate));
 
   gobject_class->get_property = fsu_filter_get_property;
-  gobject_class->set_property = fsu_filter_set_property;
   gobject_class->dispose = fsu_filter_dispose;
 
   g_object_class_install_property (gobject_class, PROP_NAME,
@@ -115,20 +110,6 @@ fsu_filter_get_property (GObject *object,
     case PROP_NAME:
       g_value_set_string (value, klass->name);
       break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      break;
-  }
-}
-
-static void
-fsu_filter_set_property (GObject *object,
-    guint property_id,
-    const GValue *value,
-    GParamSpec *pspec)
-{
-  switch (property_id)
-  {
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
