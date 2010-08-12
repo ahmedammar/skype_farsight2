@@ -226,16 +226,18 @@ fsu_filter_revert (FsuFilter *self,
   g_assert (klass->revert);
 
   g_mutex_lock (priv->mutex);
-  in_pad = GST_PAD (g_hash_table_lookup (priv->pads, pad));
-  g_mutex_unlock (priv->mutex);
+  in_pad = g_hash_table_lookup (priv->pads, pad);
 
   if (!in_pad)
   {
+    g_mutex_unlock (priv->mutex);
     g_debug ("Can't revert filter %s (%p), never got applied on this pad",
         klass->name, self);
     return NULL;
   }
   expected = gst_pad_get_peer (in_pad);
+  g_hash_table_remove (priv->pads, pad);
+  g_mutex_unlock (priv->mutex);
 
   out_pad = klass->revert (self, bin, pad);
 
@@ -251,10 +253,6 @@ fsu_filter_revert (FsuFilter *self,
   {
     gst_object_unref (expected);
   }
-
-  g_mutex_lock (priv->mutex);
-  g_hash_table_remove (priv->pads, pad);
-  g_mutex_unlock (priv->mutex);
 
   return out_pad;
 }
