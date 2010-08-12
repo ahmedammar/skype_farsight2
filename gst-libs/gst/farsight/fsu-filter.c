@@ -136,7 +136,7 @@ fsu_filter_dispose (GObject *object)
 
 /**
  * fsu_filter_apply:
- * @self: The #FsuFilterManager
+ * @self: The #FsuFilter
  * @bin: The #GstBin to apply the filter to
  * @pad: The #GstPad to apply the filter to
  *
@@ -178,7 +178,7 @@ fsu_filter_apply (FsuFilter *self,
 
 /**
  * fsu_filter_revert:
- * @self: The #FsuFilterManager
+ * @self: The #FsuFilter
  * @bin: The #GstBin to revert the filter from
  * @pad: The #GstPad to revert the filter from
  *
@@ -243,7 +243,7 @@ fsu_filter_revert (FsuFilter *self,
 
 /**
  * fsu_filter_follow:
- * @self: The #FsuFilterManager
+ * @self: The #FsuFilter
  * @pad: The #GstPad to follow the filter from
  *
  * This will not do anything but it will give you the expected output result
@@ -275,7 +275,7 @@ fsu_filter_follow (FsuFilter *self,
 
 /**
  * fsu_filter_handle_message:
- * @self: The #FsuFilterManager
+ * @self: The #FsuFilter
  * @message: The message to handle
  *
  * Try to handle a message originally received on the #GstBus to the filter.
