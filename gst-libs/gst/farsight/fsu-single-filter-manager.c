@@ -711,13 +711,13 @@ fsu_single_filter_manager_remove_filter (FsuFilterManager *iface,
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
   FsuSingleFilterManagerPrivate *priv = self->priv;
-  gint index = -1;
+  GList *find = NULL;
 
   g_mutex_lock (priv->mutex);
-  index = g_list_index (priv->filters, id);
+  find = g_list_find (priv->filters, id);
   g_mutex_unlock (priv->mutex);
 
-  if (index < 0)
+  if (!find)
     return FALSE;
 
   g_mutex_lock (priv->mutex);
@@ -743,13 +743,13 @@ fsu_single_filter_manager_get_filter_by_id (FsuFilterManager *iface,
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (iface);
   FsuSingleFilterManagerPrivate *priv = self->priv;
-  gint index = -1;
+  GList *find = NULL;
 
   g_mutex_lock (priv->mutex);
-  index = g_list_index (priv->filters, id);
+  find = g_list_find (priv->filters, id);
   g_mutex_unlock (priv->mutex);
 
-  if (index < 0)
+  if (!find)
     return NULL;
 
   return g_object_ref (id->filter);

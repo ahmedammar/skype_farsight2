@@ -422,13 +422,13 @@ fsu_multi_filter_manager_get_filter_by_id (FsuFilterManager *iface,
 {
   FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (iface);
   FsuMultiFilterManagerPrivate *priv = self->priv;
-  gint index = -1;
+  GList *find = NULL;
 
   g_mutex_lock (priv->mutex);
-  index = g_list_index (self->priv->filters, id);
+  find = g_list_find (self->priv->filters, id);
   g_mutex_unlock (priv->mutex);
 
-  if (index < 0)
+  if (!find)
     return NULL;
 
   return g_object_ref (id->filter);
