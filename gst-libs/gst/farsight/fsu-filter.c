@@ -40,7 +40,7 @@
 #endif
 
 
-#include <gst/farsight/fsu-filter.h>
+#include <gst/farsight/fsu-filter-helper.h>
 
 
 G_DEFINE_TYPE (FsuFilter, fsu_filter, G_TYPE_OBJECT);
@@ -161,14 +161,16 @@ fsu_filter_apply (FsuFilter *self,
 
   g_assert (klass->apply);
 
+  fsu_filter_lock (self);
   out_pad = klass->apply (self, bin, pad);
+  fsu_filter_unlock (self);
 
   if (out_pad)
   {
     gst_object_ref (out_pad);
-    g_mutex_lock (priv->mutex);
+    fsu_filter_lock (self);
     g_hash_table_insert (priv->pads, out_pad, gst_pad_get_peer (pad));
-    g_mutex_unlock (priv->mutex);
+    fsu_filter_unlock (self);
   }
 
   return out_pad;
@@ -206,21 +208,21 @@ fsu_filter_revert (FsuFilter *self,
 
   g_assert (klass->revert);
 
-  g_mutex_lock (priv->mutex);
+  fsu_filter_lock (self);
   in_pad = g_hash_table_lookup (priv->pads, pad);
 
   if (!in_pad)
   {
-    g_mutex_unlock (priv->mutex);
+    fsu_filter_unlock (self);
     g_debug ("Can't revert filter %s (%p), never got applied on this pad",
         klass->name, self);
     return NULL;
   }
   expected = gst_pad_get_peer (in_pad);
   g_hash_table_remove (priv->pads, pad);
-  g_mutex_unlock (priv->mutex);
 
   out_pad = klass->revert (self, bin, pad);
+  fsu_filter_unlock (self);
 
   if (out_pad != expected)
   {
@@ -261,9 +263,9 @@ fsu_filter_follow (FsuFilter *self,
   GstPad *in_pad = NULL;
   FsuFilterPrivate *priv = self->priv;
 
-  g_mutex_lock (priv->mutex);
+  fsu_filter_lock (self);
   g_hash_table_lookup (priv->pads, pad);
-  g_mutex_unlock (priv->mutex);
+  fsu_filter_unlock (self);
 
   if (in_pad)
     return gst_pad_get_peer (in_pad);
@@ -286,9 +288,51 @@ fsu_filter_handle_message (FsuFilter *self,
     GstMessage *message)
 {
   FsuFilterClass *klass = FSU_FILTER_GET_CLASS (self);
+  gboolean ret = FALSE;
 
   if (klass->handle_message)
-    return klass->handle_message (self, message);
+  {
+    fsu_filter_lock (self);
+    ret = klass->handle_message (self, message);
+    fsu_filter_unlock (self);
+  }
 
-  return FALSE;
+  return ret;
+}
+
+/**
+ * fsu_filter_lock:
+ * @self: The #FsuFilter
+ *
+ * Locks the filter's mutex.
+ * All virtual methods get called with the mutex locked so filters do not need
+ * to bother with threading. However, if the filter needs to lock the mutex to
+ * do something outside of the virtual methods (like in a g_object_set), then
+ * it should lock the filter's mutex by calling this.
+ *
+ * See also: fsu_filter_unlock()
+ */
+void
+fsu_filter_lock (FsuFilter *self)
+{
+    g_mutex_lock (self->priv->mutex);
+}
+
+/**
+ * fsu_filter_unlock:
+ * @self: The #FsuFilter
+ *
+ * Unlocks the filter's mutex.
+ * All virtual methods get called with the mutex locked so filters do not need
+ * to bother with threading. However, if the filter needs to lock the mutex to
+ * do something outside of the virtual methods (like in a g_object_set), then
+ * it should call fsu_filter_lock() then unlock it's mutex by calling this
+ * method.
+ *
+ * See also: fsu_filter_lock()
+ */
+void
+fsu_filter_unlock (FsuFilter *self)
+{
+    g_mutex_unlock (self->priv->mutex);
 }

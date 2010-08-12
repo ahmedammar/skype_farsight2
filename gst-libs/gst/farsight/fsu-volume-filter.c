@@ -155,19 +155,23 @@ fsu_volume_filter_set_property (GObject *object,
   {
     case PROP_VOLUME:
       priv->volume = g_value_get_double (value);
+      fsu_filter_lock (FSU_FILTER (self));
       for (i = priv->elements; i; i = i->next)
       {
         GstElement *element = i->data;
         g_object_set (element, "volume", priv->volume, NULL);
       }
+      fsu_filter_unlock (FSU_FILTER (self));
       break;
     case PROP_MUTE:
       priv->mute = g_value_get_boolean (value);
+      fsu_filter_lock (FSU_FILTER (self));
       for (i = priv->elements; i; i = i->next)
       {
         GstElement *element = i->data;
         g_object_set (element, "mute", priv->mute, NULL);
       }
+      fsu_filter_unlock (FSU_FILTER (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);

@@ -338,6 +338,8 @@ fsu_filter_add_element_by_name
 fsu_filter_add_standard_element
 fsu_filter_revert_standard_element
 fsu_filter_revert_bin
+fsu_filter_lock
+fsu_filter_unlock
 <SUBSECTION Standard>
 FSU_FILTER
 FSU_FILTER_CLASS

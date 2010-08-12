@@ -159,11 +159,13 @@ fsu_framerate_filter_set_property (GObject *object,
                 NULL),
             NULL);
 
+        fsu_filter_lock (FSU_FILTER (self));
         for (i = priv->elements; i; i = i->next)
         {
           GstElement *element = i->data;
           g_object_set (element, "caps", priv->caps, NULL);
         }
+        fsu_filter_unlock (FSU_FILTER (self));
       }
       break;
     default:

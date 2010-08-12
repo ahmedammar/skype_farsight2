@@ -22,7 +22,7 @@
 #ifndef __FSU_FILTER_HELPER_H__
 #define __FSU_FILTER_HELPER_H__
 
-#include <gst/gst.h>
+#include <gst/farsight/fsu-filter.h>
 
 
 G_BEGIN_DECLS
@@ -51,6 +51,8 @@ GstPad *fsu_filter_revert_standard_element (GstBin *bin,
     GList **elements);
 GstPad *fsu_filter_revert_bin (GstBin *bin,
     GstPad *pad);
+void fsu_filter_lock (FsuFilter *self);
+void fsu_filter_unlock (FsuFilter *self);
 
 G_END_DECLS
 
