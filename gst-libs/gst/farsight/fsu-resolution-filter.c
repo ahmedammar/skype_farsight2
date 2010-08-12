@@ -61,7 +61,6 @@ enum
 
 struct _FsuResolutionFilterPrivate
 {
-  GList *elements;
   GstCaps *caps;
   gint width;
   gint height;
@@ -174,15 +173,9 @@ fsu_resolution_filter_dispose (GObject *object)
 {
   FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (object);
   FsuResolutionFilterPrivate *priv = self->priv;
-  GList *i;
 
   if (priv->caps)
     gst_caps_unref (priv->caps);
-
-  for (i = priv->elements; i; i = i->next)
-    gst_object_unref (i->data);
-  g_list_free (priv->elements);
-  priv->elements = NULL;
 
   G_OBJECT_CLASS (fsu_resolution_filter_parent_class)->dispose (object);
 }
@@ -255,11 +248,10 @@ fsu_resolution_filter_apply (FsuFilter *filter,
 
     if (capsfilter)
     {
-      priv->elements = g_list_prepend (priv->elements, capsfilter);
-
       g_object_set (capsfilter,
           "caps", priv->caps,
           NULL);
+      gst_object_unref (capsfilter);
     }
     gst_object_unref (filter_bin);
   }
@@ -272,23 +264,6 @@ fsu_resolution_filter_revert (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad)
 {
-  FsuResolutionFilter *self = FSU_RESOLUTION_FILTER (filter);
-  FsuResolutionFilterPrivate *priv = self->priv;
-  GstElement *filter_bin = GST_ELEMENT (gst_pad_get_parent (pad));
-  GstElement *capsfilter = NULL;
-  GstPad *ret = NULL;
-
-  capsfilter = gst_bin_get_by_name (GST_BIN (filter_bin), "capsfilter");
-  if (g_list_find (priv->elements, capsfilter))
-  {
-    priv->elements = g_list_remove (priv->elements, capsfilter);
-    gst_object_unref (capsfilter);
-  }
-  gst_object_unref (capsfilter);
-
-  ret = fsu_filter_revert_bin (bin, pad);
-  gst_object_unref (filter_bin);
-
-  return ret;
+  return fsu_filter_revert_bin (bin, pad);
 }
 
