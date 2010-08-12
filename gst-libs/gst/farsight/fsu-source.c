@@ -455,11 +455,7 @@ create_source_and_link_tee (FsuSource *self)
       if (GST_PAD_LINK_FAILED (gst_pad_link (src_pad, tee_pad)))
       {
         WARNING ("Couldn't link source pad with src tee");
-        gst_object_unref (tee_pad);
-        gst_object_unref (src_pad);
-        gst_bin_remove (GST_BIN (self), src);
-        check_and_remove_tee (self);
-        return;
+        goto error_link;
       }
       GST_OBJECT_LOCK (GST_OBJECT (self));
       if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
@@ -468,12 +464,7 @@ create_source_and_link_tee (FsuSource *self)
         if (!gst_element_sync_state_with_parent  (src))
         {
           WARNING ("Couldn't sync src state with parent");
-          gst_pad_unlink (src_pad, tee_pad);
-          gst_object_unref (tee_pad);
-          gst_object_unref (src_pad);
-          gst_bin_remove (GST_BIN (self), src);
-          check_and_remove_tee (self);
-          return;
+          goto error_state;
         }
       }
       else
@@ -485,10 +476,7 @@ create_source_and_link_tee (FsuSource *self)
     else
     {
       WARNING ("Could not get tee pad to link with source");
-      gst_object_unref (src_pad);
-      gst_bin_remove (GST_BIN (self), src);
-      check_and_remove_tee (self);
-      return;
+      goto error_pad;
     }
 
     gst_object_unref (src_pad);
@@ -496,6 +484,16 @@ create_source_and_link_tee (FsuSource *self)
     priv->source = gst_object_ref (src);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
+
+  return;
+ error_state:
+  gst_pad_unlink (src_pad, tee_pad);
+ error_link:
+  gst_object_unref (tee_pad);
+ error_pad:
+  gst_object_unref (src_pad);
+  gst_bin_remove (GST_BIN (self), src);
+  check_and_remove_tee (self);
 
 }
 
@@ -551,6 +549,7 @@ create_tee (FsuSource *self)
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
     if (!gst_element_sync_state_with_parent  (tee))
     {
+      WARNING ("Could not sync tee state with parent");
       if (fakesink)
       {
         gst_element_unlink (tee, fakesink);

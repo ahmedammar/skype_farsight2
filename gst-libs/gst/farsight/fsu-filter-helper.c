@@ -58,33 +58,29 @@ fsu_filter_add_element (GstBin *bin,
       FALSE);
 
   if (!gst_bin_add (bin, element))
-  {
-    return FALSE;
-  }
+    goto error_add;
 
   if ((GST_PAD_IS_SRC (pad) &&
           GST_PAD_LINK_FAILED (gst_pad_link(pad, element_pad))) ||
       (GST_PAD_IS_SINK (pad) &&
           GST_PAD_LINK_FAILED (gst_pad_link(element_pad, pad))))
-  {
-    gst_object_ref (element);
-    gst_bin_remove (bin, element);
-    if (floating)
-      GST_OBJECT_FLAG_SET (GST_OBJECT (element), GST_OBJECT_FLOATING);
-    return FALSE;
-  }
+    goto error_link;
+
   if (!gst_element_sync_state_with_parent (element))
-  {
-    gst_pad_unlink (GST_PAD_IS_SRC (pad) ? pad : element_pad,
-        GST_PAD_IS_SRC (pad) ? element_pad : pad);
-    gst_object_ref (element);
-    gst_bin_remove (bin, element);
-    if (floating)
-      GST_OBJECT_FLAG_SET (GST_OBJECT (element), GST_OBJECT_FLOATING);
-    return FALSE;
-  }
+    goto error_state;
 
   return TRUE;
+
+ error_state:
+  gst_pad_unlink (GST_PAD_IS_SRC (pad) ? pad : element_pad,
+      GST_PAD_IS_SRC (pad) ? element_pad : pad);
+ error_link:
+  gst_object_ref (element);
+  gst_bin_remove (bin, element);
+  if (floating)
+    GST_OBJECT_FLAG_SET (GST_OBJECT (element), GST_OBJECT_FLOATING);
+ error_add:
+  return FALSE;
 }
 
 
@@ -121,42 +117,32 @@ fsu_filter_add_element_by_name (GstBin *bin,
   if (!element)
     return NULL;
 
-
   element_pad = gst_element_get_static_pad (element, pad_name);
 
   if (out_pad)
     *out_pad = gst_element_get_static_pad (element, out_pad_name);
 
   if (!element_pad || (out_pad && !*out_pad))
-  {
-    if (element)
-      gst_object_unref (element);
-    if (element_pad)
-      gst_object_unref (element_pad);
-    if (out_pad && *out_pad)
-    {
-      gst_object_unref (*out_pad);
-      *out_pad = NULL;
-    }
-    g_debug ("Failed trying to add element %s", element_name);
-    return NULL;
-  }
+    goto error;
 
   if (!fsu_filter_add_element (bin, pad, element, element_pad))
-  {
-    gst_object_unref (element);
-    gst_object_unref (element_pad);
-    if (out_pad)
-    {
-      gst_object_unref (*out_pad);
-      *out_pad = NULL;
-    }
-    g_debug ("Failed trying to add element %s", element_name);
-    return NULL;
-  }
+    goto error;
 
   gst_object_unref (element_pad);
   return gst_object_ref (element);
+
+ error:
+  if (element)
+    gst_object_unref (element);
+  if (element_pad)
+    gst_object_unref (element_pad);
+  if (out_pad && *out_pad)
+  {
+    gst_object_unref (*out_pad);
+    *out_pad = NULL;
+  }
+  g_debug ("Failed trying to add element %s", element_name);
+  return NULL;
 }
 
 /**
@@ -196,14 +182,10 @@ fsu_filter_add_element_by_description (GstBin *bin,
 
   src_pad = gst_element_get_static_pad (filter, "src");
   sink_pad = gst_element_get_static_pad (filter, "sink");
+
   if (!src_pad || !sink_pad)
   {
-    if (src_pad)
-      gst_object_unref (src_pad);
-    if (sink_pad)
-      gst_object_unref (sink_pad);
-    gst_object_unref (filter);
-    return NULL;
+    goto error;
   }
   else
   {
@@ -227,14 +209,19 @@ fsu_filter_add_element_by_description (GstBin *bin,
     }
     else
     {
-      gst_object_unref (src_pad);
-      gst_object_unref (sink_pad);
-      gst_object_unref (filter);
-      return NULL;
+      goto error;
     }
   }
 
   return gst_object_ref (filter);
+
+ error:
+  if (src_pad)
+    gst_object_unref (src_pad);
+  if (sink_pad)
+    gst_object_unref (sink_pad);
+  gst_object_unref (filter);
+  return NULL;
 }
 
 /**
@@ -288,7 +275,7 @@ fsu_filter_add_standard_element (GstBin *bin,
     return out_pad;
   }
 
-  g_debug ("****Failed trying to add standard element %s", element_name);
+  g_debug ("Failed trying to add standard element %s", element_name);
   return NULL;
 }
 

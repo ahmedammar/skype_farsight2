@@ -349,7 +349,6 @@ _fsu_session_start_sending (FsuSession *self)
   GstPad *filter_pad = NULL;
   GstPad *srcpad = NULL;
   GstPad *sinkpad = NULL;
-  gchar *error;
   GstState state = GST_STATE_NULL;
 
   if (!priv->source)
@@ -365,10 +364,7 @@ _fsu_session_start_sending (FsuSession *self)
   srcpad = gst_element_get_request_pad (GST_ELEMENT (priv->source), "src%d");
 
   if (!srcpad)
-  {
-    error = "Couldn't request pad from Source";
     goto no_source;
-  }
 
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), srcpad);
@@ -382,59 +378,38 @@ _fsu_session_start_sending (FsuSession *self)
       NULL);
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (filter_pad, sinkpad)))
-  {
-    srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
-        filter_pad);
-    if (srcpad)
-    {
-      gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
-      gst_object_unref (srcpad);
-    }
-    gst_object_unref (sinkpad);
-    gst_object_unref (filter_pad);
-    goto no_source;
-  }
+    goto error_link;
 
   if (gst_element_set_state (GST_ELEMENT (priv->source), GST_STATE_READY) !=
       GST_STATE_CHANGE_SUCCESS)
-  {
-    gst_pad_unlink (filter_pad, sinkpad);
-    srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
-        filter_pad);
-    if (srcpad)
-    {
-      gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
-      gst_object_unref (srcpad);
-    }
-    gst_object_unref (sinkpad);
-    gst_object_unref (filter_pad);
-    goto no_source;
-  }
-
-  gst_object_unref (filter_pad);
-  gst_object_unref (sinkpad);
+    goto error_state;
 
   gst_element_get_state (pipeline, &state, NULL, GST_CLOCK_TIME_NONE);
   if (state > GST_STATE_NULL &&
       !gst_element_sync_state_with_parent (GST_ELEMENT (priv->source)))
-  {
-    gst_pad_unlink (filter_pad, sinkpad);
-    srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
-        filter_pad);
-    if (srcpad)
-    {
-      gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
-      gst_object_unref (srcpad);
-    }
-    gst_object_unref (sinkpad);
-    gst_object_unref (filter_pad);
-    goto no_source;
-  }
+    goto error_state;
+
+  gst_object_unref (filter_pad);
+  gst_object_unref (sinkpad);
 
  done:
   g_atomic_int_inc (&priv->sending);
 
   return TRUE;
+
+ error_state:
+  gst_pad_unlink (filter_pad, sinkpad);
+ error_link:
+  srcpad = fsu_filter_manager_revert (priv->filters, GST_BIN (pipeline),
+      filter_pad);
+  if (srcpad)
+  {
+    gst_element_release_request_pad (GST_ELEMENT (priv->source), srcpad);
+    gst_object_unref (srcpad);
+  }
+  gst_object_unref (sinkpad);
+  gst_object_unref (filter_pad);
+
  no_source:
   return FALSE;
 }

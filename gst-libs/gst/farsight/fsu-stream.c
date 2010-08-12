@@ -359,7 +359,6 @@ src_pad_added (FsStream *stream,
   GstElement *sink = NULL;
   GstPad *sink_pad = NULL;
   GstPad *filter_pad = NULL;
-  gchar *error = NULL;
 
   g_object_get (priv->conference,
       "pipeline", &pipeline,
@@ -383,12 +382,10 @@ src_pad_added (FsStream *stream,
     sink = gst_element_factory_make ("fakesink", NULL);
     if (!sink)
     {
-      error = "No sink selected, and can't create fakesink";
       goto error;
     }
     if (!gst_bin_add (GST_BIN (pipeline), sink))
     {
-      error = "Could not add fakesink to pipeline";
       gst_object_unref (sink);
       goto error;
     }
@@ -396,14 +393,7 @@ src_pad_added (FsStream *stream,
   }
 
   if (!sink_pad)
-  {
-    if (priv->sink)
-      gst_element_release_request_pad (sink, sink_pad);
-    else
-      gst_bin_remove (GST_BIN (pipeline), sink);
-    gst_object_unref (sink_pad);
-    goto error;
-  }
+    goto error_pad;
 
   filter_pad = fsu_filter_manager_apply (priv->filters,
       GST_BIN (pipeline), sink_pad);
@@ -413,41 +403,33 @@ src_pad_added (FsStream *stream,
   gst_object_unref (sink_pad);
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (pad, filter_pad)))
-  {
-    sink_pad = fsu_filter_manager_revert (priv->filters,
-        GST_BIN (pipeline), filter_pad);
-    if (!sink_pad)
-      sink_pad = gst_object_ref (filter_pad);
-    if (priv->sink)
-      gst_element_release_request_pad (sink, sink_pad);
-    else
-      gst_bin_remove (GST_BIN (pipeline), sink);
-    gst_object_unref (sink_pad);
-    gst_object_unref (filter_pad);
-    goto error;
-  }
+    goto error_link;
 
   if (gst_element_set_state (sink, GST_STATE_PLAYING) ==
       GST_STATE_CHANGE_FAILURE)
-  {
-    gst_pad_unlink (pad, filter_pad);
-    sink_pad = fsu_filter_manager_revert (priv->filters,
-        GST_BIN (pipeline), filter_pad);
-    if (!sink_pad)
-      sink_pad = gst_object_ref (filter_pad);
-    if (priv->sink)
-      gst_element_release_request_pad (sink, sink_pad);
-    else
-      gst_bin_remove (GST_BIN (pipeline), sink);
-    gst_object_unref (sink_pad);
-    gst_object_unref (filter_pad);
-    goto error;
-  }
+    goto error_state;
+
   gst_object_unref (filter_pad);
 
   g_signal_connect_object (pad, "unlinked", (GCallback) src_pad_unlinked,
       self, 0);
 
+ error_state:
+  gst_pad_unlink (pad, filter_pad);
+ error_link:
+  sink_pad = fsu_filter_manager_revert (priv->filters,
+      GST_BIN (pipeline), filter_pad);
+  if (!sink_pad)
+    sink_pad = gst_object_ref (filter_pad);
+ error_pad:
+  if (priv->sink)
+    gst_element_release_request_pad (sink, sink_pad);
+  else
+    gst_bin_remove (GST_BIN (pipeline), sink);
+  if (sink_pad)
+    gst_object_unref (sink_pad);
+  if (filter_pad)
+    gst_object_unref (filter_pad);
  error:
   return;
 }

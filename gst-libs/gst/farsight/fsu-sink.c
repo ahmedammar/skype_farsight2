@@ -425,33 +425,32 @@ create_mixer (FsuSink *self,
   if (!sink_pad || !mixer_pad)
   {
     WARNING ("Could not get sink pad");
-    gst_bin_remove (GST_BIN (self), mixer);
-    if (sink_pad)
-      gst_object_unref (sink_pad);
-    if (mixer_pad)
-      gst_object_unref (mixer_pad);
-    return NULL;
+    goto error_added;
   }
   else if (GST_PAD_LINK_FAILED (gst_pad_link (mixer_pad, sink_pad)))
   {
     WARNING ("Couldn't link mixer pad with sink pad");
-    gst_bin_remove (GST_BIN (self), mixer);
-    gst_object_unref (sink_pad);
-    gst_object_unref (mixer_pad);
-    return NULL;
+    goto error_added;
   }
 
   if (!gst_element_sync_state_with_parent (mixer))
-  {
-    gst_pad_unlink (mixer_pad, sink_pad);
-    gst_bin_remove (GST_BIN (self), mixer);
-    gst_object_unref (sink_pad);
-    gst_object_unref (mixer_pad);
-  }
+    goto error_state;
+
   gst_object_unref (sink_pad);
   gst_object_unref (mixer_pad);
 
   return gst_object_ref (mixer);
+
+ error_state:
+  gst_pad_unlink (mixer_pad, sink_pad);
+ error_added:
+  gst_bin_remove (GST_BIN (self), mixer);
+  if (sink_pad)
+    gst_object_unref (sink_pad);
+  if (mixer_pad)
+    gst_object_unref (mixer_pad);
+  return NULL;
+
 }
 
 static void
@@ -548,22 +547,22 @@ fsu_sink_request_new_pad (GstElement * element,
       if (!sink)
       {
         WARNING ("Could not create sink or fakesink elements");
-        return NULL;
+        goto error_not_added;
       }
       if (!gst_bin_add (GST_BIN (self), sink))
       {
         WARNING ("Could not add sink element to Sink");
-        gst_object_unref (sink);
-        return NULL;
+        goto error_not_added;
       }
+
+      gst_object_ref (sink);
 
       /* A fakesink never needs a mixer */
       sink_pad = gst_element_get_static_pad (sink, "sink");
       if (!sink_pad)
       {
         WARNING ("Could not get sink pad from sink");
-        gst_object_unref (sink);
-        return NULL;
+        goto error_not_filtered;
       }
     }
     else
@@ -571,9 +570,11 @@ fsu_sink_request_new_pad (GstElement * element,
       if (!gst_bin_add (GST_BIN (self), sink))
       {
         WARNING ("Could not add sink element to Sink");
-        gst_object_unref (sink);
-        return NULL;
+        goto error_not_added;
       }
+
+      gst_object_ref (sink);
+
       GST_OBJECT_LOCK (GST_OBJECT (self));
       /* If this isn't our first sink then we don't need a mixer, get the pad */
       if (priv->sinks)
@@ -583,8 +584,7 @@ fsu_sink_request_new_pad (GstElement * element,
         if (!sink_pad)
         {
           WARNING ("Could not get sink pad from sink");
-          gst_object_unref (sink);
-          return NULL;
+          goto error_not_filtered;
         }
       }
       else
@@ -592,7 +592,6 @@ fsu_sink_request_new_pad (GstElement * element,
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
       }
     }
-    gst_object_ref (sink);
   }
   else
   {
@@ -603,7 +602,7 @@ fsu_sink_request_new_pad (GstElement * element,
     if (!sink_pad)
     {
       WARNING ("Couldn't get new request pad from mixer");
-      return NULL;
+      goto error_not_filtered;
     }
   }
 
@@ -617,7 +616,9 @@ fsu_sink_request_new_pad (GstElement * element,
     {
       if (mixer)
         gst_element_release_request_pad (mixer, sink_pad);
+      mixer = NULL;
       gst_object_unref (sink_pad);
+      sink_pad = NULL;
     }
     gst_bin_remove (GST_BIN (self), sink);
     gst_object_unref (sink);
@@ -627,24 +628,23 @@ fsu_sink_request_new_pad (GstElement * element,
     if (!sink)
     {
       WARNING ("Could not create sink or fakesink elements");
-      return NULL;
+      goto error_not_added;
     }
     if (!gst_bin_add (GST_BIN (self), sink))
     {
       WARNING ("Could not add fakesink element to Sink");
-      gst_object_unref (sink);
-      return NULL;
+      goto error_not_added;
     }
+
+    gst_object_ref (sink);
 
     /* A fakesink never needs a mixer */
     sink_pad = gst_element_get_static_pad (sink, "sink");
     if (!sink_pad)
     {
       WARNING ("Could not get sink pad from fakesink");
-      gst_object_unref (sink);
-      return NULL;
+      goto error_not_filtered;
     }
-    gst_object_ref (sink);
   }
 
   /* First sink, we don't know yet if we need a mixer */
@@ -660,15 +660,11 @@ fsu_sink_request_new_pad (GstElement * element,
     if (!sink_pad)
     {
       WARNING ("Couldn't get new request pad from mixer");
-      if (sink)
-      {
-        gst_bin_remove (GST_BIN (self), sink);
-        gst_object_unref (sink);
-      }
       if (mixer)
         gst_bin_remove (GST_BIN (self), mixer);
       gst_object_unref (mixer);
-      return NULL;
+      mixer = NULL;
+      goto error_not_filtered;
     }
     GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->mixer = mixer;
@@ -690,21 +686,7 @@ fsu_sink_request_new_pad (GstElement * element,
   if (!pad)
   {
     WARNING ("Couldn't create ghost pad for mixer/sink");
-    if (sink)
-    {
-      gst_bin_remove (GST_BIN (self), sink);
-      gst_object_unref (sink);
-    }
-    sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
-    if (mixer)
-    {
-      gst_element_release_request_pad (mixer, sink_pad);
-      check_and_remove_mixer (self);
-    }
-    gst_object_unref (sink_pad);
-    gst_object_unref (filter_pad);
-
-    return NULL;
+    goto error_filtered;
   }
   gst_object_unref (filter_pad);
 
@@ -713,39 +695,13 @@ fsu_sink_request_new_pad (GstElement * element,
   if (!gst_element_add_pad (element, pad))
   {
     WARNING ("Couldn't add pad");
-    if (sink)
-    {
-      gst_bin_remove (GST_BIN (self), sink);
-      gst_object_unref (sink);
-    }
-    sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
-    if (mixer)
-    {
-      gst_element_release_request_pad (mixer, sink_pad);
-      check_and_remove_mixer (self);
-    }
-    gst_object_unref (sink_pad);
-    gst_object_unref (filter_pad);
-
-    return NULL;
+    goto error_filtered;
   }
 
   if (sink && !gst_element_sync_state_with_parent (sink))
   {
     WARNING ("Couldn't sync sink state with parent");
-    gst_bin_remove (GST_BIN (self), sink);
-    gst_object_unref (sink);
-
-    sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
-    if (mixer)
-    {
-      gst_element_release_request_pad (mixer, sink_pad);
-      check_and_remove_mixer (self);
-    }
-    gst_object_unref (sink_pad);
-    gst_object_unref (filter_pad);
-
-    return NULL;
+    goto error_filtered;
   }
 
   if (sink)
@@ -756,6 +712,28 @@ fsu_sink_request_new_pad (GstElement * element,
   }
 
   return pad;
+
+ error_filtered:
+  sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
+ error_not_filtered:
+  if (mixer)
+  {
+    if (sink_pad)
+      gst_element_release_request_pad (mixer, sink_pad);
+    check_and_remove_mixer (self);
+  }
+  if (sink)
+    gst_bin_remove (GST_BIN (self), sink);
+ error_not_added:
+  if (sink)
+    gst_object_unref (sink);
+  if (sink_pad)
+    gst_object_unref (sink_pad);
+  if (filter_pad)
+    gst_object_unref (filter_pad);
+
+  return NULL;
+
 }
 
 static void
