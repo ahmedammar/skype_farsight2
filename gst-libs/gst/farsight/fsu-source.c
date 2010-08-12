@@ -563,14 +563,12 @@ create_tee (FsuSource *self)
       return;
     }
     create_source_and_link_tee (self);
-    GST_OBJECT_LOCK (GST_OBJECT (self));
   }
   else
   {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
     DEBUG ("State NULL, not creating source now...");
   }
-
-  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
 }
 
