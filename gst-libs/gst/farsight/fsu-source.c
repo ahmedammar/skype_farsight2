@@ -1200,6 +1200,7 @@ replace_source_thread (gpointer data)
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
   source = priv->source;
+  priv->source = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   if (source)
@@ -1212,9 +1213,6 @@ replace_source_thread (gpointer data)
           GST_CLOCK_TIME_NONE);
     }
     gst_object_unref (source);
-    GST_OBJECT_LOCK (GST_OBJECT (self));
-    priv->source = NULL;
-    GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     create_source_and_link_tee (self);
   }
