@@ -414,6 +414,8 @@ src_pad_added (FsStream *stream,
   g_signal_connect_object (pad, "unlinked", (GCallback) src_pad_unlinked,
       self, 0);
 
+  return;
+
  error_state:
   gst_pad_unlink (pad, filter_pad);
  error_link:
