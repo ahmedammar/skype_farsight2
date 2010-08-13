@@ -614,9 +614,6 @@ fsu_sink_request_new_pad (GstElement * element,
     WARNING ("Unable to set sink to READY");
     if (sink_pad)
     {
-      if (mixer)
-        gst_element_release_request_pad (mixer, sink_pad);
-      mixer = NULL;
       gst_object_unref (sink_pad);
       sink_pad = NULL;
     }
