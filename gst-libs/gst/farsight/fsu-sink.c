@@ -537,7 +537,6 @@ fsu_sink_request_new_pad (GstElement * element,
   GstPad *pad = NULL;
   GstPad *sink_pad = NULL;
   GstPad *filter_pad = NULL;
-  FsuFilterManager *filter = NULL;
 
   DEBUG ("requesting pad");
 
@@ -683,11 +682,8 @@ fsu_sink_request_new_pad (GstElement * element,
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
 
-  GST_OBJECT_LOCK (GST_OBJECT (self));
-  filter = priv->filters;
-  GST_OBJECT_UNLOCK (GST_OBJECT (self));
-
-  filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), sink_pad);
+  filter_pad = fsu_filter_manager_apply (priv->filters,
+      GST_BIN (self), sink_pad);
 
   if (!filter_pad)
     filter_pad = gst_object_ref (sink_pad);
@@ -726,7 +722,8 @@ fsu_sink_request_new_pad (GstElement * element,
   return pad;
 
  error_filtered:
-  sink_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
+  sink_pad = fsu_filter_manager_revert (priv->filters,
+      GST_BIN (self), filter_pad);
  error_not_filtered:
   if (mixer)
   {
@@ -765,14 +762,13 @@ fsu_sink_release_pad (GstElement * element,
     GstPad *filter_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
     GstPad *sink_pad = NULL;
     GstElement *mixer = NULL;
-    FsuFilterManager *manager = NULL;
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
     mixer = priv->mixer;
-    manager = priv->filters;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
-    sink_pad = fsu_filter_manager_revert (manager, GST_BIN (self), filter_pad);
+    sink_pad = fsu_filter_manager_revert (priv->filters,
+        GST_BIN (self), filter_pad);
     if (!sink_pad)
       sink_pad = gst_object_ref (filter_pad);
     gst_object_unref (filter_pad);

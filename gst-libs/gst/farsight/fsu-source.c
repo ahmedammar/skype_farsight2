@@ -586,7 +586,6 @@ fsu_source_request_new_pad (GstElement * element,
   GstPad *pad = NULL;
   GstPad *tee_pad = NULL;
   GstPad *filter_pad = NULL;
-  FsuFilterManager *filter = NULL;
   GstElement *tee = NULL;
 
   DEBUG ("requesting pad");
@@ -617,11 +616,8 @@ fsu_source_request_new_pad (GstElement * element,
     return NULL;
   }
 
-  GST_OBJECT_LOCK (GST_OBJECT (self));
-  filter = priv->filters;
-  GST_OBJECT_UNLOCK (GST_OBJECT (self));
-
-  filter_pad = fsu_filter_manager_apply (filter, GST_BIN (self), tee_pad);
+  filter_pad = fsu_filter_manager_apply (priv->filters,
+      GST_BIN (self), tee_pad);
 
   if (!filter_pad)
   {
@@ -635,7 +631,8 @@ fsu_source_request_new_pad (GstElement * element,
   if (!pad)
   {
     WARNING ("Couldn't create ghost pad for tee");
-    tee_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
+    tee_pad = fsu_filter_manager_revert (priv->filters,
+        GST_BIN (self), filter_pad);
     gst_element_release_request_pad (tee, tee_pad);
     gst_object_unref (tee_pad);
     gst_object_unref (tee);
@@ -666,15 +663,14 @@ fsu_source_release_pad (GstElement * element,
   {
     GstPad *filter_pad = gst_ghost_pad_get_target (GST_GHOST_PAD (pad));
     GstPad *tee_pad = NULL;
-    FsuFilterManager *filter = NULL;
     GstElement *tee = NULL;
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
     tee = gst_object_ref (priv->tee);
-    filter = priv->filters;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
-    tee_pad = fsu_filter_manager_revert (filter, GST_BIN (self), filter_pad);
+    tee_pad = fsu_filter_manager_revert (priv->filters,
+        GST_BIN (self), filter_pad);
     if (!tee_pad)
       tee_pad = gst_object_ref (filter_pad);
     gst_object_unref (filter_pad);
