@@ -255,12 +255,15 @@ fsu_source_set_property (GObject *object,
       priv->disabled = g_value_get_boolean (value);
       break;
     case PROP_SOURCE_NAME:
+      g_free (priv->source_name);
       priv->source_name = g_value_dup_string (value);
       break;
     case PROP_SOURCE_DEVICE:
+      g_free (priv->source_device);
       priv->source_device = g_value_dup_string (value);
       break;
     case PROP_SOURCE_PIPELINE:
+      g_free (priv->source_pipeline);
       priv->source_pipeline = g_value_dup_string (value);
       break;
     default:

@@ -242,12 +242,15 @@ fsu_sink_set_property (GObject *object,
   switch (property_id)
   {
     case PROP_SINK_NAME:
+      g_free (priv->sink_name);
       priv->sink_name = g_value_dup_string (value);
       break;
     case PROP_SINK_DEVICE:
+      g_free (priv->sink_device);
       priv->sink_device = g_value_dup_string (value);
       break;
     case PROP_SINK_PIPELINE:
+      g_free (priv->sink_pipeline);
       priv->sink_pipeline = g_value_dup_string (value);
       break;
     case PROP_SYNC:
