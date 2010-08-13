@@ -466,7 +466,7 @@ check_and_remove_mixer (FsuSink *self)
   gboolean done = FALSE;
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
-  mixer = priv->mixer;
+  mixer = gst_object_ref (priv->mixer);
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   iter = gst_element_iterate_sink_pads (mixer);
@@ -498,24 +498,30 @@ check_and_remove_mixer (FsuSink *self)
     gst_element_set_state (mixer, GST_STATE_NULL);
     gst_bin_remove (GST_BIN (self), mixer);
     gst_object_unref (mixer);
+
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    priv->mixer = NULL;
+    if (priv->mixer)
+    {
+      gst_object_unref (priv->mixer);
+      priv->mixer = NULL;
+    }
 
     if (priv->sinks)
     {
       GstElement *sink = priv->sinks->data;
 
       g_assert (g_list_length (priv->sinks) == 1);
+      priv->sinks = g_list_remove (priv->sinks, sink);
       GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
       gst_element_set_state (sink, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (self), sink);
       gst_object_unref (sink);
-
-      GST_OBJECT_LOCK (GST_OBJECT (self));
-      priv->sinks = g_list_remove (priv->sinks, sink);
     }
-    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    else
+    {
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    }
   }
 }
 
@@ -598,6 +604,7 @@ fsu_sink_request_new_pad (GstElement * element,
   }
   else
   {
+    gst_object_ref (mixer);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     /* This isn't our first sink and we already have a mixer */
@@ -667,7 +674,12 @@ fsu_sink_request_new_pad (GstElement * element,
       goto error_not_filtered;
     }
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    priv->mixer = mixer;
+    if (priv->mixer)
+    {
+      /* TODO: we need a mutex for this whole thing to prevent two from being
+       * run at the same time */
+    }
+    priv->mixer = gst_object_ref (mixer);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
 
@@ -720,6 +732,7 @@ fsu_sink_request_new_pad (GstElement * element,
   {
     if (sink_pad)
       gst_element_release_request_pad (mixer, sink_pad);
+    gst_object_unref (mixer);
     check_and_remove_mixer (self);
   }
   if (sink)
