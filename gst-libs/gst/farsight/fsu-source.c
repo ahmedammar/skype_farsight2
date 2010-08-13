@@ -963,13 +963,6 @@ create_source (FsuSource *self)
     }
 
     state_ret = gst_element_set_state (GST_ELEMENT (bin), GST_STATE_READY);
-    if (state_ret == GST_STATE_CHANGE_ASYNC)
-    {
-      DEBUG ("Waiting for source-pipeline to go to state READY");
-      state_ret = gst_element_get_state (GST_ELEMENT (bin), NULL, NULL,
-          GST_CLOCK_TIME_NONE);
-    }
-
     if (state_ret == GST_STATE_CHANGE_FAILURE)
     {
       WARNING ("Could not change state of source-pipeline to READY");
@@ -993,13 +986,6 @@ create_source (FsuSource *self)
     if (src)
     {
       state_ret = gst_element_set_state (src, GST_STATE_READY);
-      if (state_ret == GST_STATE_CHANGE_ASYNC)
-      {
-        DEBUG ("Waiting for %s to go to state READY", source_name);
-        state_ret = gst_element_get_state (src, NULL, NULL,
-            GST_CLOCK_TIME_NONE);
-      }
-
       if (state_ret == GST_STATE_CHANGE_FAILURE)
       {
         DEBUG ("Unable to set source to READY");
@@ -1158,12 +1144,6 @@ fsu_source_change_state (GstElement *element,
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
         DEBUG ("Setting source to state NULL");
         ret = gst_element_set_state (source, GST_STATE_NULL);
-        if (ret == GST_STATE_CHANGE_ASYNC)
-        {
-          DEBUG ("Waiting for source to go to state NULL");
-          ret = gst_element_get_state (source, NULL, NULL,
-              GST_CLOCK_TIME_NONE);
-        }
         gst_bin_remove (GST_BIN (self), source);
         gst_object_unref (source);
         GST_OBJECT_LOCK (GST_OBJECT (self));
@@ -1206,12 +1186,6 @@ replace_source_thread (gpointer data)
   if (source)
   {
     state_ret = gst_element_set_state (source, GST_STATE_NULL);
-    if (state_ret == GST_STATE_CHANGE_ASYNC)
-    {
-      DEBUG ("Waiting for source to go to state NULL");
-      gst_element_get_state (source, NULL, NULL,
-          GST_CLOCK_TIME_NONE);
-    }
     gst_object_unref (source);
 
     create_source_and_link_tee (self);
