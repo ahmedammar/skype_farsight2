@@ -260,17 +260,17 @@ GstPad *
 fsu_filter_follow (FsuFilter *self,
     GstPad *pad)
 {
-  GstPad *in_pad = NULL;
   FsuFilterPrivate *priv = self->priv;
+  GstPad *in_pad = NULL;
+  GstPad *out_pad = NULL;
 
   fsu_filter_lock (self);
-  g_hash_table_lookup (priv->pads, pad);
+  in_pad = g_hash_table_lookup (priv->pads, pad);
+  if (in_pad)
+    out_pad = gst_pad_get_peer (in_pad);
   fsu_filter_unlock (self);
 
-  if (in_pad)
-    return gst_pad_get_peer (in_pad);
-  else
-    return NULL;
+  return out_pad;
 }
 
 /**
