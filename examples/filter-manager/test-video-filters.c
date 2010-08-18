@@ -1,10 +1,10 @@
 #include <gst/gst.h>
-#include <gst/farsight/fsu-multi-filter-manager.h>
-#include <gst/farsight/fsu-videoconverter-filter.h>
-#include <gst/farsight/fsu-resolution-filter.h>
-#include <gst/farsight/fsu-gnome-effect-filter.h>
-#include <gst/farsight/fsu-framerate-filter.h>
-#include <gst/farsight/fsu-preview-filter.h>
+#include <gst/filters/fsu-multi-filter-manager.h>
+#include <gst/filters/fsu-videoconverter-filter.h>
+#include <gst/filters/fsu-resolution-filter.h>
+#include <gst/filters/fsu-gnome-effect-filter.h>
+#include <gst/filters/fsu-framerate-filter.h>
+#include <gst/filters/fsu-preview-filter.h>
 
 
 #define TIMEOUT 5000

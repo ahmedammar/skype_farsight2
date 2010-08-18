@@ -40,7 +40,7 @@
 #endif
 
 
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 
 G_DEFINE_TYPE (FsuFilter, fsu_filter, G_TYPE_OBJECT);

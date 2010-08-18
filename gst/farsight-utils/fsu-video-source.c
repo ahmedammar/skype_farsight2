@@ -35,7 +35,7 @@
 
 #include "fsu-video-source.h"
 #include "fsu.h"
-#include <gst/farsight/fsu-videoconverter-filter.h>
+#include <gst/filters/fsu-videoconverter-filter.h>
 
 GST_DEBUG_CATEGORY_STATIC (fsu_video_source_debug);
 #define GST_CAT_DEFAULT fsu_video_source_debug

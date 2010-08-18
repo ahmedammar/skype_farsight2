@@ -40,7 +40,7 @@
 #endif
 
 
-#include <gst/farsight/fsu-filter-manager.h>
+#include <gst/filters/fsu-filter-manager.h>
 
 
 G_DEFINE_INTERFACE (FsuFilterManager, fsu_filter_manager, G_TYPE_OBJECT);

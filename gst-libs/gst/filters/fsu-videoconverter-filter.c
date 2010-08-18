@@ -25,8 +25,8 @@
 #endif
 
 
-#include <gst/farsight/fsu-videoconverter-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-videoconverter-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 FSU_DEFINE_FILTER (FsuVideoconverterFilter, videoconverter);
 

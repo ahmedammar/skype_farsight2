@@ -1,11 +1,11 @@
 
 #include <string.h>
 #include <gst/gst.h>
-#include <gst/farsight/fsu-single-filter-manager.h>
-#include <gst/farsight/fsu-videoconverter-filter.h>
-#include <gst/farsight/fsu-resolution-filter.h>
-#include <gst/farsight/fsu-gnome-effect-filter.h>
-#include <gst/farsight/fsu-preview-filter.h>
+#include <gst/filters/fsu-single-filter-manager.h>
+#include <gst/filters/fsu-videoconverter-filter.h>
+#include <gst/filters/fsu-resolution-filter.h>
+#include <gst/filters/fsu-gnome-effect-filter.h>
+#include <gst/filters/fsu-preview-filter.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 

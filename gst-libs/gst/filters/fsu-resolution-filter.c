@@ -25,8 +25,8 @@
 #endif
 
 
-#include <gst/farsight/fsu-resolution-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-resolution-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 G_DEFINE_TYPE (FsuResolutionFilter, fsu_resolution_filter, FSU_TYPE_FILTER);
 

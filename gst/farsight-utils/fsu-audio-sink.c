@@ -34,7 +34,7 @@
 
 #include "fsu-audio-sink.h"
 #include "fsu.h"
-#include <gst/farsight/fsu-audioconverter-filter.h>
+#include <gst/filters/fsu-audioconverter-filter.h>
 #include <string.h>
 
 GST_DEBUG_CATEGORY_STATIC (fsu_audio_sink_debug);

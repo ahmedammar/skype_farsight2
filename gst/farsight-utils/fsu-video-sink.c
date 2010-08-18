@@ -35,7 +35,7 @@
 
 #include "fsu-video-sink.h"
 #include "fsu.h"
-#include <gst/farsight/fsu-videoconverter-filter.h>
+#include <gst/filters/fsu-videoconverter-filter.h>
 #include <gst/interfaces/xoverlay.h>
 
 

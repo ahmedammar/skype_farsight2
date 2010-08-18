@@ -22,20 +22,7 @@ libgstfarsightinclude_HEADERS = \
 		fsu-session.h \
 		fsu-session-priv.h \
 		fsu-stream.h \
-		fsu-stream-priv.h \
-		fsu-filter-manager.h \
-		fsu-single-filter-manager.h \
-		fsu-multi-filter-manager.h \
-		fsu-filter.h \
-		fsu-filter-helper.h \
-		fsu-volume-filter.h \
-		fsu-level-filter.h \
-		fsu-resolution-filter.h \
-		fsu-framerate-filter.h \
-		fsu-gnome-effect-filter.h \
-		fsu-preview-filter.h \
-		fsu-audioconverter-filter.h \
-		fsu-videoconverter-filter.h
+		fsu-stream-priv.h
 
 nodist_libgstfarsightinclude_HEADERS = \
 		fs-enum-types.h
@@ -71,20 +58,7 @@ libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-source.c \
 		fsu-conference.c \
 		fsu-session.c \
-		fsu-stream.c \
-		fsu-filter-manager.c \
-		fsu-single-filter-manager.c \
-		fsu-multi-filter-manager.c \
-		fsu-filter.c \
-		fsu-filter-helper.c \
-		fsu-volume-filter.c \
-		fsu-level-filter.c \
-		fsu-resolution-filter.c \
-		fsu-framerate-filter.c \
-		fsu-gnome-effect-filter.c \
-		fsu-preview-filter.c \
-		fsu-audioconverter-filter.c \
-		fsu-videoconverter-filter.c
+		fsu-stream.c
 
 nodist_libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fs-marshal.c \
@@ -111,6 +85,7 @@ libgstfarsight_@GST_MAJORMINOR@_la_CFLAGS = \
 	$(GST_CFLAGS) \
 	$(GST_INTERFACES_CFLAGS)
 libgstfarsight_@GST_MAJORMINOR@_la_LIBADD = \
+	../filters/libgstfilters-@GST_MAJORMINOR@.la
 	$(GST_BASE_LIBS) \
 	$(GST_LIBS)  \
 	$(GST_INTERFACES_LIBS)
@@ -130,20 +105,7 @@ public_headers = fs-candidate.h \
 		fsu-source.h \
 		fsu-conference.h \
 		fsu-session.h \
-		fsu-stream.h \
-		fsu-filter-manager.h \
-		fsu-single-filter-manager.h \
-		fsu-multi-filter-manager.h \
-		fsu-filter.h \
-		fsu-filter-helper.h \
-		fsu-volume-filter.h \
-		fsu-level-filter.h \
-		fsu-resolution-filter.h \
-		fsu-framerate-filter.h \
-		fsu-gnome-effect-filter.h \
-		fsu-preview-filter.h \
-		fsu-audioconverter-filter.h \
-		fsu-videoconverter-filter.h
+		fsu-stream.h
 
 glib_enum_headers=$(public_headers)
 glib_enum_define=FS

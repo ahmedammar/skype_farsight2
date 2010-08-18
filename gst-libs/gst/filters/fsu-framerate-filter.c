@@ -25,8 +25,8 @@
 #endif
 
 
-#include <gst/farsight/fsu-framerate-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-framerate-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 G_DEFINE_TYPE (FsuFramerateFilter, fsu_framerate_filter, FSU_TYPE_FILTER);
 

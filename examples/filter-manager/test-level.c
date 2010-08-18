@@ -1,8 +1,8 @@
 
 #include <string.h>
 #include <gst/gst.h>
-#include <gst/farsight/fsu-single-filter-manager.h>
-#include <gst/farsight/fsu-level-filter.h>
+#include <gst/filters/fsu-single-filter-manager.h>
+#include <gst/filters/fsu-level-filter.h>
 
 static GMainLoop *mainloop = NULL;
 

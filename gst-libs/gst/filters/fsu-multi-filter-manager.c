@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <gst/farsight/fsu-multi-filter-manager.h>
-#include <gst/farsight/fsu-single-filter-manager.h>
+#include <gst/filters/fsu-multi-filter-manager.h>
+#include <gst/filters/fsu-single-filter-manager.h>
 
 static void fsu_multi_filter_manager_interface_init (
     FsuFilterManagerInterface *iface);

@@ -26,8 +26,8 @@
 
 
 #include "fs-marshal.h"
-#include <gst/farsight/fsu-level-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-level-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 
 G_DEFINE_TYPE (FsuLevelFilter, fsu_level_filter, FSU_TYPE_FILTER);

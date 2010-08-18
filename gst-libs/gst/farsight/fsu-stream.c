@@ -38,7 +38,7 @@
 #include <gst/farsight/fsu-stream.h>
 #include <gst/farsight/fsu-stream-priv.h>
 #include <gst/farsight/fsu-session-priv.h>
-#include <gst/farsight/fsu-multi-filter-manager.h>
+#include <gst/filters/fsu-multi-filter-manager.h>
 
 G_DEFINE_TYPE (FsuStream, fsu_stream, G_TYPE_OBJECT);
 

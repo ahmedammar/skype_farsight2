@@ -23,8 +23,8 @@
 #  include "config.h"
 #endif
 
-#include <gst/farsight/fsu-gnome-effect-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-gnome-effect-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 
 G_DEFINE_TYPE (FsuGnomeEffectFilter, fsu_gnome_effect_filter, FSU_TYPE_FILTER);

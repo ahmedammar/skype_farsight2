@@ -1,5 +1,5 @@
 /*
- * fsu-level-filter.h - Header for FsuLevelFilter
+ * fsu-volume-filter.h - Header for FsuVolumeFilter
  *
  * Copyright (C) 2010 Collabora Ltd.
  *  @author: Youness Alaoui <youness.alaoui@collabora.co.uk>
@@ -19,60 +19,61 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __FSU_LEVEL_FILTER_H__
-#define __FSU_LEVEL_FILTER_H__
+#ifndef __FSU_VOLUME_FILTER_H__
+#define __FSU_VOLUME_FILTER_H__
 
-#include <gst/farsight/fsu-filter.h>
+#include <gst/filters/fsu-filter.h>
 
 
 G_BEGIN_DECLS
 
-#define FSU_TYPE_LEVEL_FILTER                  \
-  (fsu_level_filter_get_type())
-#define FSU_LEVEL_FILTER(obj)                  \
+#define FSU_TYPE_VOLUME_FILTER                  \
+  (fsu_volume_filter_get_type())
+#define FSU_VOLUME_FILTER(obj)                  \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj),           \
-      FSU_TYPE_LEVEL_FILTER,                   \
-      FsuLevelFilter))
-#define FSU_LEVEL_FILTER_CLASS(klass)          \
+      FSU_TYPE_VOLUME_FILTER,                   \
+      FsuVolumeFilter))
+#define FSU_VOLUME_FILTER_CLASS(klass)          \
   (G_TYPE_CHECK_CLASS_CAST ((klass),            \
-      FSU_TYPE_LEVEL_FILTER,                   \
-      FsuLevelFilterClass))
-#define FSU_IS_LEVEL_FILTER(obj)               \
+      FSU_TYPE_VOLUME_FILTER,                   \
+      FsuVolumeFilterClass))
+#define FSU_IS_VOLUME_FILTER(obj)               \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),           \
-      FSU_TYPE_LEVEL_FILTER))
-#define FSU_IS_LEVEL_FILTER_CLASS(klass)       \
+      FSU_TYPE_VOLUME_FILTER))
+#define FSU_IS_VOLUME_FILTER_CLASS(klass)       \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),            \
-      FSU_TYPE_LEVEL_FILTER))
-#define FSU_LEVEL_FILTER_GET_CLASS(obj)        \
+      FSU_TYPE_VOLUME_FILTER))
+#define FSU_VOLUME_FILTER_GET_CLASS(obj)        \
   (G_TYPE_INSTANCE_GET_CLASS ((obj),            \
-      FSU_TYPE_LEVEL_FILTER,                   \
-      FsuLevelFilterClass))
+      FSU_TYPE_VOLUME_FILTER,                   \
+      FsuVolumeFilterClass))
 
-typedef struct _FsuLevelFilter      FsuLevelFilter;
-typedef struct _FsuLevelFilterClass FsuLevelFilterClass;
-typedef struct _FsuLevelFilterPrivate FsuLevelFilterPrivate;
+typedef struct _FsuVolumeFilter      FsuVolumeFilter;
+typedef struct _FsuVolumeFilterClass FsuVolumeFilterClass;
+typedef struct _FsuVolumeFilterPrivate FsuVolumeFilterPrivate;
 
-struct _FsuLevelFilterClass
+struct _FsuVolumeFilterClass
 {
   FsuFilterClass parent_class;
 };
 
+
 /**
- * FsuLevelFilter:
+ * FsuVolumeFilter:
  *
- * An audio level filter
+ * An audio volume filter
  */
-struct _FsuLevelFilter
+struct _FsuVolumeFilter
 {
   FsuFilter parent;
   /*< private >*/
-  FsuLevelFilterPrivate *priv;
+  FsuVolumeFilterPrivate *priv;
 };
 
-GType fsu_level_filter_get_type (void) G_GNUC_CONST;
+GType fsu_volume_filter_get_type (void) G_GNUC_CONST;
 
-FsuLevelFilter *fsu_level_filter_new (void);
+FsuVolumeFilter *fsu_volume_filter_new (void);
 
 G_END_DECLS
 
-#endif /* __FSU_LEVEL_FILTER_H__ */
+#endif /* __FSU_VOLUME_FILTER_H__ */

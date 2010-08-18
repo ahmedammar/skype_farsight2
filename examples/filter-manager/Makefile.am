@@ -16,5 +16,6 @@ AM_CFLAGS = \
 
 LDADD = \
 	$(top_builddir)/gst-libs/gst/farsight/libgstfarsight-0.10.la \
+	$(top_builddir)/gst-libs/gst/filters/libgstfilters-0.10.la \
 	$(GTK_LIBS) \
 	$(GST_LIBS) 

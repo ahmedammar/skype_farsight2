@@ -3,6 +3,7 @@
 # plugins in the other directories.
 # Also, the tag directory has to be built before the cdda directory.
 SUBDIRS = \
-					farsight
+		filters	\
+		farsight
 
 noinst_HEADERS =

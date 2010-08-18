@@ -25,9 +25,9 @@
 #endif
 
 
-#include <gst/farsight/fsu-preview-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
-#include <gst/farsight/fsu-single-filter-manager.h>
+#include <gst/filters/fsu-preview-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
+#include <gst/filters/fsu-single-filter-manager.h>
 
 
 G_DEFINE_TYPE (FsuPreviewFilter, fsu_preview_filter, FSU_TYPE_FILTER);

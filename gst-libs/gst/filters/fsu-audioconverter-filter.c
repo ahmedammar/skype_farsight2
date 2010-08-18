@@ -33,8 +33,8 @@
 #  include "config.h"
 #endif
 
-#include <gst/farsight/fsu-audioconverter-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-audioconverter-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 
 FSU_DEFINE_FILTER (FsuAudioconverterFilter, audioconverter);

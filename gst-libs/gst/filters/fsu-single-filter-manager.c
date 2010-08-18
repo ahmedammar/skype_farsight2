@@ -25,7 +25,7 @@
 #endif
 
 
-#include <gst/farsight/fsu-single-filter-manager.h>
+#include <gst/filters/fsu-single-filter-manager.h>
 
 
 static void fsu_single_filter_manager_interface_init (

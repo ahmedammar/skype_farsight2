@@ -25,8 +25,8 @@
 #endif
 
 
-#include <gst/farsight/fsu-volume-filter.h>
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-volume-filter.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 
 G_DEFINE_TYPE (FsuVolumeFilter, fsu_volume_filter, FSU_TYPE_FILTER);

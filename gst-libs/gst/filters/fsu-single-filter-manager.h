@@ -22,7 +22,7 @@
 #ifndef __FSU_SINGLE_FILTER_MANAGER_H__
 #define __FSU_SINGLE_FILTER_MANAGER_H__
 
-#include <gst/farsight/fsu-filter-manager.h>
+#include <gst/filters/fsu-filter-manager.h>
 
 
 G_BEGIN_DECLS

@@ -25,7 +25,7 @@
 #endif
 
 
-#include <gst/farsight/fsu-filter-helper.h>
+#include <gst/filters/fsu-filter-helper.h>
 
 /**
  * fsu_filter_add_element:

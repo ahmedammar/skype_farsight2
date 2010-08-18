@@ -408,6 +408,7 @@ gst/videoanyrate/Makefile
 gst-libs/Makefile
 gst-libs/gst/Makefile
 gst-libs/gst/farsight/Makefile
+gst-libs/gst/filters/Makefile
 transmitters/Makefile
 transmitters/rawudp/Makefile
 transmitters/multicast/Makefile
