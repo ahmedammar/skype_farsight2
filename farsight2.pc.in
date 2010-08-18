@@ -8,6 +8,6 @@ Name: Farsight2
 Description: Farsight2 base classes and utilities
 Requires: gstreamer-@GST_MAJORMINOR@ gstreamer-base-@GST_MAJORMINOR@
 Version: @VERSION@
-Libs: -L${libdir} -lgstfarsight-@GST_MAJORMINOR@ -lgstfilters-@GST_MAJORMINOR@
+Libs: -L${libdir} -lgstfarsight-@GST_MAJORMINOR@ -lfsufilters-@GST_MAJORMINOR@
 Cflags: -I${includedir}
 

@@ -1,6 +1,6 @@
-libgstfiltersincludedir = $(includedir)/gstreamer-@GST_MAJORMINOR@/gst/filters
+libfsufiltersincludedir = $(includedir)/gstreamer-@GST_MAJORMINOR@/gst/filters
 
-libgstfiltersinclude_HEADERS = \
+libfsufiltersinclude_HEADERS = \
 		fsu-filter-manager.h \
 		fsu-single-filter-manager.h \
 		fsu-multi-filter-manager.h \
@@ -15,22 +15,22 @@ libgstfiltersinclude_HEADERS = \
 		fsu-audioconverter-filter.h \
 		fsu-videoconverter-filter.h
 
-nodist_libgstfiltersinclude_HEADERS = \
+nodist_libfsufiltersinclude_HEADERS = \
 		fs-enum-types.h
 
 # Don't forget to rename on ABI break
 fs-enum-types.h: fs-enumtypes.h
 	$(AM_V_GEN)test -L fs-enum-types.h || { rm -f fs-enum-types.h;  $(LN_S) fs-enumtypes.h fs-enum-types.h ; }
 
-lib_LTLIBRARIES = libgstfilters-@GST_MAJORMINOR@.la
+lib_LTLIBRARIES = libfsufilters-@GST_MAJORMINOR@.la
 
 BUILT_SOURCES = \
-	$(nodist_libgstfilters_@GST_MAJORMINOR@_la_SOURCES) \
-	$(nodist_libgstfiltersinclude_HEADERS)
+	$(nodist_libfsufilters_@GST_MAJORMINOR@_la_SOURCES) \
+	$(nodist_libfsufiltersinclude_HEADERS)
 
 CLEANFILES = $(BUILT_SOURCES) fs-enumtypes.h fs-marshal.list
 
-libgstfilters_@GST_MAJORMINOR@_la_SOURCES = \
+libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-filter-manager.c \
 		fsu-single-filter-manager.c \
 		fsu-multi-filter-manager.c \
@@ -45,16 +45,16 @@ libgstfilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-audioconverter-filter.c \
 		fsu-videoconverter-filter.c
 
-nodist_libgstfilters_@GST_MAJORMINOR@_la_SOURCES = \
+nodist_libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fs-marshal.c \
 		fs-marshal.h \
 		fs-enumtypes.c
 
 
-fs-marshal.list: $(libgstfilters_@GST_MAJORMINOR@_la_SOURCES) Makefile.am
+fs-marshal.list: $(libfsufilters_@GST_MAJORMINOR@_la_SOURCES) Makefile.am
 	$(AM_V_GEN) ( cd $(srcdir) && \
 	sed -n -e 's/.*_fs_marshal_\([[:upper:][:digit:]]*__[[:upper:][:digit:]_]*\).*/\1/p' \
-	$(libgstfilters_@GST_MAJORMINOR@_la_SOURCES) ) \
+	$(libfsufilters_@GST_MAJORMINOR@_la_SOURCES) ) \
 	| sed -e 's/__/:/' -e 'y/_/,/' | sort -u > $@.tmp
 	@if cmp -s $@.tmp $@; then \
 		rm $@.tmp; \
@@ -63,17 +63,17 @@ fs-marshal.list: $(libgstfilters_@GST_MAJORMINOR@_la_SOURCES) Makefile.am
 		mv $@.tmp $@; \
 	fi
 
-libgstfilters_@GST_MAJORMINOR@_la_CFLAGS = \
+libfsufilters_@GST_MAJORMINOR@_la_CFLAGS = \
 	$(FS2_INTERNAL_CFLAGS) $(FS2_CFLAGS) \
 	$(GST_PLUGINS_BASE_CFLAGS) \
 	$(GST_BASE_CFLAGS) \
 	$(GST_CFLAGS) \
 	$(GST_INTERFACES_CFLAGS)
-libgstfilters_@GST_MAJORMINOR@_la_LIBADD = \
+libfsufilters_@GST_MAJORMINOR@_la_LIBADD = \
 	$(GST_BASE_LIBS) \
 	$(GST_LIBS)  \
 	$(GST_INTERFACES_LIBS)
-libgstfilters_@GST_MAJORMINOR@_la_LDFLAGS = \
+libfsufilters_@GST_MAJORMINOR@_la_LDFLAGS = \
 	$(FS2_LIB_LDFLAGS) \
 	$(FS2_ALL_LDFLAGS) \
 	$(FS2_LT_LDFLAGS)
