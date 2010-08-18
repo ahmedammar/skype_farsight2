@@ -667,8 +667,10 @@ fsu_sink_request_new_pad (GstElement * element,
     {
       WARNING ("Couldn't get new request pad from mixer");
       if (mixer)
+      {
         gst_bin_remove (GST_BIN (self), mixer);
-      gst_object_unref (mixer);
+        gst_object_unref (mixer);
+      }
       mixer = NULL;
       goto error_not_filtered;
     }
@@ -678,7 +680,10 @@ fsu_sink_request_new_pad (GstElement * element,
       /* TODO: we need a mutex for this whole thing to prevent two from being
        * run at the same time */
     }
-    priv->mixer = gst_object_ref (mixer);
+    if (mixer)
+      priv->mixer = gst_object_ref (mixer);
+    else
+      priv->mixer = NULL;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
 
@@ -718,6 +723,9 @@ fsu_sink_request_new_pad (GstElement * element,
     priv->sinks = g_list_prepend (priv->sinks, sink);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
+
+  if (mixer)
+    gst_object_unref (mixer);
 
   return pad;
 
