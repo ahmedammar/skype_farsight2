@@ -316,6 +316,14 @@ pad_block_do_nothing (GstPad *pad,
 }
 
 static void
+destroy_pad_block_data (gpointer user_data)
+{
+  FsuSingleFilterManager *self = user_data;
+  /* Unref the reference that was held by the pad_block*/
+  g_object_unref (self);
+}
+
+static void
 free_filter_id (FsuFilterId *id)
 {
   g_object_unref (id->filter);
@@ -558,8 +566,6 @@ apply_modifs (GstPad *pad,
   }
   g_mutex_unlock (priv->mutex);
 
-  g_object_unref (self);
-
   gst_pad_set_blocked_async (pad, FALSE, pad_block_do_nothing, NULL);
 }
 
@@ -581,18 +587,20 @@ new_modification (FsuSingleFilterManager *self,
   g_mutex_lock (priv->mutex);
   g_queue_push_tail (priv->modifications, modif);
 
+  /* Keep a reference to self for the pad block thread */
+  g_object_ref (self);
   if (GST_PAD_IS_SRC (priv->applied_pad))
   {
-    gst_pad_set_blocked_async (priv->applied_pad, TRUE, apply_modifs, self);
+    gst_pad_set_blocked_async_full (priv->applied_pad, TRUE, apply_modifs,
+        self, destroy_pad_block_data);
   }
   else
   {
     GstPad *src_pad = gst_pad_get_peer (priv->out_pad);
-    gst_pad_set_blocked_async (src_pad, TRUE, apply_modifs, self);
+    gst_pad_set_blocked_async_full (src_pad, TRUE, apply_modifs, self,
+        destroy_pad_block_data);
     gst_object_unref (src_pad);
   }
-  /* Keep a reference to self for the pad block thread */
-  g_object_ref (self);
   g_mutex_unlock (priv->mutex);
 }
 
@@ -884,8 +892,6 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
         gst_object_unref (src_pad);
       }
     }
-    /* Unref the reference that was held by the pad_block*/
-    g_object_unref (self);
   }
 
   if (GST_PAD_IS_SRC (pad))
