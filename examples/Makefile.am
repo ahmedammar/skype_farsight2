@@ -1,2 +1,2 @@
 
-SUBDIRS = gui commandline filter-manager
+SUBDIRS = gui commandline filter-manager fsu

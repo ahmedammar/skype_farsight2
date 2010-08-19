@@ -685,34 +685,6 @@ fsu_source_release_pad (GstElement * element,
   check_and_remove_tee (self);
 }
 
-static const gchar *
-get_device_property_name (GstElement *element)
-{
-  if (_fsu_g_object_has_property (G_OBJECT (element), "device") &&
-      !_fsu_g_object_has_property (G_OBJECT (element), "device-name"))
-  {
-    return "device";
-  }
-  else if (!_fsu_g_object_has_property (G_OBJECT (element), "device") &&
-      _fsu_g_object_has_property (G_OBJECT (element), "device-name"))
-  {
-    return "device-name";
-  }
-  else if (_fsu_g_object_has_property (G_OBJECT (element), "device") &&
-      _fsu_g_object_has_property (G_OBJECT (element), "device-name"))
-  {
-    if (!strcmp (GST_ELEMENT_NAME (element), "dshowaudiosrc") ||
-        !strcmp (GST_ELEMENT_NAME (element), "dshowvideosrc"))
-      return "device-name";
-    else
-      return "device";
-  }
-  else
-  {
-    return NULL;
-  }
-}
-
 static GstElement *
 find_source (GstElement *src)
 {
@@ -839,10 +811,10 @@ test_source (FsuSource *self,
   if (GST_IS_PROPERTY_PROBE (element))
   {
     probe = GST_PROPERTY_PROBE (element);
-    if (probe && get_device_property_name(element))
+    if (probe && _fsu_get_device_property_name(element))
     {
       arr = gst_property_probe_probe_and_get_values_name (probe,
-          get_device_property_name(element));
+          _fsu_get_device_property_name(element));
       if (arr)
       {
         guint i;
@@ -861,7 +833,7 @@ test_source (FsuSource *self,
 
           DEBUG ("Testing device %s", device);
           g_object_set(element,
-              get_device_property_name(element), device,
+              _fsu_get_device_property_name(element), device,
               NULL);
 
           state_ret = gst_element_set_state (element, target_state);
@@ -977,9 +949,9 @@ create_source (FsuSource *self)
 
     src = gst_element_factory_make (source_name, NULL);
 
-    if (src && source_device && get_device_property_name(src))
+    if (src && source_device && _fsu_get_device_property_name(src))
       g_object_set(src,
-          get_device_property_name(src), source_device,
+          _fsu_get_device_property_name(src), source_device,
           NULL);
 
     if (src)

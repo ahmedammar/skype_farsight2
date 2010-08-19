@@ -18,6 +18,7 @@ libgstfarsightinclude_HEADERS = \
 		fsu-sink-class.h \
 		fsu-source.h \
 		fsu-source-class.h \
+		fsu-probe.h \
 		fsu-conference.h \
 		fsu-session.h \
 		fsu-session-priv.h \
@@ -56,6 +57,7 @@ libgstfarsight_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-common.c \
 		fsu-sink.c \
 		fsu-source.c \
+		fsu-probe.c \
 		fsu-conference.c \
 		fsu-session.c \
 		fsu-stream.c
@@ -103,6 +105,7 @@ public_headers = fs-candidate.h \
 		fs-conference-iface.h \
 		fsu-sink.h \
 		fsu-source.h \
+		fsu-probe.h \
 		fsu-conference.h \
 		fsu-session.h \
 		fsu-stream.h

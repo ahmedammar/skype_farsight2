@@ -423,6 +423,7 @@ examples/Makefile
 examples/gui/Makefile
 examples/commandline/Makefile
 examples/filter-manager/Makefile
+examples/fsu/Makefile
 docs/Makefile
 docs/libs/Makefile
 docs/plugins/Makefile

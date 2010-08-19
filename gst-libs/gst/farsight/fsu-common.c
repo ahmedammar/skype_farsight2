@@ -87,3 +87,84 @@ _fsu_get_plugins_filtered (klass_check check)
   return result;
 }
 
+
+static gboolean
+klass_contains (const gchar *klass,
+    const gchar *needle)
+{
+  gchar *found = strstr (klass, needle);
+
+  if(!found)
+    return FALSE;
+  if (found != klass && *(found-1) != '/')
+    return FALSE;
+  if (found[strlen (needle)] != 0 &&
+      found[strlen (needle)] != '/')
+    return FALSE;
+  return TRUE;
+}
+
+gboolean
+_fsu_is_audio_source (GstElementFactory *factory)
+{
+  const gchar *klass = gst_element_factory_get_klass (factory);
+  /* we might have some sources that provide a non raw stream */
+  return (klass_contains (klass, "Audio") &&
+          klass_contains (klass, "Source"));
+}
+
+gboolean
+_fsu_is_audio_sink (GstElementFactory *factory)
+{
+  const gchar *klass = gst_element_factory_get_klass (factory);
+  /* we might have some sinks that provide decoding */
+  return (klass_contains (klass, "Audio") &&
+          klass_contains (klass, "Sink"));
+}
+
+gboolean
+_fsu_is_video_source (GstElementFactory *factory)
+{
+  const gchar *klass = gst_element_factory_get_klass (factory);
+  /* we might have some sources that provide a non raw stream */
+  return (klass_contains (klass, "Video") &&
+          klass_contains (klass, "Source"));
+}
+
+gboolean
+_fsu_is_video_sink (GstElementFactory *factory)
+{
+  const gchar *klass = gst_element_factory_get_klass (factory);
+  /* we might have some sinks that provide decoding */
+  return (klass_contains (klass, "Video") &&
+          klass_contains (klass, "Sink"));
+}
+
+
+const gchar *
+_fsu_get_device_property_name (GstElement *element)
+{
+  if (_fsu_g_object_has_property (G_OBJECT (element), "device") &&
+      !_fsu_g_object_has_property (G_OBJECT (element), "device-name"))
+  {
+    return "device";
+  }
+  else if (!_fsu_g_object_has_property (G_OBJECT (element), "device") &&
+      _fsu_g_object_has_property (G_OBJECT (element), "device-name"))
+  {
+    return "device-name";
+  }
+  else if (_fsu_g_object_has_property (G_OBJECT (element), "device") &&
+      _fsu_g_object_has_property (G_OBJECT (element), "device-name"))
+  {
+    if (!strcmp (GST_ELEMENT_NAME (element), "dshowaudiosrc") ||
+        !strcmp (GST_ELEMENT_NAME (element), "dshowvideosrc"))
+      return "device-name";
+    else
+      return "device";
+  }
+  else
+  {
+    return NULL;
+  }
+}

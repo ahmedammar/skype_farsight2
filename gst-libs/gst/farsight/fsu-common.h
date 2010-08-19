@@ -32,6 +32,11 @@ typedef gboolean (*klass_check) (GstElementFactory *factory);
 gboolean _fsu_g_object_has_property (GObject *object,
     const gchar *property);
 GList * _fsu_get_plugins_filtered (klass_check check);
+const gchar *_fsu_get_device_property_name (GstElement *element);
+gboolean _fsu_is_audio_source (GstElementFactory *factory);
+gboolean _fsu_is_video_source (GstElementFactory *factory);
+gboolean _fsu_is_audio_sink (GstElementFactory *factory);
+gboolean _fsu_is_video_sink (GstElementFactory *factory);
 
 G_END_DECLS
 

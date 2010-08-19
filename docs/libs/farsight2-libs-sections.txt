@@ -568,6 +568,21 @@ fsu_sink_get_type
 fsu_sink_element_added
 </SECTION>
 
+
+<SECTION>
+<FILE>fsu-probe</FILE>
+<TITLE>FsuProbe</TITLE>
+<INCLUDE>gst/farsight/fsu-probe.h</INCLUDE>
+FsuProbeDevice
+FsuProbeDeviceElement
+FsuProbeDeviceType
+fsu_probe_devices
+fsu_probe_free
+<SUBSECTION Standard>
+FS_TYPE_PROBE_DEVICE_TYPE
+fsu_probe_device_type_get_type
+</SECTION>
+
 <SECTION>
 <FILE>garbage</FILE>
 FS_TYPE_CANDIDATE_TYPE

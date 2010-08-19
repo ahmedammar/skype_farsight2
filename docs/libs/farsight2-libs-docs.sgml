@@ -45,6 +45,7 @@
       <xi:include href="xml/fsu-filters.xml"/>
       <xi:include href="xml/fsu-source.xml"/>
       <xi:include href="xml/fsu-sink.xml"/>
+      <xi:include href="xml/fsu-probe.xml"/>
     </chapter>
   </part>
   <part>

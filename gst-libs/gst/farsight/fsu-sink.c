@@ -46,7 +46,7 @@
 #include <string.h>
 #include <gst/interfaces/propertyprobe.h>
 
-#include "fsu-sink-class.h"
+#include <gst/farsight/fsu-sink-class.h>
 #include <gst/farsight/fsu-common.h>
 
 
