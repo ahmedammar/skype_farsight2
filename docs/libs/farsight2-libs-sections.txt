@@ -424,6 +424,7 @@ fsu_videoconverter_filter_new
 <SUBSECTION FsuResolutionFilter>
 FsuResolutionFilter
 fsu_resolution_filter_new
+fsu_resolution_filter_new_range
 <SUBSECTION FsuMaxFramerateFilter>
 FsuMaxFramerateFilter
 fsu_maxframerate_filter_new

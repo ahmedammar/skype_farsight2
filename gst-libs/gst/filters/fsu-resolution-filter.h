@@ -74,6 +74,12 @@ GType fsu_resolution_filter_get_type (void) G_GNUC_CONST;
 FsuResolutionFilter *fsu_resolution_filter_new (guint width,
     guint height);
 
+FsuResolutionFilter *fsu_resolution_filter_new_range (guint min_width,
+    guint min_height,
+    guint max_width,
+    guint max_height);
+
+
 G_END_DECLS
 
 #endif /* __FSU_RESOLUTION_FILTER_H__ */
