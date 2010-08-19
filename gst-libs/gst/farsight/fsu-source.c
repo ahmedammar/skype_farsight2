@@ -545,7 +545,8 @@ create_tee (FsuSource *self)
   if (GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
-    if (!gst_element_sync_state_with_parent  (tee))
+    if (!gst_element_sync_state_with_parent  (tee) ||
+        (fakesink && !gst_element_sync_state_with_parent  (fakesink)))
     {
       WARNING ("Could not sync tee state with parent");
       if (fakesink)
