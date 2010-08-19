@@ -77,6 +77,7 @@ struct _FsuSessionPrivate
   FsuFilterManager *filters;
   gint sending;
   GMutex *mutex;
+  GMutex *pipeline_mutex;
 };
 
 static void
@@ -127,6 +128,7 @@ fsu_session_init (FsuSession *self)
   self->priv = priv;
   priv->filters = fsu_single_filter_manager_new ();
   priv->mutex = g_mutex_new ();
+  priv->pipeline_mutex = g_mutex_new ();
 }
 
 static void
@@ -276,6 +278,7 @@ fsu_session_finalize (GObject *object)
   FsuSession *self = FSU_SESSION (object);
 
   g_mutex_free (self->priv->mutex);
+  g_mutex_free (self->priv->pipeline_mutex);
 
   G_OBJECT_CLASS (fsu_session_parent_class)->finalize (object);
 }
@@ -372,6 +375,8 @@ _fsu_session_start_sending (FsuSession *self)
       "pipeline", &pipeline,
       NULL);
 
+  g_mutex_lock (priv->pipeline_mutex);
+
   srcpad = gst_element_get_request_pad (GST_ELEMENT (priv->source), "src%d");
 
   if (!srcpad)
@@ -404,6 +409,8 @@ _fsu_session_start_sending (FsuSession *self)
   gst_object_unref (sinkpad);
 
  done:
+  g_mutex_unlock (priv->pipeline_mutex);
+
   g_atomic_int_inc (&priv->sending);
 
   return TRUE;
@@ -422,6 +429,8 @@ _fsu_session_start_sending (FsuSession *self)
   gst_object_unref (filter_pad);
 
  no_source:
+  g_mutex_unlock (priv->pipeline_mutex);
+
   return FALSE;
 }
 
@@ -445,6 +454,8 @@ _fsu_session_stop_sending (FsuSession *self)
           "sink-pad", &sinkpad,
           NULL);
 
+      g_mutex_lock (priv->pipeline_mutex);
+
       filter_pad = gst_pad_get_peer (sinkpad);
       gst_pad_unlink (filter_pad, sinkpad);
       srcpad = fsu_filter_manager_revert (priv->filters,
@@ -454,6 +465,8 @@ _fsu_session_stop_sending (FsuSession *self)
       gst_object_unref (filter_pad);
       gst_object_unref (sinkpad);
       gst_object_unref (pipeline);
+
+      g_mutex_unlock (priv->pipeline_mutex);
     }
     return TRUE;
   }

@@ -80,6 +80,7 @@ struct _FsuStreamPrivate
   gboolean sending;
   FsuFilterManager *filters;
   GMutex *mutex;
+  GMutex *pipeline_mutex;
 };
 
 static void
@@ -137,6 +138,7 @@ fsu_stream_init (FsuStream *self)
   self->priv = priv;
   priv->filters = fsu_multi_filter_manager_new ();
   priv->mutex = g_mutex_new ();
+  priv->pipeline_mutex = g_mutex_new ();
 }
 
 static void
@@ -293,6 +295,7 @@ fsu_stream_finalize (GObject *object)
   FsuStream *self = FSU_STREAM (object);
 
   g_mutex_free (self->priv->mutex);
+  g_mutex_free (self->priv->pipeline_mutex);
 
   G_OBJECT_CLASS (fsu_stream_parent_class)->finalize (object);
 }
@@ -334,6 +337,8 @@ src_pad_unlinked (GstPad  *pad,
       "pipeline", &pipeline,
       NULL);
 
+  g_mutex_lock (priv->pipeline_mutex);
+
   sink_pad = fsu_filter_manager_revert (priv->filters,
       GST_BIN (pipeline), filter_pad);
 
@@ -355,6 +360,8 @@ src_pad_unlinked (GstPad  *pad,
   }
 
   gst_object_unref (pipeline);
+
+  g_mutex_unlock (priv->pipeline_mutex);
 
   g_signal_handlers_disconnect_by_func(pad, src_pad_unlinked, user_data);
 }
@@ -384,6 +391,8 @@ src_pad_added (FsStream *stream,
     return;
   }
   g_mutex_unlock (priv->mutex);
+
+  g_mutex_lock (priv->pipeline_mutex);
 
   if (priv->sink)
   {
@@ -427,6 +436,8 @@ src_pad_added (FsStream *stream,
   g_signal_connect_object (pad, "unlinked", (GCallback) src_pad_unlinked,
       self, 0);
 
+  g_mutex_unlock (priv->pipeline_mutex);
+
   return;
 
  error_state:
@@ -446,6 +457,7 @@ src_pad_added (FsStream *stream,
   if (filter_pad)
     gst_object_unref (filter_pad);
  error:
+  g_mutex_unlock (priv->pipeline_mutex);
   return;
 }
 
