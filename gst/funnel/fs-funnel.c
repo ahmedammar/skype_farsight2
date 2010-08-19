@@ -293,6 +293,11 @@ fs_funnel_event (GstPad * pad, GstEvent * event)
         GST_OBJECT_LOCK (funnel);
         gst_segment_set_newsegment_full (&priv->segment, update, rate, arate,
             format, start, stop, time);
+        GST_DEBUG_OBJECT (funnel, "got new segment : start %" GST_TIME_FORMAT
+            ", stop %" GST_TIME_FORMAT ", time %" GST_TIME_FORMAT
+            ", accum %" GST_TIME_FORMAT,
+            GST_TIME_ARGS (start), GST_TIME_ARGS (start), GST_TIME_ARGS (time),
+            GST_TIME_ARGS (priv->segment.accum));
         GST_OBJECT_UNLOCK (funnel);
 
         forward = FALSE;
@@ -302,7 +307,9 @@ fs_funnel_event (GstPad * pad, GstEvent * event)
     case GST_EVENT_FLUSH_STOP:
       {
         GST_OBJECT_LOCK (funnel);
+        GST_DEBUG_OBJECT (funnel, "Received flush stop.");
         gst_segment_init (&priv->segment, GST_FORMAT_UNDEFINED);
+        funnel->has_segment = FALSE;
         GST_OBJECT_UNLOCK (funnel);
       }
       break;
