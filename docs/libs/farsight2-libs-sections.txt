@@ -424,6 +424,9 @@ fsu_videoconverter_filter_new
 <SUBSECTION FsuResolutionFilter>
 FsuResolutionFilter
 fsu_resolution_filter_new
+<SUBSECTION FsuMaxFramerateFilter>
+FsuMaxFramerateFilter
+fsu_maxframerate_filter_new
 <SUBSECTION FsuFramerateFilter>
 FsuFramerateFilter
 fsu_framerate_filter_new
@@ -497,6 +500,16 @@ FsuGnomeEffectFilterPrivate
 fsu_gnome_effect_filter_get_type
 FSU_TYPE_GNOME_EFFECT_CATEGORIES_LIST
 fsu_gnome_effect_categories_list_get_type
+
+FSU_IS_MAXFRAMERATE_FILTER
+FSU_IS_MAXFRAMERATE_FILTER_CLASS
+FSU_MAXFRAMERATE_FILTER
+FSU_MAXFRAMERATE_FILTER_CLASS
+FSU_MAXFRAMERATE_FILTER_GET_CLASS
+FSU_TYPE_MAXFRAMERATE_FILTER
+FsuMaxFramerateFilterClass
+FsuMaxFramerateFilterPrivate
+fsu_maxframerate_filter_get_type
 
 FSU_FRAMERATE_FILTER
 FSU_FRAMERATE_FILTER_CLASS

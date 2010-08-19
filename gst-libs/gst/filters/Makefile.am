@@ -9,6 +9,7 @@ libfsufiltersinclude_HEADERS = \
 		fsu-volume-filter.h \
 		fsu-level-filter.h \
 		fsu-resolution-filter.h \
+		fsu-maxframerate-filter.h \
 		fsu-framerate-filter.h \
 		fsu-gnome-effect-filter.h \
 		fsu-preview-filter.h \
@@ -39,6 +40,7 @@ libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-volume-filter.c \
 		fsu-level-filter.c \
 		fsu-resolution-filter.c \
+		fsu-maxframerate-filter.c \
 		fsu-framerate-filter.c \
 		fsu-gnome-effect-filter.c \
 		fsu-preview-filter.c \
@@ -88,6 +90,7 @@ public_headers = \
 		fsu-volume-filter.h \
 		fsu-level-filter.h \
 		fsu-resolution-filter.h \
+		fsu-maxframerate-filter.h \
 		fsu-framerate-filter.h \
 		fsu-gnome-effect-filter.h \
 		fsu-preview-filter.h \

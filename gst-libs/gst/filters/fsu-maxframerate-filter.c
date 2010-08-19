@@ -1,5 +1,5 @@
 /*
- * fsu-framerate-filter.c - Source for FsuFramerateFilter
+ * fsu-maxframerate-filter.c - Source for FsuMaxFramerateFilter
  *
  * Copyright (C) 2010 Collabora Ltd.
  *  @author: Youness Alaoui <youness.alaoui@collabora.co.uk>
@@ -25,25 +25,25 @@
 #endif
 
 
-#include <gst/filters/fsu-framerate-filter.h>
+#include <gst/filters/fsu-maxframerate-filter.h>
 #include <gst/filters/fsu-filter-helper.h>
 
-G_DEFINE_TYPE (FsuFramerateFilter, fsu_framerate_filter, FSU_TYPE_FILTER);
+G_DEFINE_TYPE (FsuMaxFramerateFilter, fsu_maxframerate_filter, FSU_TYPE_FILTER);
 
-static void fsu_framerate_filter_constructed (GObject *object);
-static void fsu_framerate_filter_get_property (GObject *object,
+static void fsu_maxframerate_filter_constructed (GObject *object);
+static void fsu_maxframerate_filter_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec);
-static void fsu_framerate_filter_set_property (GObject *object,
+static void fsu_maxframerate_filter_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec);
-static void fsu_framerate_filter_dispose (GObject *object);
-static GstPad *fsu_framerate_filter_apply (FsuFilter *filter,
+static void fsu_maxframerate_filter_dispose (GObject *object);
+static GstPad *fsu_maxframerate_filter_apply (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad);
-static GstPad *fsu_framerate_filter_revert (FsuFilter *filter,
+static GstPad *fsu_maxframerate_filter_revert (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad);
 
@@ -57,7 +57,7 @@ enum
 };
 
 
-struct _FsuFramerateFilterPrivate
+struct _FsuMaxFramerateFilterPrivate
 {
   GList *elements;
   GstCaps *caps;
@@ -65,30 +65,30 @@ struct _FsuFramerateFilterPrivate
 };
 
 static void
-fsu_framerate_filter_class_init (FsuFramerateFilterClass *klass)
+fsu_maxframerate_filter_class_init (FsuMaxFramerateFilterClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   FsuFilterClass *fsufilter_class = FSU_FILTER_CLASS (klass);
 
-  g_type_class_add_private (klass, sizeof (FsuFramerateFilterPrivate));
+  g_type_class_add_private (klass, sizeof (FsuMaxFramerateFilterPrivate));
 
-  gobject_class->constructed = fsu_framerate_filter_constructed;
-  gobject_class->get_property = fsu_framerate_filter_get_property;
-  gobject_class->set_property = fsu_framerate_filter_set_property;
-  gobject_class->dispose = fsu_framerate_filter_dispose;
+  gobject_class->constructed = fsu_maxframerate_filter_constructed;
+  gobject_class->get_property = fsu_maxframerate_filter_get_property;
+  gobject_class->set_property = fsu_maxframerate_filter_set_property;
+  gobject_class->dispose = fsu_maxframerate_filter_dispose;
 
-  fsufilter_class->apply = fsu_framerate_filter_apply;
-  fsufilter_class->revert = fsu_framerate_filter_revert;
-  fsufilter_class->name = "framerate";
+  fsufilter_class->apply = fsu_maxframerate_filter_apply;
+  fsufilter_class->revert = fsu_maxframerate_filter_revert;
+  fsufilter_class->name = "maxframerate";
 
   /**
-   * FsuFramerateFilter:fps:
+   * FsuMaxFramerateFilter:fps:
    *
    * The maximum framerate allowed
    */
   g_object_class_install_property (gobject_class, PROP_FPS,
       g_param_spec_uint ("fps", "Frames per second",
-          "The framerate per second to set",
+          "The maximum framerate per second allowed",
           0, G_MAXINT,
           DEFAULT_FRAMERATE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
@@ -96,11 +96,11 @@ fsu_framerate_filter_class_init (FsuFramerateFilterClass *klass)
 }
 
 static void
-fsu_framerate_filter_init (FsuFramerateFilter *self)
+fsu_maxframerate_filter_init (FsuMaxFramerateFilter *self)
 {
-  FsuFramerateFilterPrivate *priv =
-      G_TYPE_INSTANCE_GET_PRIVATE (self, FSU_TYPE_FRAMERATE_FILTER,
-          FsuFramerateFilterPrivate);
+  FsuMaxFramerateFilterPrivate *priv =
+      G_TYPE_INSTANCE_GET_PRIVATE (self, FSU_TYPE_MAXFRAMERATE_FILTER,
+          FsuMaxFramerateFilterPrivate);
 
   self->priv = priv;
   priv->fps = DEFAULT_FRAMERATE;
@@ -108,13 +108,13 @@ fsu_framerate_filter_init (FsuFramerateFilter *self)
 
 
 static void
-fsu_framerate_filter_get_property (GObject *object,
+fsu_maxframerate_filter_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec)
 {
-  FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
-  FsuFramerateFilterPrivate *priv = self->priv;
+  FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (object);
+  FsuMaxFramerateFilterPrivate *priv = self->priv;
 
 
   switch (property_id)
@@ -129,13 +129,13 @@ fsu_framerate_filter_get_property (GObject *object,
 }
 
 static void
-fsu_framerate_filter_set_property (GObject *object,
+fsu_maxframerate_filter_set_property (GObject *object,
     guint property_id,
     const GValue *value,
     GParamSpec *pspec)
 {
-  FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
-  FsuFramerateFilterPrivate *priv = self->priv;
+  FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (object);
+  FsuMaxFramerateFilterPrivate *priv = self->priv;
 
   switch (property_id)
   {
@@ -175,10 +175,10 @@ fsu_framerate_filter_set_property (GObject *object,
 }
 
 static void
-fsu_framerate_filter_dispose (GObject *object)
+fsu_maxframerate_filter_dispose (GObject *object)
 {
-  FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
-  FsuFramerateFilterPrivate *priv = self->priv;
+  FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (object);
+  FsuMaxFramerateFilterPrivate *priv = self->priv;
   GList *i;
 
   if(priv->caps)
@@ -189,18 +189,18 @@ fsu_framerate_filter_dispose (GObject *object)
   g_list_free (priv->elements);
   priv->elements = NULL;
 
-  G_OBJECT_CLASS (fsu_framerate_filter_parent_class)->dispose (object);
+  G_OBJECT_CLASS (fsu_maxframerate_filter_parent_class)->dispose (object);
 }
 
 
 static void
-fsu_framerate_filter_constructed (GObject *object)
+fsu_maxframerate_filter_constructed (GObject *object)
 {
-  FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (object);
-  FsuFramerateFilterPrivate *priv = self->priv;
+  FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (object);
+  FsuMaxFramerateFilterPrivate *priv = self->priv;
 
-  if (G_OBJECT_CLASS (fsu_framerate_filter_parent_class)->constructed)
-    G_OBJECT_CLASS (fsu_framerate_filter_parent_class)->constructed (object);
+  if (G_OBJECT_CLASS (fsu_maxframerate_filter_parent_class)->constructed)
+    G_OBJECT_CLASS (fsu_maxframerate_filter_parent_class)->constructed (object);
 
   priv->caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
           "framerate", GST_TYPE_FRACTION, priv->fps, 1,
@@ -215,40 +215,40 @@ fsu_framerate_filter_constructed (GObject *object)
 }
 
 /**
- * fsu_framerate_filter_new:
+ * fsu_maxframerate_filter_new:
  * @fps: The maximum FPS allowed
  *
- * Creates a new framerate filter.
+ * Creates a new maxframerate filter.
  * This filter will make sure that the stream does not output more frames than
  * the specified FPS. It will not generate duplicate frames, so this filter is
  * mainly to be used in a streaming pipeline.
  * It will basically add 'videomaxrate ! capsfilter' to the pipeline.
  *
- * Returns: A new #FsuFramerateFilter
+ * Returns: A new #FsuMaxFramerateFilter
  */
-FsuFramerateFilter *
-fsu_framerate_filter_new (guint fps)
+FsuMaxFramerateFilter *
+fsu_maxframerate_filter_new (guint fps)
 {
-  return g_object_new (FSU_TYPE_FRAMERATE_FILTER,
+  return g_object_new (FSU_TYPE_MAXFRAMERATE_FILTER,
       "fps", fps,
       NULL);
 }
 
 
 static GstPad *
-fsu_framerate_filter_apply (FsuFilter *filter,
+fsu_maxframerate_filter_apply (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad)
 {
 
-  FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (filter);
-  FsuFramerateFilterPrivate *priv = self->priv;
+  FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (filter);
+  FsuMaxFramerateFilterPrivate *priv = self->priv;
   GstElement *capsfilter = NULL;
   GstElement *filter_bin = NULL;
   GstPad *out_pad = NULL;
 
   filter_bin = fsu_filter_add_element_by_description (bin, pad,
-      "videorate ! capsfilter name=capsfilter", &out_pad);
+      "videomaxrate ! capsfilter name=capsfilter", &out_pad);
 
   if (filter_bin)
   {
@@ -270,12 +270,12 @@ fsu_framerate_filter_apply (FsuFilter *filter,
 }
 
 static GstPad *
-fsu_framerate_filter_revert (FsuFilter *filter,
+fsu_maxframerate_filter_revert (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad)
 {
-  FsuFramerateFilter *self = FSU_FRAMERATE_FILTER (filter);
-  FsuFramerateFilterPrivate *priv = self->priv;
+  FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (filter);
+  FsuMaxFramerateFilterPrivate *priv = self->priv;
   GstElement *filter_bin = GST_ELEMENT (gst_pad_get_parent (pad));
   GstElement *capsfilter = NULL;
   GstPad *ret = NULL;
