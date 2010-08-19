@@ -31,6 +31,7 @@ G_DEFINE_TYPE_WITH_CODE (FsuMultiFilterManager,
         fsu_multi_filter_manager_interface_init));
 
 static void fsu_multi_filter_manager_dispose (GObject *object);
+static void fsu_multi_filter_manager_finalize (GObject *object);
 static void free_filter_id (FsuFilterId *id);
 
 static GList *fsu_multi_filter_manager_list_filters (
@@ -92,6 +93,7 @@ fsu_multi_filter_manager_class_init (FsuMultiFilterManagerClass *klass)
   g_type_class_add_private (klass, sizeof (FsuMultiFilterManagerPrivate));
 
   gobject_class->dispose = fsu_multi_filter_manager_dispose;
+  gobject_class->finalize = fsu_multi_filter_manager_finalize;
 }
 
 static void
@@ -128,6 +130,7 @@ fsu_multi_filter_manager_dispose (GObject *object)
   FsuMultiFilterManagerPrivate *priv = self->priv;
   GList *i;
 
+  g_mutex_lock (priv->mutex);
 
   for (i = priv->filter_managers; i; i = i->next)
   {
@@ -147,11 +150,19 @@ fsu_multi_filter_manager_dispose (GObject *object)
   g_list_free (priv->filters);
   priv->filters = NULL;
 
-  if (priv->mutex)
-    g_mutex_free (priv->mutex);
-  priv->mutex = NULL;
+  g_mutex_unlock (priv->mutex);
 
   G_OBJECT_CLASS (fsu_multi_filter_manager_parent_class)->dispose (object);
+}
+
+static void
+fsu_multi_filter_manager_finalize (GObject *object)
+{
+  FsuMultiFilterManager *self = FSU_MULTI_FILTER_MANAGER (object);
+
+  g_mutex_free (self->priv->mutex);
+
+  G_OBJECT_CLASS (fsu_multi_filter_manager_parent_class)->finalize (object);
 }
 
 /**

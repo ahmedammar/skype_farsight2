@@ -47,6 +47,7 @@ G_DEFINE_TYPE (FsuConference, fsu_conference, G_TYPE_OBJECT);
 
 static void fsu_conference_constructed (GObject *object);
 static void fsu_conference_dispose (GObject *object);
+static void fsu_conference_finalize (GObject *object);
 static void fsu_conference_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -87,6 +88,7 @@ fsu_conference_class_init (FsuConferenceClass *klass)
   gobject_class->set_property = fsu_conference_set_property;
   gobject_class->constructed = fsu_conference_constructed;
   gobject_class->dispose = fsu_conference_dispose;
+  gobject_class->finalize = fsu_conference_finalize;
 
   /**
    * FsuConference:fs-conference:
@@ -217,6 +219,8 @@ fsu_conference_dispose (GObject *object)
   FsuConference *self = FSU_CONFERENCE (object);
   FsuConferencePrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
+
   if (priv->sessions)
   {
     g_list_foreach (priv->sessions, remove_weakref, self);
@@ -242,12 +246,21 @@ fsu_conference_dispose (GObject *object)
   }
   priv->pipeline = NULL;
 
-  if (priv->mutex)
-    g_mutex_free (priv->mutex);
-  priv->mutex = NULL;
+  g_mutex_unlock (priv->mutex);
 
   G_OBJECT_CLASS (fsu_conference_parent_class)->dispose (object);
 }
+
+static void
+fsu_conference_finalize (GObject *object)
+{
+  FsuConference *self = FSU_CONFERENCE (object);
+
+  g_mutex_free (self->priv->mutex);
+
+  G_OBJECT_CLASS (fsu_conference_parent_class)->finalize (object);
+}
+
 
 /**
  * fsu_conference_new:

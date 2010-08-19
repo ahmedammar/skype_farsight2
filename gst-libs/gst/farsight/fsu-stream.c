@@ -44,6 +44,7 @@ G_DEFINE_TYPE (FsuStream, fsu_stream, G_TYPE_OBJECT);
 
 static void fsu_stream_constructed (GObject *object);
 static void fsu_stream_dispose (GObject *object);
+static void fsu_stream_finalize (GObject *object);
 static void fsu_stream_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -92,6 +93,7 @@ fsu_stream_class_init (FsuStreamClass *klass)
   gobject_class->set_property = fsu_stream_set_property;
   gobject_class->constructed = fsu_stream_constructed;
   gobject_class->dispose = fsu_stream_dispose;
+  gobject_class->finalize = fsu_stream_finalize;
 
   g_object_class_install_property (gobject_class, PROP_CONFERENCE,
       g_param_spec_object ("fsu-conference", "Farsight-utils conference",
@@ -243,6 +245,8 @@ fsu_stream_dispose (GObject *object)
   fsu_stream_stop_sending (self);
   fsu_stream_stop_receiving (self);
 
+  g_mutex_lock (priv->mutex);
+
   if (priv->sink)
   {
     if (GST_OBJECT_REFCOUNT(priv->sink) == 1)
@@ -278,12 +282,21 @@ fsu_stream_dispose (GObject *object)
     gst_object_unref (priv->conference);
   priv->conference = NULL;
 
-  if (priv->mutex)
-    g_mutex_free (priv->mutex);
-  priv->mutex = NULL;
+  g_mutex_unlock (priv->mutex);
 
   G_OBJECT_CLASS (fsu_stream_parent_class)->dispose (object);
 }
+
+static void
+fsu_stream_finalize (GObject *object)
+{
+  FsuStream *self = FSU_STREAM (object);
+
+  g_mutex_free (self->priv->mutex);
+
+  G_OBJECT_CLASS (fsu_stream_parent_class)->finalize (object);
+}
+
 
 FsuStream *
 _fsu_stream_new (FsuConference *conference,
@@ -584,6 +597,8 @@ fsu_stream_stop_receiving (FsuStream *self)
           GstPad *filter_pad = gst_pad_get_peer (pad);
           if (filter_pad)
           {
+            /* The real unlinking will actually be done in the 'unlinked'
+               signal handler */
             gst_pad_unlink (pad, filter_pad);
             gst_object_unref (filter_pad);
           }

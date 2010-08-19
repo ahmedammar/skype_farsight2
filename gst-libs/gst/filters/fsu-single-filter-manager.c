@@ -37,6 +37,7 @@ G_DEFINE_TYPE_WITH_CODE (FsuSingleFilterManager,
         fsu_single_filter_manager_interface_init));
 
 static void fsu_single_filter_manager_dispose (GObject *object);
+static void fsu_single_filter_manager_finalize (GObject *object);
 static void fsu_single_filter_manager_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -127,8 +128,9 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
 
   g_type_class_add_private (klass, sizeof (FsuSingleFilterManagerPrivate));
 
-  gobject_class->dispose = fsu_single_filter_manager_dispose;
   gobject_class->get_property = fsu_single_filter_manager_get_property;
+  gobject_class->dispose = fsu_single_filter_manager_dispose;
+  gobject_class->finalize = fsu_single_filter_manager_finalize;
 
   /**
    * FsuSingleFilterManager:applied:
@@ -214,6 +216,8 @@ fsu_single_filter_manager_dispose (GObject *object)
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
   FsuSingleFilterManagerPrivate *priv = self->priv;
 
+  g_mutex_lock (priv->mutex);
+
   if (priv->applied_bin)
   {
     g_critical ("Disposing of FsuSingleFilterManager while applied.\n"
@@ -226,7 +230,6 @@ fsu_single_filter_manager_dispose (GObject *object)
   }
 
   g_assert (g_queue_is_empty (priv->modifications));
-  g_queue_free (priv->modifications);
 
   if (priv->applied_filters)
     g_list_free (priv->applied_filters);
@@ -245,12 +248,20 @@ fsu_single_filter_manager_dispose (GObject *object)
   if (priv->out_pad)
     gst_object_unref (priv->out_pad);
 
-
-  if (priv->mutex)
-    g_mutex_free (priv->mutex);
-  priv->mutex = NULL;
+  g_mutex_unlock (priv->mutex);
 
   G_OBJECT_CLASS (fsu_single_filter_manager_parent_class)->dispose (object);
+}
+
+static void
+fsu_single_filter_manager_finalize (GObject *object)
+{
+  FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
+
+  g_queue_free (self->priv->modifications);
+  g_mutex_free (self->priv->mutex);
+
+  G_OBJECT_CLASS (fsu_single_filter_manager_parent_class)->finalize (object);
 }
 
 static void
