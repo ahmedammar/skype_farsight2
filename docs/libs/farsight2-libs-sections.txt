@@ -264,7 +264,7 @@ fs_interfaces_get_local_ips
 <SECTION>
 <FILE>fsu-conference</FILE>
 <TITLE>FsuConference</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-conference.h</INCLUDE>
+<INCLUDE>gst/farsight/fsu-conference.h</INCLUDE>
 FsuConference
 fsu_conference_new
 fsu_conference_handle_session
@@ -284,7 +284,7 @@ fsu_conference_get_type
 <SECTION>
 <FILE>fsu-session</FILE>
 <TITLE>FsuSession</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-session.h</INCLUDE>
+<INCLUDE>gst/farsight/fsu-session.h</INCLUDE>
 FsuSession
 fsu_session_handle_stream
 <SUBSECTION Standard>
@@ -302,7 +302,7 @@ fsu_session_get_type
 <SECTION>
 <FILE>fsu-stream</FILE>
 <TITLE>FsuStream</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-stream.h</INCLUDE>
+<INCLUDE>gst/farsight/fsu-stream.h</INCLUDE>
 FsuStream
 fsu_stream_start_receiving
 fsu_stream_start_sending
@@ -323,7 +323,7 @@ fsu_stream_get_type
 <SECTION>
 <FILE>fsu-filter</FILE>
 <TITLE>FsuFilter</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-filter.h</INCLUDE>
+<INCLUDE>gst/filters/fsu-filter.h</INCLUDE>
 FsuFilter
 FsuFilterClass
 FsuFilterId
@@ -354,7 +354,7 @@ fsu_filter_get_type
 <SECTION>
 <FILE>fsu-filter-manager</FILE>
 <TITLE>FsuFilterManager</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-filter-manager.h,gst/farsight-utils/fsu-single-filter-manager.h,gst/farsight-utils/fsu-multi-filter-manager.h</INCLUDE>
+<INCLUDE>gst/filters/fsu-filter-manager.h,gst/filters/fsu-single-filter-manager.h,gst/filters/fsu-multi-filter-manager.h</INCLUDE>
 FsuFilterManager
 FsuFilterManagerInterface
 <SUBSECTION SingleFilterManaer>
@@ -408,7 +408,7 @@ FsuMultiFilterManagerPrivate
 <SECTION>
 <FILE>fsu-filters</FILE>
 <TITLE>Farsight-Utils Filters</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-audioconverter-filter.h,gst/farsight-utils/fsu-volume-filter.h,gst/farsight-utils/fsu-level-filter.h,gst/farsight-utils/fsu-videoconverter-filter.h,gst/farsight-utils/fsu-resolution-filter.h,gst/farsight-utils/fsu-framerate-filter.h,gst/farsight-utils/fsu-effectv-filter.h,gst/farsight-utils/fsu-preview-filter.h</INCLUDE>
+<INCLUDE>gst/filters/fsu-audioconverter-filter.h,gst/filters/fsu-volume-filter.h,gst/filters/fsu-level-filter.h,gst/filters/fsu-videoconverter-filter.h,gst/filters/fsu-resolution-filter.h,gst/filters/fsu-framerate-filter.h,gst/filters/fsu-effectv-filter.h,gst/filters/fsu-preview-filter.h</INCLUDE>
 <SUBSECTION FsuAudioconverterFilter>
 FsuAudioconverterFilter
 fsu_audioconverter_filter_new
@@ -535,7 +535,7 @@ fsu_preview_filter_get_type
 <SECTION>
 <FILE>fsu-source</FILE>
 <TITLE>FsuSource</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-source.h</INCLUDE>
+<INCLUDE>gst/farsight/fsu-source.h</INCLUDE>
 FsuSource
 <SUBSECTION Standard>
 FSU_SOURCE
@@ -553,7 +553,7 @@ klass_check
 <SECTION>
 <FILE>fsu-sink</FILE>
 <TITLE>FsuSink</TITLE>
-<INCLUDE>gst/farsight-utils/fsu-sink.h</INCLUDE>
+<INCLUDE>gst/farsight/fsu-sink.h</INCLUDE>
 FsuSink
 <SUBSECTION Standard>
 FSU_SINK
