@@ -576,6 +576,14 @@ create_tee (FsuSource *self)
 
 }
 
+static gboolean
+pad_event_probe (GstPad  *pad, GstEvent *event, gpointer user_data)
+{
+  if (GST_EVENT_TYPE (event) == GST_EVENT_NEWSEGMENT)
+    gst_pad_push_event (pad, gst_event_new_flush_stop ());
+
+  return TRUE;
+}
 
 static GstPad *
 fsu_source_request_new_pad (GstElement * element,
@@ -645,6 +653,8 @@ fsu_source_request_new_pad (GstElement * element,
   gst_pad_set_active (pad, TRUE);
 
   gst_element_add_pad (element, pad);
+
+  gst_pad_add_event_probe (pad, (GCallback)pad_event_probe, self);
 
   return pad;
 }
