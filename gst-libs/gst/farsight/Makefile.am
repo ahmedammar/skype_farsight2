@@ -87,7 +87,7 @@ libgstfarsight_@GST_MAJORMINOR@_la_CFLAGS = \
 	$(GST_CFLAGS) \
 	$(GST_INTERFACES_CFLAGS)
 libgstfarsight_@GST_MAJORMINOR@_la_LIBADD = \
-	../filters/libfsufilters-@GST_MAJORMINOR@.la
+	../filters/libfsufilters-@GST_MAJORMINOR@.la \
 	$(GST_BASE_LIBS) \
 	$(GST_LIBS)  \
 	$(GST_INTERFACES_LIBS)
