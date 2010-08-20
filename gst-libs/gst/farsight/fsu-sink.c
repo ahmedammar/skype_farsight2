@@ -534,6 +534,7 @@ fsu_sink_request_new_pad (GstElement * element,
   FsuSinkPrivate *priv = self->priv;
   GstElement *sink = NULL;
   GstElement *mixer = NULL;
+  GstElement *queue = NULL;
   GstPad *pad = NULL;
   GstPad *sink_pad = NULL;
   GstPad *filter_pad = NULL;
@@ -557,6 +558,10 @@ fsu_sink_request_new_pad (GstElement * element,
         WARNING ("Could not create sink or fakesink elements");
         goto error_not_added;
       }
+      g_object_set(sink,
+          "sync", FALSE,
+          "async", FALSE,
+          NULL);
       if (!gst_bin_add (GST_BIN (self), sink))
       {
         WARNING ("Could not add sink element to Sink");
@@ -588,7 +593,20 @@ fsu_sink_request_new_pad (GstElement * element,
       if (priv->sinks)
       {
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
-        sink_pad = gst_element_get_static_pad (sink, "sink");
+        queue = gst_element_factory_make ("queue", NULL);
+        if (queue && gst_bin_add (GST_BIN (self), queue) &&
+            gst_element_link (queue, sink))
+        {
+          sink_pad = gst_element_get_static_pad (queue, "sink");
+        }
+        else
+        {
+          if (queue && !gst_bin_remove (GST_BIN (self), queue))
+            gst_object_unref (queue);
+          queue = NULL;
+
+          sink_pad = gst_element_get_static_pad (sink, "sink");
+        }
         if (!sink_pad)
         {
           WARNING ("Could not get sink pad from sink");
@@ -626,6 +644,9 @@ fsu_sink_request_new_pad (GstElement * element,
       gst_object_unref (sink_pad);
       sink_pad = NULL;
     }
+    if (queue)
+      gst_bin_remove (GST_BIN (self), queue);
+    queue = NULL;
     gst_bin_remove (GST_BIN (self), sink);
     gst_object_unref (sink);
 
@@ -636,6 +657,10 @@ fsu_sink_request_new_pad (GstElement * element,
       WARNING ("Could not create sink or fakesink elements");
       goto error_not_added;
     }
+    g_object_set(sink,
+        "sync", FALSE,
+        "async", FALSE,
+        NULL);
     if (!gst_bin_add (GST_BIN (self), sink))
     {
       WARNING ("Could not add fakesink element to Sink");
@@ -659,9 +684,26 @@ fsu_sink_request_new_pad (GstElement * element,
     mixer = create_mixer (self, sink);
     /* Check if we need a mixer */
     if (!mixer)
-      sink_pad = gst_element_get_static_pad (sink, "sink");
+    {
+      queue = gst_element_factory_make ("queue", NULL);
+      if (queue && gst_bin_add (GST_BIN (self), queue) &&
+          gst_element_link (queue, sink))
+      {
+        sink_pad = gst_element_get_static_pad (queue, "sink");
+      }
+      else
+      {
+        if (queue && !gst_bin_remove (GST_BIN (self), queue))
+          gst_object_unref (queue);
+        queue = NULL;
+
+        sink_pad = gst_element_get_static_pad (sink, "sink");
+      }
+    }
     else
+    {
       sink_pad = gst_element_get_request_pad (mixer, "sink%d");
+    }
 
     if (!sink_pad)
     {
@@ -717,6 +759,12 @@ fsu_sink_request_new_pad (GstElement * element,
     goto error_filtered;
   }
 
+  if (queue && !gst_element_sync_state_with_parent (queue))
+  {
+    WARNING ("Couldn't sync sink state with parent");
+    goto error_filtered;
+  }
+
   if (sink)
   {
     GST_OBJECT_LOCK (GST_OBJECT (self));
@@ -733,6 +781,8 @@ fsu_sink_request_new_pad (GstElement * element,
   sink_pad = fsu_filter_manager_revert (priv->filters,
       GST_BIN (self), filter_pad);
  error_not_filtered:
+  if (queue && !gst_bin_remove (GST_BIN (self), queue))
+    gst_object_unref (queue);
   if (mixer)
   {
     if (sink_pad)
@@ -791,6 +841,25 @@ fsu_sink_release_pad (GstElement * element,
     {
       GstElement *sink = GST_ELEMENT (
           gst_object_get_parent (GST_OBJECT (sink_pad)));
+
+      /* Check if we had a queue before the sink */
+      if (!GST_OBJECT_FLAG_SET(sink, GST_ELEMENT_IS_SINK))
+      {
+        GstElement *queue;
+        GstPad *src_pad = NULL;
+
+        queue = sink;
+        src_pad = gst_element_get_static_pad (sink, "src");
+        gst_object_unref (sink_pad);
+        sink_pad = gst_pad_get_peer (src_pad);
+        sink = GST_ELEMENT (gst_object_get_parent (GST_OBJECT (sink_pad)));
+        gst_object_unref (src_pad);
+
+        gst_bin_remove (GST_BIN (self), queue);
+        /* From the get_parent */
+        gst_object_unref (queue);
+      }
+
       gst_object_unref (sink_pad);
       gst_element_set_state (sink, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (self), sink);
