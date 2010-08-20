@@ -1,5 +1,5 @@
 
-noinst_PROGRAMS = test-probe
+noinst_PROGRAMS = test-probe test-source test-sink
 
 AM_CFLAGS = \
 	$(FS2_INTERNAL_CFLAGS) \
