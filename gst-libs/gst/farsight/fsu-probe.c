@@ -166,6 +166,7 @@ fsu_probe_devices (gboolean full)
                   probe_device->device_name = g_strdup (device_name);
                 else
                   probe_device->device_name = g_strdup (device);
+                g_free (device_name);
               }
               else
               {
