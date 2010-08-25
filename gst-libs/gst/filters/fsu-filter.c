@@ -41,7 +41,7 @@
 
 
 #include <gst/filters/fsu-filter-helper.h>
-
+#include "fsu-marshal.h"
 
 G_DEFINE_TYPE (FsuFilter, fsu_filter, G_TYPE_OBJECT);
 
@@ -50,6 +50,18 @@ static void fsu_filter_get_property (GObject *object,
     guint property_id,
     GValue *value,
     GParamSpec *pspec);
+
+/* signals  */
+enum {
+  SIGNAL_APPLIED,
+  SIGNAL_APPLY_FAILED,
+  SIGNAL_REVERTED,
+  SIGNAL_REVERT_FAILED,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
+
 
 
 /* properties */
@@ -80,6 +92,72 @@ fsu_filter_class_init (FsuFilterClass *klass)
           "The name of the filter",
           NULL,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FsuFilter::applied:
+   * @bin: The #GstBin the filter got applied on
+   * @pad: The #GstPad the filter got applied on
+   * @out_pad: The resulting output pad
+   *
+   * This signal is sent when the filter gets applied on a pad.
+   */
+  signals[SIGNAL_APPLIED] = g_signal_new ("applied",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__OBJECT_OBJECT_OBJECT,
+      G_TYPE_NONE, 3,
+      GST_TYPE_BIN, GST_TYPE_PAD, GST_TYPE_PAD);
+
+  /**
+   * FsuFilter::apply-failed:
+   * @bin: The #GstBin the filter got applied on
+   * @pad: The #GstPad the filter got applied on
+   *
+   * This signal is sent when the filter fails to apply on a pad.
+   */
+  signals[SIGNAL_APPLY_FAILED] = g_signal_new ("apply-failed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__OBJECT_OBJECT,
+      G_TYPE_NONE, 3,
+      GST_TYPE_BIN, GST_TYPE_PAD);
+
+  /**
+   * FsuFilter::reverted:
+   * @bin: The #GstBin the filter got reverted from
+   * @pad: The #GstPad the filter got reverted from
+   * @out_pad: The resulting output pad
+   *
+   * This signal is sent when the filter gets reverted from a pad.
+   */
+  signals[SIGNAL_REVERTED] = g_signal_new ("reverted",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__OBJECT_OBJECT_OBJECT,
+      G_TYPE_NONE, 3,
+      GST_TYPE_BIN, GST_TYPE_PAD, GST_TYPE_PAD);
+
+  /**
+   * FsuFilter::revert-failed:
+   * @bin: The #GstBin the filter got reverted from
+   * @pad: The #GstPad the filter got reverted from
+   *
+   * This signal is sent when the filter fails to revert from a pad.
+   */
+  signals[SIGNAL_REVERT_FAILED] = g_signal_new ("revert-failed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__OBJECT_OBJECT,
+      G_TYPE_NONE, 3,
+      GST_TYPE_BIN, GST_TYPE_PAD);
 }
 
 static void
@@ -171,6 +249,11 @@ fsu_filter_apply (FsuFilter *self,
     fsu_filter_lock (self);
     g_hash_table_insert (priv->pads, out_pad, gst_pad_get_peer (pad));
     fsu_filter_unlock (self);
+    g_signal_emit (self, signals[SIGNAL_APPLIED], 0, bin, pad, out_pad);
+  }
+  else
+  {
+    g_signal_emit (self, signals[SIGNAL_APPLY_FAILED], 0, bin, pad);
   }
 
   return out_pad;
@@ -216,6 +299,7 @@ fsu_filter_revert (FsuFilter *self,
     fsu_filter_unlock (self);
     g_debug ("Can't revert filter %s (%p), never got applied on this pad",
         klass->name, self);
+    g_signal_emit (self, signals[SIGNAL_REVERT_FAILED], 0, bin, pad);
     return NULL;
   }
   expected = gst_pad_get_peer (in_pad);
@@ -223,6 +307,11 @@ fsu_filter_revert (FsuFilter *self,
 
   out_pad = klass->revert (self, bin, pad);
   fsu_filter_unlock (self);
+
+  if (!out_pad)
+    g_signal_emit (self, signals[SIGNAL_REVERT_FAILED], 0, bin, pad);
+  else
+    g_signal_emit (self, signals[SIGNAL_REVERTED], 0, bin, pad, out_pad);
 
   if (out_pad != expected)
   {
