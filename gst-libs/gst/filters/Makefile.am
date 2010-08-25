@@ -16,12 +16,6 @@ libfsufiltersinclude_HEADERS = \
 		fsu-audioconverter-filter.h \
 		fsu-videoconverter-filter.h
 
-nodist_libfsufiltersinclude_HEADERS = \
-		fs-enum-types.h
-
-# Don't forget to rename on ABI break
-fs-enum-types.h: fs-enumtypes.h
-	$(AM_V_GEN)test -L fs-enum-types.h || { rm -f fs-enum-types.h;  $(LN_S) fs-enumtypes.h fs-enum-types.h ; }
 
 lib_LTLIBRARIES = libfsufilters-@GST_MAJORMINOR@.la
 
@@ -29,7 +23,7 @@ BUILT_SOURCES = \
 	$(nodist_libfsufilters_@GST_MAJORMINOR@_la_SOURCES) \
 	$(nodist_libfsufiltersinclude_HEADERS)
 
-CLEANFILES = $(BUILT_SOURCES) fs-enumtypes.h fsu-marshal.list
+CLEANFILES = $(BUILT_SOURCES) fsu-marshal.list
 
 libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-filter-manager.c \
@@ -49,8 +43,7 @@ libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 
 nodist_libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-marshal.c \
-		fsu-marshal.h \
-		fs-enumtypes.c
+		fsu-marshal.h
 
 
 fsu-marshal.list: $(libfsufilters_@GST_MAJORMINOR@_la_SOURCES) Makefile.am
@@ -81,24 +74,6 @@ libfsufilters_@GST_MAJORMINOR@_la_LDFLAGS = \
 	$(FS2_LT_LDFLAGS)
 
 
-public_headers = \
-		fsu-filter-manager.h \
-		fsu-single-filter-manager.h \
-		fsu-multi-filter-manager.h \
-		fsu-filter.h \
-		fsu-filter-helper.h \
-		fsu-volume-filter.h \
-		fsu-level-filter.h \
-		fsu-resolution-filter.h \
-		fsu-maxframerate-filter.h \
-		fsu-framerate-filter.h \
-		fsu-gnome-effect-filter.h \
-		fsu-preview-filter.h \
-		fsu-audioconverter-filter.h \
-		fsu-videoconverter-filter.h
-
-glib_enum_headers=$(public_headers)
-glib_enum_define=FSU
 glib_gen_prefix=_fsu
 glib_gen_basename=fsu
 
