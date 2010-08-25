@@ -37,6 +37,54 @@
      Current available sources as 'fsuaudiosrc' and 'fsuvideosrc'.
  * </para>
  *
+ * The sources will communicate asynchronous events to the user through
+ * #GstMessage of type #GST_MESSAGE_ELEMENT sent over the #GstBus.
+ * </para>
+ * <refsect2><title>The "<literal>fsusource-no-available-sources</literal>"
+ *   message</title>
+ * <para>
+ * This message is sent on the bus when the source cannot find any suitable
+ * source device for capture.
+ * See also: #FsuSource::no-sources-available signal.
+ * </para>
+ * </refsect2>
+ *
+ * </para>
+ * <refsect2><title>The "<literal>fsusource-source-chosen</literal>"
+ *   message</title>
+ * |[
+ * "source"             #GstElement The source element chosen
+ * "source-name"        gchar *     The name of the chosen element
+ * "source-device"      gchar *     The chosen device
+ * "source-device-name" gchar *     The user-friendly name of the chosen device
+ * ]|
+ * <para>
+ * This message is sent when the source has been chosen and correctly opened
+ * and ready for capture.
+ * See also: #FsuSource::source-chosen signal.
+ * </para>
+ * </refsect2>
+ *
+ * </para>
+ * <refsect2><title>The "<literal>fsusource-source-destroyed</literal>"
+ *   message</title>
+ * <para>
+ * This message is sent when the source has been destroyed.
+ * See also: #FsuSource::source-destroyed signal.
+ * </para>
+ * </refsect2>
+ *
+ * </para>
+ * <refsect2><title>The "<literal>fsusource-source-error</literal>"
+ *   message</title>
+ * <para>
+ * This message is sent when the source received a Resource error. This will
+ * usually only be sent when the device is no longer available. It will
+ * shortly be followed by a 'fsusource-source-destroyed' message then either
+ * a 'fsusource-source-chosen' or 'fsusource-no-sources-available' message.
+ * See also: #FsuSource::source-error signal.
+ * </para>
+ * </refsect2>
  */
 
 
@@ -50,7 +98,7 @@
 
 #include <gst/farsight/fsu-source-class.h>
 #include <gst/farsight/fsu-common.h>
-
+#include "fs-marshal.h"
 
 GST_DEBUG_CATEGORY_STATIC (fsu_source_debug);
 #define GST_CAT_DEFAULT fsu_source_debug
@@ -101,6 +149,18 @@ static GstPad *fsu_source_request_new_pad (GstElement * element,
 static void fsu_source_release_pad (GstElement * element,
     GstPad * pad);
 static GstElement *create_source (FsuSource *self);
+
+/* signals  */
+enum {
+  SIGNAL_NO_SOURCES_AVAILABLE,
+  SIGNAL_SOURCE_CHOSEN,
+  SIGNAL_SOURCE_DESTROYED,
+  SIGNAL_SOURCE_ERROR,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
+
 
 /* properties */
 enum
@@ -201,6 +261,88 @@ fsu_source_class_init (FsuSourceClass *klass)
           "The pipeline to use for creating the source",
           NULL,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FsuSource::no-sources-available:
+   *
+   * This signal is sent when the source cannot find any suitable source
+   * device for capture.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusource-no-sources-available' is also sent over the bus.
+   */
+  signals[SIGNAL_NO_SOURCES_AVAILABLE] = g_signal_new ("no-sources-available",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuSource::source-chosen:
+   * @source_element: The #GstElement of the chosen source
+   * @source_name: The name of the chosen element
+   * @source_device: The chosen device
+   * @source_device_name: The chosen user-friendly device name
+   *
+   * This signal is sent when the source has been chosen and correctly opened
+   * and ready for capture.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusource-source-chosen' is also sent over the bus.
+   */
+  signals[SIGNAL_SOURCE_CHOSEN] = g_signal_new ("source-chosen",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fs_marshal_VOID__OBJECT_STRING_STRING_STRING,
+      G_TYPE_NONE, 3,
+      GST_TYPE_ELEMENT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+  /**
+   * FsuSource::source-destroyed:
+   *
+   * This signal is sent when the source has been destroyed.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusource-source-destroyed' is also sent over the bus.
+   */
+  signals[SIGNAL_SOURCE_DESTROYED] = g_signal_new ("source-destroyed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuSource::source-error:
+   *
+   * This signal is sent when the source received a Resource error. This will
+   * usually only be sent when the device is no longer available. It will
+   * shortly be followed by a #FsuSource::source-destroyed signal then either
+   * a #FsuSource::source-chosen or #FsuSource::no-sources-available signal.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusource-source-error' is also sent over the bus.
+   */
+  signals[SIGNAL_SOURCE_ERROR] = g_signal_new ("source-error",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
 }
 
 static void
@@ -401,6 +543,11 @@ check_and_remove_tee (FsuSource *self)
     gst_element_set_state (source, GST_STATE_NULL);
     gst_object_unref (source);
 
+    g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
+    gst_element_post_message (GST_ELEMENT (self),
+        gst_message_new_element (GST_OBJECT (self),
+            gst_structure_new ("fsusource-source-destroyed",
+                NULL)));
     g_object_notify (G_OBJECT (self), "source-element");
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
@@ -440,7 +587,7 @@ create_source_and_link_tee (FsuSource *self)
     {
       WARNING ("Could not add source element to Source");
       gst_object_unref (src);
-      return;
+      goto error_destroy_source;
     }
 
     src_pad = gst_element_get_static_pad (src, "src");
@@ -491,10 +638,6 @@ create_source_and_link_tee (FsuSource *self)
     }
 
     gst_object_unref (src_pad);
-    GST_OBJECT_LOCK (GST_OBJECT (self));
-    priv->source = gst_object_ref (src);
-    GST_OBJECT_UNLOCK (GST_OBJECT (self));
-    g_object_notify (G_OBJECT (self), "source-element");
   }
 
   return;
@@ -506,7 +649,17 @@ create_source_and_link_tee (FsuSource *self)
   gst_object_unref (src_pad);
   gst_bin_remove (GST_BIN (self), src);
   check_and_remove_tee (self);
-
+ error_destroy_source:
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  priv->source = NULL;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  gst_object_unref (priv->source);
+  g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
+  gst_element_post_message (GST_ELEMENT (self),
+      gst_message_new_element (GST_OBJECT (self),
+          gst_structure_new ("fsusource-source-destroyed",
+              NULL)));
+  g_object_notify (G_OBJECT (self), "source-element");
 }
 
 static void
@@ -1082,13 +1235,62 @@ create_source (FsuSource *self)
 
   if (src)
   {
+    gchar *device = NULL;
+    gchar *device_name = NULL;
+    const gchar *element_name = NULL;
+    GstElement *chosen_src = NULL;
+    GstElementFactory *factory = NULL;
+
     GST_OBJECT_FLAG_UNSET (src, GST_ELEMENT_IS_SINK);
     real_src = find_source (src);
 
     if (_fsu_g_object_has_property (G_OBJECT (real_src), "is-live"))
       g_object_set(real_src, "is-live", TRUE, NULL);
 
+    if (source_pipeline)
+    {
+      chosen_src = src;
+    }
+    else
+    {
+      chosen_src = real_src;
+      factory = gst_element_get_factory (chosen_src);
+      element_name = GST_PLUGIN_FEATURE_NAME(factory);
+
+      g_object_get (chosen_src,
+          _fsu_get_device_property_name(chosen_src), &device,
+          "device-name", &device_name,
+          NULL);
+    }
+
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    priv->source = gst_object_ref (src);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    g_signal_emit (self, signals[SIGNAL_SOURCE_CHOSEN], 0, chosen_src,
+        element_name, device, device_name);
+
+    gst_element_post_message (GST_ELEMENT (self),
+        gst_message_new_element (GST_OBJECT (self),
+            gst_structure_new ("fsusource-source-chosen",
+                "source", GST_TYPE_ELEMENT, chosen_src,
+                "source-name", G_TYPE_STRING, element_name,
+                "source-device", G_TYPE_STRING, device,
+                "source-device-name", G_TYPE_STRING, device_name,
+                NULL)));
+    g_object_notify (G_OBJECT (self), "source-element");
+
+    g_free (device);
+    g_free (device_name);
     gst_object_unref (real_src);
+  }
+  else
+  {
+    g_signal_emit (self, signals[SIGNAL_NO_SOURCES_AVAILABLE], 0);
+    gst_element_post_message (GST_ELEMENT (self),
+        gst_message_new_element (GST_OBJECT (self),
+            gst_structure_new ("fsusource-no-sources-available",
+                NULL)));
   }
 
  error:
@@ -1145,6 +1347,11 @@ fsu_source_change_state (GstElement *element,
         gst_bin_remove (GST_BIN (self), source);
         gst_object_unref (source);
 
+        g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
+        gst_element_post_message (GST_ELEMENT (self),
+            gst_message_new_element (GST_OBJECT (self),
+                gst_structure_new ("fsusource-source-destroyed",
+                    NULL)));
         g_object_notify (G_OBJECT (self), "source-element");
 
         GST_OBJECT_LOCK (GST_OBJECT (self));
@@ -1188,6 +1395,11 @@ replace_source_thread (gpointer data)
     state_ret = gst_element_set_state (source, GST_STATE_NULL);
     gst_object_unref (source);
 
+    g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
+    gst_element_post_message (GST_ELEMENT (self),
+        gst_message_new_element (GST_OBJECT (self),
+            gst_structure_new ("fsusource-source-destroyed",
+                NULL)));
     g_object_notify (G_OBJECT (self), "source-element");
 
     create_source_and_link_tee (self);
@@ -1264,6 +1476,11 @@ fsu_source_handle_message (GstBin *bin,
         GST_MESSAGE_SRC (message) == GST_OBJECT (real_source))
     {
       DEBUG ("Source got an error. setting source to state NULL");
+      g_signal_emit (self, signals[SIGNAL_SOURCE_ERROR], 0);
+      gst_element_post_message (GST_ELEMENT (self),
+          gst_message_new_element (GST_OBJECT (self),
+              gst_structure_new ("fsusource-source-error",
+                  NULL)));
       destroy_source (self);
       gst_message_unref (message);
       gst_object_unref (real_source);
