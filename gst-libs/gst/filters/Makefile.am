@@ -29,7 +29,7 @@ BUILT_SOURCES = \
 	$(nodist_libfsufilters_@GST_MAJORMINOR@_la_SOURCES) \
 	$(nodist_libfsufiltersinclude_HEADERS)
 
-CLEANFILES = $(BUILT_SOURCES) fs-enumtypes.h fs-marshal.list
+CLEANFILES = $(BUILT_SOURCES) fs-enumtypes.h fsu-marshal.list
 
 libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-filter-manager.c \
@@ -48,14 +48,14 @@ libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-videoconverter-filter.c
 
 nodist_libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
-		fs-marshal.c \
-		fs-marshal.h \
+		fsu-marshal.c \
+		fsu-marshal.h \
 		fs-enumtypes.c
 
 
-fs-marshal.list: $(libfsufilters_@GST_MAJORMINOR@_la_SOURCES) Makefile.am
+fsu-marshal.list: $(libfsufilters_@GST_MAJORMINOR@_la_SOURCES) Makefile.am
 	$(AM_V_GEN) ( cd $(srcdir) && \
-	sed -n -e 's/.*_fs_marshal_\([[:upper:][:digit:]]*__[[:upper:][:digit:]_]*\).*/\1/p' \
+	sed -n -e 's/.*_fsu_marshal_\([[:upper:][:digit:]]*__[[:upper:][:digit:]_]*\).*/\1/p' \
 	$(libfsufilters_@GST_MAJORMINOR@_la_SOURCES) ) \
 	| sed -e 's/__/:/' -e 'y/_/,/' | sort -u > $@.tmp
 	@if cmp -s $@.tmp $@; then \
@@ -98,8 +98,8 @@ public_headers = \
 		fsu-videoconverter-filter.h
 
 glib_enum_headers=$(public_headers)
-glib_enum_define=FS
-glib_gen_prefix=_fs
-glib_gen_basename=fs
+glib_enum_define=FSU
+glib_gen_prefix=_fsu
+glib_gen_basename=fsu
 
 include $(top_srcdir)/common-modified/gst-glib-gen.mak
