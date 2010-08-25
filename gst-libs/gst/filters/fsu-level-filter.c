@@ -25,7 +25,6 @@
 #endif
 
 
-#include "fs-marshal.h"
 #include <gst/filters/fsu-level-filter.h>
 #include <gst/filters/fsu-filter-helper.h>
 
@@ -88,7 +87,7 @@ fsu_level_filter_class_init (FsuLevelFilterClass *klass)
       0,
       NULL,
       NULL,
-      _fs_marshal_VOID__DOUBLE,
+      g_cclosure_marshal_VOID__DOUBLE,
       G_TYPE_NONE, 1, G_TYPE_DOUBLE);
 }
 
