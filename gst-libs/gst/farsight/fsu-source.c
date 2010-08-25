@@ -106,6 +106,7 @@ static GstElement *create_source (FsuSource *self);
 enum
 {
   PROP_DISABLED = 1,
+  PROP_SOURCE_ELEMENT,
   PROP_SOURCE_NAME,
   PROP_SOURCE_DEVICE,
   PROP_SOURCE_PIPELINE,
@@ -180,6 +181,11 @@ fsu_source_class_init (FsuSourceClass *klass)
           "Set to TRUE to disable the source",
           FALSE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_SOURCE_ELEMENT,
+      g_param_spec_object ("source-element", "The source element created",
+          "The internal source element created.",
+          GST_TYPE_ELEMENT,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SOURCE_NAME,
       g_param_spec_string ("source-name", "Source element name",
           "The name of the source element to create.",
@@ -224,6 +230,11 @@ fsu_source_get_property (GObject *object,
   {
     case PROP_DISABLED:
       g_value_set_boolean (value, priv->disabled);
+      break;
+    case PROP_SOURCE_ELEMENT:
+      GST_OBJECT_LOCK (GST_OBJECT (self));
+      g_value_set_object (value, priv->source);
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       break;
     case PROP_SOURCE_NAME:
       g_value_set_string (value, priv->source_name);
@@ -383,14 +394,16 @@ check_and_remove_tee (FsuSource *self)
   {
     GstElement *source = priv->source;
 
+    priv->source = NULL;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     gst_bin_remove (GST_BIN (self), source);
     gst_element_set_state (source, GST_STATE_NULL);
     gst_object_unref (source);
 
+    g_object_notify (G_OBJECT (self), "source-element");
+
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    priv->source = NULL;
   }
   priv->current_filtered_source = NULL;
 
@@ -481,6 +494,7 @@ create_source_and_link_tee (FsuSource *self)
     GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->source = gst_object_ref (src);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    g_object_notify (G_OBJECT (self), "source-element");
   }
 
   return;
@@ -1123,13 +1137,17 @@ fsu_source_change_state (GstElement *element,
       {
         GstElement *source = priv->source;
 
+        priv->source = NULL;
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
         DEBUG ("Setting source to state NULL");
         ret = gst_element_set_state (source, GST_STATE_NULL);
         gst_bin_remove (GST_BIN (self), source);
         gst_object_unref (source);
+
+        g_object_notify (G_OBJECT (self), "source-element");
+
         GST_OBJECT_LOCK (GST_OBJECT (self));
-        priv->source = NULL;
       }
       priv->current_filtered_source = NULL;
 
@@ -1169,6 +1187,8 @@ replace_source_thread (gpointer data)
   {
     state_ret = gst_element_set_state (source, GST_STATE_NULL);
     gst_object_unref (source);
+
+    g_object_notify (G_OBJECT (self), "source-element");
 
     create_source_and_link_tee (self);
   }
