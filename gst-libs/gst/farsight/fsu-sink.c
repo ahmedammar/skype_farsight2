@@ -843,7 +843,7 @@ fsu_sink_release_pad (GstElement * element,
           gst_object_get_parent (GST_OBJECT (sink_pad)));
 
       /* Check if we had a queue before the sink */
-      if (!GST_OBJECT_FLAG_SET(sink, GST_ELEMENT_IS_SINK))
+      if (!GST_OBJECT_FLAG_IS_SET(sink, GST_ELEMENT_IS_SINK))
       {
         GstElement *queue;
         GstPad *src_pad = NULL;
