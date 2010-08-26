@@ -129,8 +129,22 @@ fsu_probe_devices (gboolean full)
       if (GST_IS_PROPERTY_PROBE (element)) {
         probe = GST_PROPERTY_PROBE (element);
         if (probe) {
-          arr = gst_property_probe_probe_and_get_values_name (probe,
-              _fsu_get_device_property_name(element));
+          const gchar *property_name = _fsu_get_device_property_name(element);
+          const GList *properties = NULL;
+          const GList *prop_walk;
+
+          arr = NULL;
+          properties = gst_property_probe_get_properties (probe);
+          for (prop_walk = properties; prop_walk; prop_walk = prop_walk->next)
+          {
+            GParamSpec *spec = prop_walk->data;
+            if (!strcmp (property_name, g_param_spec_get_name (spec)))
+            {
+              arr = gst_property_probe_probe_and_get_values (probe, spec);
+              break;
+            }
+          }
+
           if (arr) {
             guint i;
             for (i = 0; i < arr->n_values; ++i) {
