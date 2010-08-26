@@ -855,6 +855,7 @@ fsu_sink_release_pad (GstElement * element,
         sink = GST_ELEMENT (gst_object_get_parent (GST_OBJECT (sink_pad)));
         gst_object_unref (src_pad);
 
+        gst_element_set_state (queue, GST_STATE_NULL);
         gst_bin_remove (GST_BIN (self), queue);
         /* From the get_parent */
         gst_object_unref (queue);
