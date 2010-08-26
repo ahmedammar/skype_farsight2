@@ -849,7 +849,7 @@ fsu_sink_release_pad (GstElement * element,
         GstPad *src_pad = NULL;
 
         queue = sink;
-        src_pad = gst_element_get_static_pad (sink, "src");
+        src_pad = gst_element_get_static_pad (queue, "src");
         gst_object_unref (sink_pad);
         sink_pad = gst_pad_get_peer (src_pad);
         sink = GST_ELEMENT (gst_object_get_parent (GST_OBJECT (sink_pad)));
