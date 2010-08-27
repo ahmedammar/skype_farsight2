@@ -81,6 +81,9 @@
  * </para>
  * <refsect2><title>The "<literal>fsusink-sink-error</literal>"
  *   message</title>
+ * |[
+ * "error"              #GError     The error received from the sink
+ * ]|
  * <para>
  * This message is sent when the sink received an error. This will
  * usually only be sent when the device is no longer available.
@@ -317,6 +320,7 @@ fsu_sink_class_init (FsuSinkClass *klass)
 
   /**
    * FsuSink::sink-error:
+   * @error: The #GError received from the sink
    *
    * This signal is sent when the sink received a Resink error. This will
    * usually only be sent when the device is no longer available. It will
@@ -333,8 +337,9 @@ fsu_sink_class_init (FsuSinkClass *klass)
       G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
       0,
       NULL, NULL,
-      g_cclosure_marshal_VOID__VOID,
-      G_TYPE_NONE, 0);
+      g_cclosure_marshal_VOID__BOXED,
+      G_TYPE_NONE, 1,
+      GST_TYPE_G_ERROR);
 }
 
 static void
@@ -1248,11 +1253,17 @@ fsu_sink_handle_message (GstBin *bin,
   /* TODO: handle_message on the filter manager */
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
   {
-    g_signal_emit (self, signals[SIGNAL_SINK_ERROR], 0);
+    GError *error = NULL;
+
+    gst_message_parse_error (message, &error, NULL);
+
+    g_signal_emit (self, signals[SIGNAL_SINK_ERROR], 0, error);
     gst_element_post_message (GST_ELEMENT (self),
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusink-sink-error",
+                "error", GST_TYPE_G_ERROR, error,
                 NULL)));
+    g_error_free (error);
     gst_message_unref (message);
     return;
   }
