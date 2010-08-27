@@ -717,13 +717,14 @@ create_source_and_link_tee (FsuSource *self)
   gst_bin_remove (GST_BIN (self), src);
  error_destroy_source:
   GST_OBJECT_LOCK (GST_OBJECT (self));
+  src = priv->source;
   priv->source = NULL;
   g_free (priv->last_working_source);
   priv->last_working_source = NULL;
   g_free (priv->last_working_device);
   priv->last_working_device = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
-  gst_object_unref (priv->source);
+  gst_object_unref (src);
 
   g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
   gst_element_post_message (GST_ELEMENT (self),
