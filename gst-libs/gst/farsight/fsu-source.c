@@ -1545,8 +1545,10 @@ fsu_source_handle_message (GstBin *bin,
       destroy_source (self);
       gst_message_unref (message);
       gst_object_unref (real_source);
+      g_error_free (error);
       return;
     }
+    g_error_free (error);
     gst_object_unref (real_source);
   }
  done:
