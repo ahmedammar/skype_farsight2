@@ -1245,12 +1245,11 @@ fsu_sink_handle_message (GstBin *bin,
     GstMessage *message)
 {
   FsuSink *self = FSU_SINK (bin);
-  //FsuSinkPrivate *priv = self->priv;
+  FsuSinkPrivate *priv = self->priv;
 
   DEBUG ("Got message of type %s from %s", GST_MESSAGE_TYPE_NAME(message),
       GST_ELEMENT_NAME (GST_MESSAGE_SRC (message)));
 
-  /* TODO: handle_message on the filter manager */
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
   {
     GError *error = NULL;
@@ -1264,8 +1263,9 @@ fsu_sink_handle_message (GstBin *bin,
                 "error", GST_TYPE_G_ERROR, error,
                 NULL)));
     g_error_free (error);
-    gst_message_unref (message);
-    return;
   }
-  GST_BIN_CLASS (parent_class)->handle_message (bin, message);
+  if (fsu_filter_manager_handle_message (priv->filters, message))
+    gst_message_unref (message);
+  else
+    GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }

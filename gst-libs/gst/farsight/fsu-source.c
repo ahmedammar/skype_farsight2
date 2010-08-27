@@ -1517,7 +1517,6 @@ fsu_source_handle_message (GstBin *bin,
     return;
   }
 
-  /* TODO: handle_message on the filter manager */
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
   {
     GError *error;
@@ -1558,5 +1557,8 @@ fsu_source_handle_message (GstBin *bin,
     gst_object_unref (real_source);
   }
  done:
-  GST_BIN_CLASS (parent_class)->handle_message (bin, message);
+  if (fsu_filter_manager_handle_message (priv->filters, message))
+    gst_message_unref (message);
+  else
+    GST_BIN_CLASS (parent_class)->handle_message (bin, message);
 }
