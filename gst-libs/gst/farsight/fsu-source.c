@@ -732,6 +732,7 @@ create_source_and_link_tee (FsuSource *self)
   g_free (priv->last_working_device);
   priv->last_working_device = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  gst_element_set_state (src, GST_STATE_NULL);
   gst_object_unref (src);
 
   g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
