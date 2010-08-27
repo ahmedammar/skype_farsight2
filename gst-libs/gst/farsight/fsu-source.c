@@ -191,6 +191,9 @@ struct _FsuSourcePrivate
   GstElement *source;
   /* Source when being removed, to ignore its messages */
   GstElement *ignore_source;
+  /* Last known working configuration */
+  gchar *last_working_source;
+  gchar *last_working_device;
   /* The src tee coming out of the source element */
   GstElement *tee;
   /* The fakesink linked to the tee to prevent not-linked issues */
@@ -465,15 +468,18 @@ fsu_source_dispose (GObject *object)
   g_list_free (priv->filtered_sources);
   priv->filtered_sources = NULL;
 
-  if (priv->source_name)
-    g_free (priv->source_name);
+  g_free (priv->source_name);
   priv->source_name = NULL;
-  if (priv->source_device)
-    g_free (priv->source_device);
+  g_free (priv->source_device);
   priv->source_device = NULL;
-  if (priv->source_pipeline)
-    g_free (priv->source_pipeline);
+  g_free (priv->source_pipeline);
   priv->source_pipeline = NULL;
+
+  g_free (priv->last_working_source);
+  priv->last_working_source = NULL;
+  g_free (priv->last_working_device);
+  priv->last_working_device = NULL;
+
 
   if (priv->source)
     gst_object_unref (priv->source);
@@ -713,6 +719,10 @@ create_source_and_link_tee (FsuSource *self)
  error_destroy_source:
   GST_OBJECT_LOCK (GST_OBJECT (self));
   priv->source = NULL;
+  g_free (priv->last_working_source);
+  priv->last_working_source = NULL;
+  g_free (priv->last_working_device);
+  priv->last_working_device = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
   gst_object_unref (priv->source);
 
@@ -1097,6 +1107,7 @@ create_source (FsuSource *self)
   gchar *source_pipeline = NULL;
   gchar *source_name = NULL;
   gchar *source_device = NULL;
+  gboolean using_last_working = FALSE;
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
 
@@ -1112,6 +1123,15 @@ create_source (FsuSource *self)
   source_pipeline = g_strdup (priv->source_pipeline);
   source_name = g_strdup (priv->source_name);
   source_device = g_strdup (priv->source_device);
+
+  if (!source_pipeline && !source_name)
+  {
+    source_name = g_strdup (priv->last_working_source);
+    g_free (source_device);
+    source_device = g_strdup (priv->last_working_device);
+    using_last_working = TRUE;
+  }
+
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   DEBUG ("Creating source : %s -- %s (%s)",
@@ -1119,6 +1139,7 @@ create_source (FsuSource *self)
       source_name ? source_name : "(null)",
       source_device ? source_device : "(null)");
 
+ retry:
   if (source_pipeline)
   {
     GstBin *bin = NULL;
@@ -1271,6 +1292,17 @@ create_source (FsuSource *self)
     }
   }
 
+ error:
+  if (!src && using_last_working)
+  {
+    g_free (source_name);
+    source_name = NULL;
+    g_free (source_device);
+    source_device = NULL;
+    using_last_working = FALSE;
+    goto retry;
+  }
+
   if (src)
   {
     gchar *device = NULL;
@@ -1315,6 +1347,10 @@ create_source (FsuSource *self)
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
     priv->source = gst_object_ref (src);
+    g_free (priv->last_working_source);
+    priv->last_working_source = g_strdup (element_name);
+    g_free (priv->last_working_device);
+    priv->last_working_device = g_strdup (device);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     g_signal_emit (self, signals[SIGNAL_SOURCE_CHOSEN], 0, chosen_src,
@@ -1336,6 +1372,13 @@ create_source (FsuSource *self)
   }
   else
   {
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    g_free (priv->last_working_source);
+    priv->last_working_source = NULL;
+    g_free (priv->last_working_device);
+    priv->last_working_device = NULL;
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
     g_signal_emit (self, signals[SIGNAL_NO_SOURCES_AVAILABLE], 0);
     gst_element_post_message (GST_ELEMENT (self),
         gst_message_new_element (GST_OBJECT (self),
@@ -1343,7 +1386,6 @@ create_source (FsuSource *self)
                 NULL)));
   }
 
- error:
   g_free (source_pipeline);
   g_free (source_name);
   g_free (source_device);
@@ -1390,6 +1432,10 @@ fsu_source_change_state (GstElement *element,
         GstElement *source = priv->source;
 
         priv->source = NULL;
+        g_free (priv->last_working_source);
+        priv->last_working_source = NULL;
+        g_free (priv->last_working_device);
+        priv->last_working_device = NULL;
         priv->ignore_source = find_source (source);
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
@@ -1480,6 +1526,10 @@ destroy_source (FsuSource *self)
     GstElement *source = priv->source;
 
     priv->ignore_source = find_source (source);
+    g_free (priv->last_working_source);
+    priv->last_working_source = NULL;
+    g_free (priv->last_working_device);
+    priv->last_working_device = NULL;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     gst_bin_remove (GST_BIN (self), source);
