@@ -186,6 +186,8 @@ struct _FsuSourcePrivate
 
   /* The source element inside the bin */
   GstElement *source;
+  /* Source when being removed, to ignore its messages */
+  GstElement *ignore_source;
   /* The src tee coming out of the source element */
   GstElement *tee;
   /* The fakesink linked to the tee to prevent not-linked issues */
@@ -489,6 +491,52 @@ fsu_source_dispose (GObject *object)
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
+static GstElement *
+find_source (GstElement *src)
+{
+
+
+  if (GST_IS_BIN (src))
+  {
+    GstElement *source = NULL;
+    GstIterator *it = gst_bin_iterate_sources (GST_BIN(src));
+    gboolean done = FALSE;
+    gpointer item = NULL;
+
+    while (!done)
+    {
+      switch (gst_iterator_next (it, &item))
+      {
+        case GST_ITERATOR_OK:
+          source = GST_ELEMENT (item);
+          done = TRUE;
+          break;
+        case GST_ITERATOR_RESYNC:
+          gst_iterator_resync (it);
+          break;
+        case GST_ITERATOR_ERROR:
+          done = TRUE;
+          break;
+        case GST_ITERATOR_DONE:
+          done = TRUE;
+          break;
+      }
+    }
+    gst_iterator_free (it);
+
+    if (!source)
+      return gst_object_ref (src);
+
+    src = find_source (source);
+    gst_object_unref (source);
+    return src;
+  }
+  else
+  {
+    return gst_object_ref (src);
+  }
+}
+
 static void
 check_and_remove_tee (FsuSource *self)
 {
@@ -539,6 +587,7 @@ check_and_remove_tee (FsuSource *self)
     GstElement *source = priv->source;
 
     priv->source = NULL;
+    priv->ignore_source = find_source (source);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     gst_bin_remove (GST_BIN (self), source);
@@ -553,6 +602,8 @@ check_and_remove_tee (FsuSource *self)
     g_object_notify (G_OBJECT (self), "source-element");
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
+    gst_object_unref (priv->ignore_source);
+    priv->ignore_source = NULL;
   }
   priv->current_filtered_source = NULL;
 
@@ -649,6 +700,9 @@ create_source_and_link_tee (FsuSource *self)
   gst_object_unref (tee_pad);
  error_pad:
   gst_object_unref (src_pad);
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  priv->ignore_source = find_source (src);
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
   gst_bin_remove (GST_BIN (self), src);
   check_and_remove_tee (self);
  error_destroy_source:
@@ -662,6 +716,10 @@ create_source_and_link_tee (FsuSource *self)
           gst_structure_new ("fsusource-source-destroyed",
               NULL)));
   g_object_notify (G_OBJECT (self), "source-element");
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  gst_object_unref (priv->ignore_source);
+  priv->ignore_source = NULL;
+  GST_OBJECT_LOCK (GST_OBJECT (self));
 }
 
 static void
@@ -863,52 +921,6 @@ fsu_source_release_pad (GstElement * element,
   gst_element_remove_pad (element, pad);
 
   check_and_remove_tee (self);
-}
-
-static GstElement *
-find_source (GstElement *src)
-{
-
-
-  if (GST_IS_BIN (src))
-  {
-    GstElement *source = NULL;
-    GstIterator *it = gst_bin_iterate_sources (GST_BIN(src));
-    gboolean done = FALSE;
-    gpointer item = NULL;
-
-    while (!done)
-    {
-      switch (gst_iterator_next (it, &item))
-      {
-        case GST_ITERATOR_OK:
-          source = GST_ELEMENT (item);
-          done = TRUE;
-          break;
-        case GST_ITERATOR_RESYNC:
-          gst_iterator_resync (it);
-          break;
-        case GST_ITERATOR_ERROR:
-          done = TRUE;
-          break;
-        case GST_ITERATOR_DONE:
-          done = TRUE;
-          break;
-      }
-    }
-    gst_iterator_free (it);
-
-    if (!source)
-      return gst_object_ref (src);
-
-    src = find_source (source);
-    gst_object_unref (source);
-    return src;
-  }
-  else
-  {
-    return gst_object_ref (src);
-  }
 }
 
 
@@ -1368,6 +1380,7 @@ fsu_source_change_state (GstElement *element,
         GstElement *source = priv->source;
 
         priv->source = NULL;
+        priv->ignore_source = find_source (source);
         GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
         DEBUG ("Setting source to state NULL");
@@ -1383,6 +1396,8 @@ fsu_source_change_state (GstElement *element,
         g_object_notify (G_OBJECT (self), "source-element");
 
         GST_OBJECT_LOCK (GST_OBJECT (self));
+        gst_object_unref (priv->ignore_source);
+        priv->ignore_source = NULL;
       }
       priv->current_filtered_source = NULL;
 
@@ -1434,6 +1449,8 @@ replace_source_thread (gpointer data)
   }
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
+  gst_object_unref (priv->ignore_source);
+  priv->ignore_source = NULL;
   priv->thread = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
   gst_object_unref (self);
@@ -1451,6 +1468,8 @@ destroy_source (FsuSource *self)
   if (priv->source && !priv->thread)
   {
     GstElement *source = priv->source;
+
+    priv->ignore_source = find_source (source);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     gst_bin_remove (GST_BIN (self), source);
@@ -1475,9 +1494,23 @@ fsu_source_handle_message (GstBin *bin,
 {
   FsuSource *self = FSU_SOURCE (bin);
   FsuSourcePrivate *priv = self->priv;
+  GstElement *ignore_source = NULL;
 
   DEBUG ("Got message of type %s from %s", GST_MESSAGE_TYPE_NAME(message),
       GST_ELEMENT_NAME (GST_MESSAGE_SRC (message)));
+
+
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  ignore_source = priv->ignore_source;
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+  if (GST_MESSAGE_SRC (message) == GST_OBJECT (ignore_source))
+  {
+    DEBUG ("Message received from currently being destroyed source. Ignoring");
+    /* Ignoring messages */
+    gst_message_unref (message);
+    return;
+  }
 
   /* TODO: handle_message on the filter manager */
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
