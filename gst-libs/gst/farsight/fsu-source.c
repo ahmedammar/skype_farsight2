@@ -715,16 +715,21 @@ create_source_and_link_tee (FsuSource *self)
   priv->source = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
   gst_object_unref (priv->source);
+
   g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
   gst_element_post_message (GST_ELEMENT (self),
       gst_message_new_element (GST_OBJECT (self),
           gst_structure_new ("fsusource-source-destroyed",
               NULL)));
   g_object_notify (G_OBJECT (self), "source-element");
+
   GST_OBJECT_LOCK (GST_OBJECT (self));
-  gst_object_unref (priv->ignore_source);
-  priv->ignore_source = NULL;
-  GST_OBJECT_LOCK (GST_OBJECT (self));
+  if (priv->ignore_source)
+  {
+    gst_object_unref (priv->ignore_source);
+    priv->ignore_source = NULL;
+  }
+  GST_OBJECT_UNLOCK (GST_OBJECT (self));
 }
 
 static void
