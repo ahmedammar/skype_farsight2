@@ -167,6 +167,7 @@ enum
   PROP_SINK_NAME = 1,
   PROP_SINK_DEVICE,
   PROP_SINK_PIPELINE,
+  PROP_SINK_ELEMENT,
   PROP_SYNC,
   PROP_ASYNC,
   LAST_PROPERTY
@@ -218,6 +219,12 @@ fsu_sink_class_init (FsuSinkClass *klass)
   gstelement_class->request_new_pad =
       GST_DEBUG_FUNCPTR (fsu_sink_request_new_pad);
   gstelement_class->release_pad = GST_DEBUG_FUNCPTR (fsu_sink_release_pad);
+
+  g_object_class_install_property (gobject_class, PROP_SINK_ELEMENT,
+      g_param_spec_object ("sink-element", "The sink element created",
+          "The internal sink element created (first one in case of multisinks)",
+          GST_TYPE_ELEMENT,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_SINK_NAME,
       g_param_spec_string ("sink-name", "Sink element name",
@@ -355,6 +362,27 @@ fsu_sink_get_property (GObject *object,
 
   switch (property_id)
   {
+    case PROP_SINK_ELEMENT:
+      {
+        GstElement *sink = NULL;
+        GList *walk;
+
+        GST_OBJECT_LOCK (GST_OBJECT (self));
+        for (walk = priv->sinks; walk; walk = walk->next)
+        {
+          GstElement *current = walk->data;
+          GstElementFactory *factory = gst_element_get_factory (current);
+
+          if (g_strcmp0 (GST_PLUGIN_FEATURE_NAME (factory), "fakesink"))
+          {
+            sink = current;
+            break;
+          }
+        }
+        g_value_set_object (value, sink);
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
+      }
+      break;
     case PROP_SINK_NAME:
       g_value_set_string (value, priv->sink_name);
       break;
@@ -669,6 +697,7 @@ check_and_remove_mixer (FsuSink *self)
           gst_message_new_element (GST_OBJECT (self),
               gst_structure_new ("fsusink-sink-destroyed",
                   NULL)));
+      g_object_notify (G_OBJECT (self), "sink-element");
     }
     else
     {
@@ -991,6 +1020,8 @@ fsu_sink_request_new_pad (GstElement * element,
       g_free (device_name);
       gst_object_unref (chosen_sink);
     }
+
+    g_object_notify (G_OBJECT (self), "sink-element");
   }
 
   if (mixer)
@@ -1099,6 +1130,7 @@ fsu_sink_release_pad (GstElement * element,
           gst_message_new_element (GST_OBJECT (self),
               gst_structure_new ("fsusink-sink-destroyed",
                   NULL)));
+      g_object_notify (G_OBJECT (self), "sink-element");
     }
   }
 
