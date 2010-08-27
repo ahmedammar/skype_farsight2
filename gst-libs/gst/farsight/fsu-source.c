@@ -154,6 +154,9 @@ static GstPad *fsu_source_request_new_pad (GstElement * element,
 static void fsu_source_release_pad (GstElement * element,
     GstPad * pad);
 static GstElement *create_source (FsuSource *self);
+static void destroy_source (FsuSource *self);
+static void destroy_source_locked (FsuSource *self);
+static void create_source_and_link_tee (FsuSource *self);
 
 /* signals  */
 enum {
@@ -1525,12 +1528,11 @@ replace_source_thread (gpointer data)
 }
 
 static void
-destroy_source (FsuSource *self)
+destroy_source_locked (FsuSource *self)
 {
   FsuSourcePrivate *priv = self->priv;
   GError *error = NULL;
 
-  GST_OBJECT_LOCK (GST_OBJECT (self));
   if (priv->source && !priv->thread)
   {
     GstElement *source = priv->source;
@@ -1555,8 +1557,16 @@ destroy_source (FsuSource *self)
     }
     g_clear_error (&error);
   }
+}
+
+static void
+destroy_source (FsuSource *self)
+{
+  GST_OBJECT_LOCK (GST_OBJECT (self));
+  destroy_source_locked (self);
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 }
+
 
 static void
 fsu_source_handle_message (GstBin *bin,
@@ -1605,7 +1615,7 @@ fsu_source_handle_message (GstBin *bin,
     if (error->domain == GST_RESOURCE_ERROR &&
         GST_MESSAGE_SRC (message) == GST_OBJECT (real_source))
     {
-      DEBUG ("Source got an error. setting source to state NULL");
+      DEBUG ("Source got an error. Destroying source");
       g_signal_emit (self, signals[SIGNAL_SOURCE_ERROR], 0, error);
       gst_element_post_message (GST_ELEMENT (self),
           gst_message_new_element (GST_OBJECT (self),
