@@ -39,6 +39,7 @@
 #include <gst/farsight/fsu-session-priv.h>
 #include <gst/farsight/fsu-stream-priv.h>
 #include <gst/filters/fsu-single-filter-manager.h>
+#include "fs-marshal.h"
 
 G_DEFINE_TYPE (FsuSession, fsu_session, G_TYPE_OBJECT);
 
@@ -56,6 +57,17 @@ static void fsu_session_set_property (GObject *object,
 
 static void remove_weakref (gpointer data,
     gpointer user_data);
+
+/* signals  */
+enum {
+  SIGNAL_NO_SOURCES_AVAILABLE,
+  SIGNAL_SOURCE_CHOSEN,
+  SIGNAL_SOURCE_DESTROYED,
+  SIGNAL_SOURCE_ERROR,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
 
 /* properties */
 enum
@@ -116,6 +128,68 @@ fsu_session_class_init (FsuSessionClass *klass)
           "The filter manager applied on the session",
           FSU_TYPE_FILTER_MANAGER,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FsuSession::no-sources-available:
+   *
+   * This signal is sent when the source cannot find any suitable source
+   * device for capture.
+   */
+  signals[SIGNAL_NO_SOURCES_AVAILABLE] = g_signal_new ("no-sources-available",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuSession::source-chosen:
+   * @source_element: The #GstElement of the chosen source
+   * @source_name: The name of the chosen element
+   * @source_device: The chosen device
+   * @source_device_name: The chosen user-friendly device name
+   *
+   * This signal is sent when the source has been chosen and correctly opened
+   * and ready for capture.
+   */
+  signals[SIGNAL_SOURCE_CHOSEN] = g_signal_new ("source-chosen",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fs_marshal_VOID__OBJECT_STRING_STRING_STRING,
+      G_TYPE_NONE, 3,
+      GST_TYPE_ELEMENT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+  /**
+   * FsuSession::source-destroyed:
+   *
+   * This signal is sent when the source has been destroyed.
+   */
+  signals[SIGNAL_SOURCE_DESTROYED] = g_signal_new ("source-destroyed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuSession::source-error:
+   * @error: The #GError received from the source
+   *
+   * This signal is sent when the source received a Resource error. This will
+   * usually only be sent when the device is no longer available.
+   */
+  signals[SIGNAL_SOURCE_ERROR] = g_signal_new ("source-error",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__BOXED,
+      G_TYPE_NONE, 1,
+      GST_TYPE_G_ERROR);
 }
 
 static void
@@ -481,6 +555,55 @@ _fsu_session_handle_message (FsuSession *self,
   GList *i;
   gboolean drop = FALSE;
   gint list_id = 0;
+  const GstStructure *s = gst_message_get_structure (message);
+
+  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ELEMENT)
+  {
+    if (gst_structure_has_name (s, "fsusource-no-sources-available"))
+    {
+      g_signal_emit (self, signals[SIGNAL_NO_SOURCES_AVAILABLE], 0);
+      drop = TRUE;
+    }
+    else if (gst_structure_has_name (s, "fsusource-source-chosen"))
+    {
+      const GValue *value;
+      const GstElement *element = NULL;
+      const gchar *name = NULL;
+      const gchar *device = NULL;
+      const gchar *device_name = NULL;
+
+      value = gst_structure_get_value (s, "source");
+      element = g_value_get_object (value);
+      value = gst_structure_get_value (s, "source-name");
+      name = g_value_get_string (value);
+      value = gst_structure_get_value (s, "source-device");
+      device = g_value_get_string (value);
+      value = gst_structure_get_value (s, "source-device-name");
+      device_name = g_value_get_string (value);
+
+      g_signal_emit (self, signals[SIGNAL_SOURCE_CHOSEN], 0, element,
+          name, device, device_name);
+      drop = TRUE;
+    }
+    else if (gst_structure_has_name (s, "fsusource-source-destroyed"))
+    {
+      g_signal_emit (self, signals[SIGNAL_SOURCE_DESTROYED], 0);
+      drop = TRUE;
+    }
+    else if (gst_structure_has_name (s, "fsusource-source-error"))
+    {
+      const GValue *value;
+      GError *error = NULL;
+
+      value = gst_structure_get_value (s, "error");
+      error = g_value_get_boxed (value);
+      g_signal_emit (self, signals[SIGNAL_SOURCE_ERROR], 0, error);
+      drop = TRUE;
+    }
+  }
+
+  if (drop)
+    return drop;
 
   drop = fsu_filter_manager_handle_message (priv->filters, message);
 
