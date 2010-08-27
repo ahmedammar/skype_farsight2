@@ -61,6 +61,8 @@
  * <para>
  * This message is sent when the source has been chosen and correctly opened
  * and ready for capture.
+ * Note that source-name, source-device and source-device-name could be #NULL if
+ * the source was created with the #FsuSource:source-pipeline property set.
  * See also: #FsuSource::source-chosen signal.
  * </para>
  * </refsect2>
