@@ -55,7 +55,7 @@ compare_ranks (GstPluginFeature * f1,
   rname1 = gst_plugin_feature_get_name (f1);
   rname2 = gst_plugin_feature_get_name (f2);
 
-  diff = strcmp (rname2, rname1);
+  diff = g_strcmp0 (rname2, rname1);
 
   return diff;
 }
@@ -157,8 +157,8 @@ _fsu_get_device_property_name (GstElement *element)
   else if (_fsu_g_object_has_property (G_OBJECT (element), "device") &&
       _fsu_g_object_has_property (G_OBJECT (element), "device-name"))
   {
-    if (!strcmp (GST_ELEMENT_NAME (element), "dshowaudiosrc") ||
-        !strcmp (GST_ELEMENT_NAME (element), "dshowvideosrc"))
+    if (!g_strcmp0 (GST_ELEMENT_NAME (element), "dshowaudiosrc") ||
+        !g_strcmp0 (GST_ELEMENT_NAME (element), "dshowvideosrc"))
       return "device-name";
     else
       return "device";

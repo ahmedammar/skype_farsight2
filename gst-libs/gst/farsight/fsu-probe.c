@@ -101,18 +101,18 @@ fsu_probe_devices (gboolean full)
       FsuProbeDeviceElement *item = NULL;
 
       if (!full &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "pulsesrc") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "alsasrc") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "dshowaudiosrc") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "directsoundsrc")  &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "osxaudiosrc")  &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "pulsesink") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "alsasink") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "osxaudiosink") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "v4l2src") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "dshowvideosrc") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "ksvideosrc") &&
-          strcmp (GST_PLUGIN_FEATURE_NAME(factory), "xvimagesink"))
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "pulsesrc") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "alsasrc") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "dshowaudiosrc") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "directsoundsrc")  &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "osxaudiosrc")  &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "pulsesink") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "alsasink") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "osxaudiosink") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "v4l2src") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "dshowvideosrc") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "ksvideosrc") &&
+          g_strcmp0 (GST_PLUGIN_FEATURE_NAME(factory), "xvimagesink"))
         continue;
 
       element = gst_element_factory_create (factory, NULL);
@@ -138,7 +138,7 @@ fsu_probe_devices (gboolean full)
           for (prop_walk = properties; prop_walk; prop_walk = prop_walk->next)
           {
             GParamSpec *spec = prop_walk->data;
-            if (!strcmp (property_name, g_param_spec_get_name (spec)))
+            if (!g_strcmp0 (property_name, g_param_spec_get_name (spec)))
             {
               arr = gst_property_probe_probe_and_get_values (probe, spec);
               break;

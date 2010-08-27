@@ -947,7 +947,7 @@ create_sink (FsuSink *self)
     goto done;
   }
   else if (sink_name &&
-      (!auto_sink_name || strcmp (sink_name, auto_sink_name)))
+      (!auto_sink_name || g_strcmp0 (sink_name, auto_sink_name)))
   {
     sink = gst_element_factory_make (sink_name, NULL);
 

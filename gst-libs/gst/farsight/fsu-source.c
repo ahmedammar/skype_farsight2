@@ -946,7 +946,7 @@ test_source (FsuSource *self,
 
   for (;blacklist && *blacklist; blacklist++)
   {
-    if (!strcmp (name, *blacklist))
+    if (!g_strcmp0 (name, *blacklist))
     {
       GST_OBJECT_LOCK (GST_OBJECT (self));
       priv->probe_idx = -1;
