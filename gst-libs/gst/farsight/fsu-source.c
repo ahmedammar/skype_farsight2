@@ -1259,10 +1259,22 @@ create_source (FsuSource *self)
       factory = gst_element_get_factory (chosen_src);
       element_name = GST_PLUGIN_FEATURE_NAME(factory);
 
-      g_object_get (chosen_src,
-          _fsu_get_device_property_name(chosen_src), &device,
-          "device-name", &device_name,
-          NULL);
+      if (_fsu_get_device_property_name(chosen_src))
+      {
+        g_object_get (chosen_src,
+            _fsu_get_device_property_name(chosen_src), &device,
+            NULL);
+        if (_fsu_g_object_has_property (G_OBJECT (chosen_src), "device-name"))
+        {
+          g_object_get (chosen_src,
+              "device-name", &device_name,
+              NULL);
+        }
+        else
+        {
+          device_name = g_strdup (device);
+        }
+      }
     }
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
