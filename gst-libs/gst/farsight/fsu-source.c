@@ -715,7 +715,6 @@ create_source_and_link_tee (FsuSource *self)
   priv->ignore_source = find_source (src);
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
   gst_bin_remove (GST_BIN (self), src);
-  check_and_remove_tee (self);
  error_destroy_source:
   GST_OBJECT_LOCK (GST_OBJECT (self));
   priv->source = NULL;
@@ -740,6 +739,7 @@ create_source_and_link_tee (FsuSource *self)
     priv->ignore_source = NULL;
   }
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  check_and_remove_tee (self);
 }
 
 static void
