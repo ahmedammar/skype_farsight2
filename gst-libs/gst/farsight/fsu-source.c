@@ -395,6 +395,21 @@ reset_source_search (FsuSource *self)
 }
 
 static void
+reset_and_restart_source_unlock (FsuSource *self)
+{
+  if (self->priv->source)
+  {
+    destroy_source_locked (self);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  }
+  else if (self->priv->tee && GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
+  {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    create_source_and_link_tee (self);
+  }
+}
+
+static void
 fsu_source_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -437,25 +452,31 @@ fsu_source_set_property (GObject *object,
   FsuSource *self = FSU_SOURCE (object);
   FsuSourcePrivate *priv = self->priv;
 
+  GST_OBJECT_LOCK (GST_OBJECT (self));
   switch (property_id)
   {
     case PROP_DISABLED:
       priv->disabled = g_value_get_boolean (value);
+      reset_and_restart_source_unlock (self);
       break;
     case PROP_SOURCE_NAME:
       g_free (priv->source_name);
       priv->source_name = g_value_dup_string (value);
+      reset_and_restart_source_unlock (self);
       break;
     case PROP_SOURCE_DEVICE:
       g_free (priv->source_device);
       priv->source_device = g_value_dup_string (value);
+      reset_and_restart_source_unlock (self);
       break;
     case PROP_SOURCE_PIPELINE:
       g_free (priv->source_pipeline);
       priv->source_pipeline = g_value_dup_string (value);
+      reset_and_restart_source_unlock (self);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       break;
   }
 }
