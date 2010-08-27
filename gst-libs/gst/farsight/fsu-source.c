@@ -40,7 +40,7 @@
  * The sources will communicate asynchronous events to the user through
  * #GstMessage of type #GST_MESSAGE_ELEMENT sent over the #GstBus.
  * </para>
- * <refsect2><title>The "<literal>fsusource-no-available-sources</literal>"
+ * <refsect2><title>The "<literal>fsusource-no-sources-available</literal>"
  *   message</title>
  * <para>
  * This message is sent on the bus when the source cannot find any suitable
