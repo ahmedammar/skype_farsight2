@@ -39,6 +39,7 @@
 #include <gst/farsight/fsu-stream-priv.h>
 #include <gst/farsight/fsu-session-priv.h>
 #include <gst/filters/fsu-multi-filter-manager.h>
+#include "fs-marshal.h"
 
 G_DEFINE_TYPE (FsuStream, fsu_stream, G_TYPE_OBJECT);
 
@@ -58,6 +59,18 @@ static void src_pad_added (FsStream *self,
     GstPad *pad,
     FsCodec *codec,
     gpointer user_data);
+
+/* signals  */
+enum {
+  SIGNAL_NO_SINKS_AVAILABLE,
+  SIGNAL_SINK_CHOSEN,
+  SIGNAL_SINK_DESTROYED,
+  SIGNAL_SINK_ERROR,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
+
 
 /* properties */
 enum
@@ -125,6 +138,70 @@ fsu_stream_class_init (FsuStreamClass *klass)
           "The filter manager applied on the stream",
           FSU_TYPE_FILTER_MANAGER,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FsuStream::no-sinks-available:
+   *
+   * This signal is sent when the sink cannot find any suitable sink
+   * device for capture.
+   */
+  signals[SIGNAL_NO_SINKS_AVAILABLE] = g_signal_new ("no-sinks-available",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuStream::sink-chosen:
+   * @sink_element: The #GstElement of the chosen sink
+   * @sink_name: The name of the chosen element
+   * @sink_device: The chosen device
+   * @sink_device_name: The chosen user-friendly device name
+   *
+   * This signal is sent when the sink has been chosen and correctly opened
+   * and ready for capture.
+   */
+  signals[SIGNAL_SINK_CHOSEN] = g_signal_new ("sink-chosen",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fs_marshal_VOID__OBJECT_STRING_STRING_STRING,
+      G_TYPE_NONE, 3,
+      GST_TYPE_ELEMENT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+  /**
+   * FsuStream::sink-destroyed:
+   *
+   * This signal is sent when the sink has been destroyed.
+   */
+  signals[SIGNAL_SINK_DESTROYED] = g_signal_new ("sink-destroyed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuStream::sink-error:
+   * @error: The #GError received from the sink
+   *
+   * This signal is sent when the sink received a Resink error. This will
+   * usually only be sent when the device is no longer available. It will
+   * shortly be followed by a #FsuSink::sink-destroyed signal then either
+   * a #FsuSink::sink-chosen or #FsuSink::no-sinks-available signal.
+   */
+  signals[SIGNAL_SINK_ERROR] = g_signal_new ("sink-error",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__BOXED,
+      G_TYPE_NONE, 1,
+      GST_TYPE_G_ERROR);
 }
 
 
@@ -636,5 +713,56 @@ gboolean
 _fsu_stream_handle_message (FsuStream *self,
     GstMessage *message)
 {
-  return fsu_filter_manager_handle_message (self->priv->filters, message);
+  gboolean drop = FALSE;
+  const GstStructure *s = gst_message_get_structure (message);
+
+  if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ELEMENT)
+  {
+    if (gst_structure_has_name (s, "fsusink-no-sinks-available"))
+    {
+      g_signal_emit (self, signals[SIGNAL_NO_SINKS_AVAILABLE], 0);
+      drop = TRUE;
+    }
+    else if (gst_structure_has_name (s, "fsusink-sink-chosen"))
+    {
+      const GValue *value;
+      const GstElement *element = NULL;
+      const gchar *name = NULL;
+      const gchar *device = NULL;
+      const gchar *device_name = NULL;
+
+      value = gst_structure_get_value (s, "sink");
+      element = g_value_get_object (value);
+      value = gst_structure_get_value (s, "sink-name");
+      name = g_value_get_string (value);
+      value = gst_structure_get_value (s, "sink-device");
+      device = g_value_get_string (value);
+      value = gst_structure_get_value (s, "sink-device-name");
+      device_name = g_value_get_string (value);
+
+      g_signal_emit (self, signals[SIGNAL_SINK_CHOSEN], 0, element,
+          name, device, device_name);
+      drop = TRUE;
+    }
+    else if (gst_structure_has_name (s, "fsusink-sink-destroyed"))
+    {
+      g_signal_emit (self, signals[SIGNAL_SINK_DESTROYED], 0);
+      drop = TRUE;
+    }
+    else if (gst_structure_has_name (s, "fsusink-sink-error"))
+    {
+      const GValue *value;
+      GError *error = NULL;
+
+      value = gst_structure_get_value (s, "error");
+      error = g_value_get_boxed (value);
+      g_signal_emit (self, signals[SIGNAL_SINK_ERROR], 0, error);
+      drop = TRUE;
+    }
+  }
+
+  if (drop)
+    return drop;
+  else
+    return fsu_filter_manager_handle_message (self->priv->filters, message);
 }
