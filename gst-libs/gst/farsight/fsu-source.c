@@ -993,8 +993,22 @@ test_source (FsuSource *self,
     probe = GST_PROPERTY_PROBE (element);
     if (probe && _fsu_get_device_property_name(element))
     {
-      arr = gst_property_probe_probe_and_get_values_name (probe,
-          _fsu_get_device_property_name(element));
+      const gchar *property_name = _fsu_get_device_property_name(element);
+      const GList *properties = NULL;
+      const GList *prop_walk;
+
+      arr = NULL;
+      properties = gst_property_probe_get_properties (probe);
+      for (prop_walk = properties; prop_walk; prop_walk = prop_walk->next)
+      {
+        GParamSpec *spec = prop_walk->data;
+        if (!g_strcmp0 (property_name, g_param_spec_get_name (spec)))
+        {
+          arr = gst_property_probe_probe_and_get_values (probe, spec);
+          break;
+        }
+      }
+
       if (arr)
       {
         guint i;
