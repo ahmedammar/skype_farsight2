@@ -1510,7 +1510,6 @@ replace_source_thread (gpointer data)
                 NULL)));
     g_object_notify (G_OBJECT (self), "source-element");
 
-    create_source_and_link_tee (self);
   }
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
@@ -1518,6 +1517,8 @@ replace_source_thread (gpointer data)
   priv->ignore_source = NULL;
   priv->thread = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  if (source)
+    create_source_and_link_tee (self);
   gst_object_unref (self);
 
   return NULL;
