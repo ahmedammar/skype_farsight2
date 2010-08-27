@@ -36,6 +36,56 @@
  * <para>
      Current available sinks as 'fsuaudiosink' and 'fsuvideosink'.
  * </para>
+ *
+ * The sinks will communicate asynchronous events to the user through
+ * #GstMessage of type #GST_MESSAGE_ELEMENT sent over the #GstBus.
+ * </para>
+ * <refsect2><title>The "<literal>fsusink-no-sinks-available</literal>"
+ *   message</title>
+ * <para>
+ * This message is sent on the bus when the sink cannot find any suitable
+ * sink device for playback.
+ * See also: #FsuSink::no-sinks-available signal.
+ * </para>
+ * </refsect2>
+ *
+ * </para>
+ * <refsect2><title>The "<literal>fsusink-sink-chosen</literal>"
+ *   message</title>
+ * |[
+ * "sink"             #GstElement The sink element chosen
+ * "sink-name"        gchar *     The name of the chosen element
+ * "sink-device"      gchar *     The chosen device
+ * "sink-device-name" gchar *     The user-friendly name of the chosen device
+ * ]|
+ * <para>
+ * This message is sent when the sink has been chosen and correctly opened
+ * and ready for playback.
+ * Note that sink-name, sink-device and sink-device-name could be #NULL if
+ * the sink was created with the #FsuSink:sink-pipeline property set.
+ * Also, sink-device and sink-device-name could be #NULL if the sink element
+ * doesn't provide that information.
+ * See also: #FsuSink::sink-chosen signal.
+ * </para>
+ * </refsect2>
+ *
+ * </para>
+ * <refsect2><title>The "<literal>fsusink-sink-destroyed</literal>"
+ *   message</title>
+ * <para>
+ * This message is sent when the sink has been destroyed.
+ * See also: #FsuSink::sink-destroyed signal.
+ * </para>
+ * </refsect2>
+ *
+ * </para>
+ * <refsect2><title>The "<literal>fsusink-sink-error</literal>"
+ *   message</title>
+ * <para>
+ * This message is sent when the sink received an error. This will
+ * usually only be sent when the device is no longer available.
+ * </para>
+ * </refsect2>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -48,6 +98,7 @@
 
 #include <gst/farsight/fsu-sink-class.h>
 #include <gst/farsight/fsu-common.h>
+#include "fs-marshal.h"
 
 
 GST_DEBUG_CATEGORY_STATIC (fsu_sink_debug);
@@ -97,6 +148,18 @@ static GstPad *fsu_sink_request_new_pad (GstElement * element,
 static void fsu_sink_release_pad (GstElement * element,
     GstPad * pad);
 static GstElement *create_sink (FsuSink *self);
+
+/* signals  */
+enum {
+  SIGNAL_NO_SINKS_AVAILABLE,
+  SIGNAL_SINK_CHOSEN,
+  SIGNAL_SINK_DESTROYED,
+  SIGNAL_SINK_ERROR,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
+
 
 /* properties */
 enum
@@ -182,6 +245,89 @@ fsu_sink_class_init (FsuSinkClass *klass)
           "Go asynchronously to PAUSED",
           TRUE,
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+
+  /**
+   * FsuSink::no-sinks-available:
+   *
+   * This signal is sent when the sink cannot find any suitable sink
+   * device for capture.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusink-no-sinks-available' is also sent over the bus.
+   */
+  signals[SIGNAL_NO_SINKS_AVAILABLE] = g_signal_new ("no-sinks-available",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuSink::sink-chosen:
+   * @sink_element: The #GstElement of the chosen sink
+   * @sink_name: The name of the chosen element
+   * @sink_device: The chosen device
+   * @sink_device_name: The chosen user-friendly device name
+   *
+   * This signal is sent when the sink has been chosen and correctly opened
+   * and ready for capture.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusink-sink-chosen' is also sent over the bus.
+   */
+  signals[SIGNAL_SINK_CHOSEN] = g_signal_new ("sink-chosen",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fs_marshal_VOID__OBJECT_STRING_STRING_STRING,
+      G_TYPE_NONE, 3,
+      GST_TYPE_ELEMENT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+  /**
+   * FsuSink::sink-destroyed:
+   *
+   * This signal is sent when the sink has been destroyed.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusink-sink-destroyed' is also sent over the bus.
+   */
+  signals[SIGNAL_SINK_DESTROYED] = g_signal_new ("sink-destroyed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
+
+  /**
+   * FsuSink::sink-error:
+   *
+   * This signal is sent when the sink received a Resink error. This will
+   * usually only be sent when the device is no longer available. It will
+   * shortly be followed by a #FsuSink::sink-destroyed signal then either
+   * a #FsuSink::sink-chosen or #FsuSink::no-sinks-available signal.
+   * <note>
+      This signal could be sent from any thread. Make sure you handle this
+      signal in a thread-safe manner. Otherwise, use the #GstMessage on the bus
+   * </note>
+   * A #GstMessage 'fsusink-sink-error' is also sent over the bus.
+   */
+  signals[SIGNAL_SINK_ERROR] = g_signal_new ("sink-error",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      g_cclosure_marshal_VOID__VOID,
+      G_TYPE_NONE, 0);
 }
 
 static void
@@ -517,6 +663,12 @@ check_and_remove_mixer (FsuSink *self)
       gst_element_set_state (sink, GST_STATE_NULL);
       gst_bin_remove (GST_BIN (self), sink);
       gst_object_unref (sink);
+
+      g_signal_emit (self, signals[SIGNAL_SINK_DESTROYED], 0);
+      gst_element_post_message (GST_ELEMENT (self),
+          gst_message_new_element (GST_OBJECT (self),
+              gst_structure_new ("fsusink-sink-destroyed",
+                  NULL)));
     }
     else
     {
@@ -538,6 +690,7 @@ fsu_sink_request_new_pad (GstElement * element,
   GstPad *pad = NULL;
   GstPad *sink_pad = NULL;
   GstPad *filter_pad = NULL;
+  gboolean using_fakesink = FALSE;
 
   DEBUG ("requesting pad");
 
@@ -552,6 +705,7 @@ fsu_sink_request_new_pad (GstElement * element,
     sink = create_sink (self);
     if (!sink)
     {
+      using_fakesink = TRUE;
       sink = gst_element_factory_make ("fakesink", NULL);
       if (!sink)
       {
@@ -651,6 +805,7 @@ fsu_sink_request_new_pad (GstElement * element,
     gst_object_unref (sink);
 
     DEBUG ("Replacing sink with fakesink");
+    using_fakesink = TRUE;
     sink = gst_element_factory_make ("fakesink", NULL);
     if (!sink)
     {
@@ -767,9 +922,75 @@ fsu_sink_request_new_pad (GstElement * element,
 
   if (sink)
   {
+    gboolean using_pipeline = FALSE;
+
     GST_OBJECT_LOCK (GST_OBJECT (self));
+    if (priv->sink_pipeline)
+      using_pipeline = TRUE;
     priv->sinks = g_list_prepend (priv->sinks, sink);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
+    if (using_fakesink)
+    {
+      g_signal_emit (self, signals[SIGNAL_NO_SINKS_AVAILABLE], 0);
+      gst_element_post_message (GST_ELEMENT (self),
+          gst_message_new_element (GST_OBJECT (self),
+              gst_structure_new ("fsusink-no-sinks-available",
+                  NULL)));
+    }
+    else
+    {
+      gchar *device = NULL;
+      gchar *device_name = NULL;
+      const gchar *element_name = NULL;
+      GstElement *chosen_sink = NULL;
+      GstElementFactory *factory = NULL;
+
+      if (using_pipeline)
+      {
+        chosen_sink = gst_object_ref (sink);
+      }
+      else
+      {
+        chosen_sink = find_sink (sink);
+        factory = gst_element_get_factory (chosen_sink);
+        element_name = GST_PLUGIN_FEATURE_NAME(factory);
+
+        if (_fsu_get_device_property_name(chosen_sink))
+        {
+          g_object_get (chosen_sink,
+              _fsu_get_device_property_name(chosen_sink), &device,
+              NULL);
+          if (_fsu_g_object_has_property (G_OBJECT (chosen_sink),
+                  "device-name"))
+          {
+            g_object_get (chosen_sink,
+                "device-name", &device_name,
+                NULL);
+          }
+          else
+          {
+            device_name = g_strdup (device);
+          }
+        }
+      }
+
+      g_signal_emit (self, signals[SIGNAL_SINK_CHOSEN], 0, chosen_sink,
+          element_name, device, device_name);
+
+      gst_element_post_message (GST_ELEMENT (self),
+          gst_message_new_element (GST_OBJECT (self),
+              gst_structure_new ("fsusink-sink-chosen",
+                  "sink", GST_TYPE_ELEMENT, chosen_sink,
+                  "sink-name", G_TYPE_STRING, element_name,
+                  "sink-device", G_TYPE_STRING, device,
+                  "sink-device-name", G_TYPE_STRING, device_name,
+                  NULL)));
+
+      g_free (device);
+      g_free (device_name);
+      gst_object_unref (chosen_sink);
+    }
   }
 
   if (mixer)
@@ -872,6 +1093,12 @@ fsu_sink_release_pad (GstElement * element,
       gst_object_unref (sink);
       /* From the get_parent */
       gst_object_unref (sink);
+
+      g_signal_emit (self, signals[SIGNAL_SINK_DESTROYED], 0);
+      gst_element_post_message (GST_ELEMENT (self),
+          gst_message_new_element (GST_OBJECT (self),
+              gst_structure_new ("fsusink-sink-destroyed",
+                  NULL)));
     }
   }
 
@@ -989,6 +1216,11 @@ fsu_sink_handle_message (GstBin *bin,
   /* TODO: handle_message on the filter manager */
   if (GST_MESSAGE_TYPE (message) == GST_MESSAGE_ERROR)
   {
+    g_signal_emit (self, signals[SIGNAL_SINK_ERROR], 0);
+    gst_element_post_message (GST_ELEMENT (self),
+        gst_message_new_element (GST_OBJECT (self),
+            gst_structure_new ("fsusink-sink-error",
+                NULL)));
     gst_message_unref (message);
     return;
   }
