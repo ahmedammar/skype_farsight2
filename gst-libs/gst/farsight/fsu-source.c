@@ -712,6 +712,14 @@ create_source_and_link_tee (FsuSource *self)
  error_pad:
   gst_object_unref (src_pad);
   GST_OBJECT_LOCK (GST_OBJECT (self));
+  if (priv->ignore_source || !priv->source)
+  {
+    /* The source was already destroyed or is being removed, which means it
+     * got an async error. Let it get destroyed by the destroy thread.
+     */
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    return;
+  }
   priv->ignore_source = find_source (src);
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
   gst_bin_remove (GST_BIN (self), src);
