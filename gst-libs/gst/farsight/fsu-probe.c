@@ -128,7 +128,7 @@ fsu_probe_devices (gboolean full)
 
       if (GST_IS_PROPERTY_PROBE (element)) {
         probe = GST_PROPERTY_PROBE (element);
-        if (probe) {
+        if (probe && _fsu_get_device_property_name(element)) {
           const gchar *property_name = _fsu_get_device_property_name(element);
           const GList *properties = NULL;
           const GList *prop_walk;
