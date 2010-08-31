@@ -375,7 +375,7 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
 }
 
 static void
-reset_source_search (FsuSource *self)
+reset_source_search_locked (FsuSource *self)
 {
   FsuSourcePrivate *priv = self->priv;
   GList *item;
@@ -397,6 +397,7 @@ reset_source_search (FsuSource *self)
 static void
 reset_and_restart_source_unlock (FsuSource *self)
 {
+  reset_source_search_locked (self);
   if (self->priv->source)
   {
     destroy_source_locked (self);
@@ -659,7 +660,7 @@ check_and_remove_tee (FsuSource *self)
     gst_object_unref (priv->ignore_source);
     priv->ignore_source = NULL;
   }
-  reset_source_search (self);
+  reset_source_search_locked (self);
 
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 }
@@ -1496,7 +1497,7 @@ fsu_source_change_state (GstElement *element,
         gst_object_unref (priv->ignore_source);
         priv->ignore_source = NULL;
       }
-      reset_source_search (self);
+      reset_source_search_locked (self);
       GST_OBJECT_UNLOCK (GST_OBJECT (self));
       break;
     default:
