@@ -1227,12 +1227,26 @@ create_source (FsuSource *self)
   {
     GstStateChangeReturn state_ret;
 
-    src = gst_element_factory_make (source_name, NULL);
+    /* If no device specified, try to autodetect device */
+    if (source_device)
+    {
+      src = gst_element_factory_make (source_name, NULL);
 
-    if (src && source_device && _fsu_get_device_property_name(src))
-      g_object_set(src,
-          _fsu_get_device_property_name(src), source_device,
-          NULL);
+      if (src && _fsu_get_device_property_name(src))
+        g_object_set(src,
+            _fsu_get_device_property_name(src), source_device,
+            NULL);
+    }
+    else
+    {
+      src = test_source (self, source_name);
+
+      /* If we can't test the source (maybe blacklisted or other reasons..
+       * then create the element and let the rest of the code handle the error
+       */
+      if (!src)
+        src = gst_element_factory_make (source_name, NULL);
+    }
 
     if (src)
     {
