@@ -1167,7 +1167,7 @@ create_source (FsuSource *self)
   source_name = g_strdup (priv->source_name);
   source_device = g_strdup (priv->source_device);
 
-  if (!source_pipeline && !source_name)
+  if (!source_pipeline && !source_name && priv->last_working_source)
   {
     source_name = g_strdup (priv->last_working_source);
     g_free (source_device);
