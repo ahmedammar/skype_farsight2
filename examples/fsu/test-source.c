@@ -40,16 +40,6 @@ gst_and_gtk_init (int *argc, char ***argv)
   g_option_context_free (optcontext);
 }
 
-static gboolean
-buffer_probe (GstPad *pad, GstBuffer *buffer, gpointer user_data)
-{
-  g_debug ("Buffer timestamp : %" GST_TIME_FORMAT,
-      GST_TIME_ARGS(GST_BUFFER_TIMESTAMP(buffer)));
-  g_debug ("Source base time : %" GST_TIME_FORMAT,
-      GST_TIME_ARGS(gst_element_get_base_time (src)));
-  return TRUE;
-}
-
 #define TEST_SINK 0
 
 static void
@@ -76,7 +66,6 @@ button_clicked (GtkButton *button, gpointer user_data)
     g_debug ("Starting source");
     g_debug ("Requesting source pad");
     src_pad = gst_element_get_request_pad (src, "src%d");
-    gst_pad_add_buffer_probe (src_pad, (GCallback) buffer_probe, NULL);
 #if TEST_SINK
     g_debug ("Requesting sink pad");
     sink_pad = gst_element_get_request_pad (sink, "sink%d");
