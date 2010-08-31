@@ -408,6 +408,10 @@ reset_and_restart_source_unlock (FsuSource *self)
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
     create_source_and_link_tee (self);
   }
+  else
+  {
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  }
 }
 
 static void
@@ -458,28 +462,24 @@ fsu_source_set_property (GObject *object,
   {
     case PROP_DISABLED:
       priv->disabled = g_value_get_boolean (value);
-      reset_and_restart_source_unlock (self);
       break;
     case PROP_SOURCE_NAME:
       g_free (priv->source_name);
       priv->source_name = g_value_dup_string (value);
-      reset_and_restart_source_unlock (self);
       break;
     case PROP_SOURCE_DEVICE:
       g_free (priv->source_device);
       priv->source_device = g_value_dup_string (value);
-      reset_and_restart_source_unlock (self);
       break;
     case PROP_SOURCE_PIPELINE:
       g_free (priv->source_pipeline);
       priv->source_pipeline = g_value_dup_string (value);
-      reset_and_restart_source_unlock (self);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-      GST_OBJECT_UNLOCK (GST_OBJECT (self));
       break;
   }
+  reset_and_restart_source_unlock (self);
 }
 
 static void
