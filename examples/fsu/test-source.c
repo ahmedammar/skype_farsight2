@@ -87,6 +87,31 @@ _bus_callback (GstBus *bus, GstMessage *message, gpointer user_data)
   return GST_BUS_DROP;
 }
 
+#define CHANGE_SOURCE 0
+#define CHANGE_SOURCE_TIMEOUT 5000
+
+static gboolean
+change_source (gpointer user_data)
+{
+#if CHANGE_SOURCE
+  gboolean testsrc = GPOINTER_TO_UINT (user_data);
+
+  if (testsrc)
+  {
+    g_object_set (src, "source-name", "videotestsrc", NULL);
+  }
+  else
+  {
+    g_object_set (src, "source-name", NULL, NULL);
+  }
+
+  g_timeout_add (CHANGE_SOURCE_TIMEOUT, change_source,
+      GUINT_TO_POINTER (!testsrc));
+#endif
+  return FALSE;
+}
+
+
 int main (int argc, char *argv[])
 {
   GMainLoop *mainloop = NULL;
@@ -119,6 +144,7 @@ int main (int argc, char *argv[])
   g_signal_connect (but, "clicked", (GCallback) button_clicked, NULL);
   gtk_widget_show_all(window);
 
+  g_timeout_add (CHANGE_SOURCE_TIMEOUT, change_source, GUINT_TO_POINTER (TRUE));
   g_main_loop_run (mainloop);
 
   return 0;
