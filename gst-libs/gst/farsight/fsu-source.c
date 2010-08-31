@@ -1514,6 +1514,12 @@ fsu_source_change_state (GstElement *element,
       reset_source_search_locked (self);
       GST_OBJECT_UNLOCK (GST_OBJECT (self));
       break;
+    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      /* We are a live source, force the result to be NO_PREROLL..
+         It may not be if we were unable to find an available source */
+      if (ret == GST_STATE_CHANGE_SUCCESS)
+        ret = GST_STATE_CHANGE_NO_PREROLL;
     default:
       break;
   }
