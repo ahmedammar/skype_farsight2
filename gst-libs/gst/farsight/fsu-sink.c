@@ -134,6 +134,7 @@ GST_BOILERPLATE_FULL (FsuSink, fsu_sink,
 
 
 static void fsu_sink_dispose (GObject *object);
+static void fsu_sink_finalize (GObject *object);
 static void fsu_sink_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -190,6 +191,9 @@ struct _FsuSinkPrivate
   GList *sinks;
   /* The FsuMultiFilterManager filters to apply on the sink */
   FsuFilterManager *filters;
+  /* A mutex to block concurrent request/release pad calls.
+     one pipeline modification at a time is allowed */
+  GMutex *mutex;
 };
 
 
@@ -216,6 +220,7 @@ fsu_sink_class_init (FsuSinkClass *klass)
   gobject_class->get_property = fsu_sink_get_property;
   gobject_class->set_property = fsu_sink_set_property;
   gobject_class->dispose = fsu_sink_dispose;
+  gobject_class->finalize = fsu_sink_finalize;
 
   gstbin_class->handle_message =
       GST_DEBUG_FUNCPTR (fsu_sink_handle_message);
@@ -354,6 +359,7 @@ fsu_sink_init (FsuSink *self, FsuSinkClass *klass)
   priv->filters = fsu_multi_filter_manager_new ();
   if (klass->add_filters)
     klass->add_filters (self, priv->filters);
+  priv->mutex = g_mutex_new ();
 }
 
 static void
@@ -480,6 +486,17 @@ fsu_sink_dispose (GObject *object)
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
   G_OBJECT_CLASS (parent_class)->dispose (object);
+}
+
+
+static void
+fsu_sink_finalize (GObject *object)
+{
+  FsuSink *self = FSU_SINK (object);
+
+  g_mutex_free (self->priv->mutex);
+
+  G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
 
@@ -729,6 +746,8 @@ fsu_sink_request_new_pad (GstElement * element,
   DEBUG ("requesting pad");
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
+  g_mutex_lock (priv->mutex);
+
   mixer = priv->mixer;
 
   /* If this is our first sink or second sink with no mixer*/
@@ -956,12 +975,19 @@ fsu_sink_request_new_pad (GstElement * element,
 
   if (sink)
   {
+    GST_OBJECT_LOCK (GST_OBJECT (self));
+    priv->sinks = g_list_prepend (priv->sinks, sink);
+    GST_OBJECT_UNLOCK (GST_OBJECT (self));
+  }
+
+  g_mutex_unlock (priv->mutex);
+  if (sink)
+  {
     gboolean using_pipeline = FALSE;
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
     if (priv->sink_pipeline)
       using_pipeline = TRUE;
-    priv->sinks = g_list_prepend (priv->sinks, sink);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
     if (using_fakesink)
@@ -1057,6 +1083,7 @@ fsu_sink_request_new_pad (GstElement * element,
   if (filter_pad)
     gst_object_unref (filter_pad);
 
+  g_mutex_unlock (priv->mutex);
   return NULL;
 
 }
@@ -1069,6 +1096,8 @@ fsu_sink_release_pad (GstElement * element,
   FsuSinkPrivate *priv = self->priv;
 
   DEBUG ("releasing pad");
+
+  g_mutex_lock (priv->mutex);
 
   gst_pad_set_active (pad, FALSE);
 
@@ -1141,6 +1170,7 @@ fsu_sink_release_pad (GstElement * element,
 
   gst_element_remove_pad (element, pad);
 
+  g_mutex_unlock (priv->mutex);
 }
 
 static GstElement *
