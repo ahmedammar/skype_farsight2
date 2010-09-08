@@ -131,6 +131,8 @@ GST_BOILERPLATE_FULL (FsuSource, fsu_source,
 
 
 static void fsu_source_dispose (GObject *object);
+static void fsu_source_finalize (GObject *object);
+
 static void fsu_source_get_property (GObject *object,
     guint property_id,
     GValue *value,
@@ -199,6 +201,10 @@ struct _FsuSourcePrivate
   GThread *thread;
   /* A FsuMultiFilterManager filters to apply on the source */
   FsuFilterManager *filters;
+
+  /* A mutex to block concurrent request/release pad calls.
+     one pipeline modification at a time is allowed */
+  GMutex *mutex;
 };
 
 
@@ -225,6 +231,7 @@ fsu_source_class_init (FsuSourceClass *klass)
   gobject_class->get_property = fsu_source_get_property;
   gobject_class->set_property = fsu_source_set_property;
   gobject_class->dispose = fsu_source_dispose;
+  gobject_class->finalize = fsu_source_finalize;
 
   gstelement_class->change_state = GST_DEBUG_FUNCPTR (fsu_source_change_state);
   gstelement_class->request_new_pad =
@@ -273,6 +280,8 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
   priv->filters = fsu_multi_filter_manager_new ();
   if (klass->add_filters)
     klass->add_filters (self, priv->filters);
+  priv->mutex = g_mutex_new ();
+
 }
 
 static void
@@ -448,6 +457,17 @@ fsu_source_dispose (GObject *object)
   G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
+static void
+fsu_source_finalize (GObject *object)
+{
+  FsuSource *self = FSU_SOURCE (object);
+
+  g_mutex_free (self->priv->mutex);
+
+  G_OBJECT_CLASS (parent_class)->finalize (object);
+}
+
+
 static GstElement *
 find_source (GstElement *src)
 {
@@ -557,7 +577,8 @@ check_and_remove_tee (FsuSource *self)
     g_object_notify (G_OBJECT (self), "source-element");
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    gst_object_unref (priv->ignore_source);
+    if (priv->ignore_source)
+      gst_object_unref (priv->ignore_source);
     priv->ignore_source = NULL;
   }
   reset_source_search_locked (self);
@@ -789,6 +810,8 @@ fsu_source_request_new_pad (GstElement * element,
   DEBUG ("requesting pad");
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
+  g_mutex_lock (priv->mutex);
+
   if (!priv->tee)
   {
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
@@ -798,7 +821,7 @@ fsu_source_request_new_pad (GstElement * element,
     {
       GST_OBJECT_UNLOCK (GST_OBJECT (self));
       WARNING ("Couldn't create a tee to request pad from");
-      return NULL;
+      goto out;
     }
   }
 
@@ -811,7 +834,7 @@ fsu_source_request_new_pad (GstElement * element,
   {
     WARNING ("Couldn't get new request pad from src tee");
     check_and_remove_tee (self);
-    return NULL;
+    goto out;
   }
 
   filter_pad = fsu_filter_manager_apply (priv->filters,
@@ -835,7 +858,7 @@ fsu_source_request_new_pad (GstElement * element,
     gst_object_unref (tee_pad);
     gst_object_unref (tee);
     check_and_remove_tee (self);
-    return NULL;
+    goto out;
   }
   gst_object_unref (tee);
 
@@ -844,6 +867,9 @@ fsu_source_request_new_pad (GstElement * element,
   gst_element_add_pad (element, pad);
 
   gst_pad_add_event_probe (pad, (GCallback)pad_event_probe, self);
+
+ out:
+  g_mutex_unlock (priv->mutex);
 
   return pad;
 }
@@ -856,6 +882,8 @@ fsu_source_release_pad (GstElement * element,
   FsuSourcePrivate *priv = self->priv;
 
   DEBUG ("releasing pad");
+
+  g_mutex_lock (priv->mutex);
 
   gst_pad_set_active (pad, FALSE);
 
@@ -883,6 +911,8 @@ fsu_source_release_pad (GstElement * element,
   gst_element_remove_pad (element, pad);
 
   check_and_remove_tee (self);
+
+  g_mutex_unlock (priv->mutex);
 }
 
 
@@ -1423,7 +1453,7 @@ fsu_source_change_state (GstElement *element,
 }
 
 static gpointer
-replace_source_thread (gpointer data)
+replace_source_thread_unlock (gpointer data)
 {
   FsuSource *self = FSU_SOURCE (data);
   FsuSourcePrivate *priv = self->priv;
@@ -1453,9 +1483,13 @@ replace_source_thread (gpointer data)
   priv->ignore_source = NULL;
   priv->thread = NULL;
   GST_OBJECT_UNLOCK (GST_OBJECT (self));
+
   if (source)
     create_source_and_link_tee (self);
   gst_object_unref (self);
+
+  /* This was locked before creating the thread, so unlock it now.*/
+  g_mutex_unlock (priv->mutex);
 
   return NULL;
 }
@@ -1465,6 +1499,9 @@ destroy_source_locked (FsuSource *self)
 {
   FsuSourcePrivate *priv = self->priv;
   GError *error = NULL;
+
+  /* Lock until the thread finishes its job */
+  g_mutex_lock (priv->mutex);
 
   if (priv->source && !priv->thread)
   {
@@ -1481,14 +1518,21 @@ destroy_source_locked (FsuSource *self)
 
     gst_object_ref (self);
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    priv->thread = g_thread_create (replace_source_thread, self, FALSE, &error);
+    priv->thread = g_thread_create (replace_source_thread_unlock, self,
+        FALSE, &error);
 
     if (!priv->thread)
     {
       WARNING ("Could not start stopping thread for FsuSource:"
           " %s", error->message);
+      gst_object_unref (self);
+      g_mutex_unlock (priv->mutex);
     }
     g_clear_error (&error);
+  }
+  else
+  {
+    g_mutex_unlock (priv->mutex);
   }
 }
 
