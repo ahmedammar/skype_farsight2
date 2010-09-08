@@ -619,7 +619,6 @@ check_and_remove_mixer (FsuSink *self)
           gst_message_new_element (GST_OBJECT (self),
               gst_structure_new ("fsusink-sink-destroyed",
                   NULL)));
-      g_object_notify (G_OBJECT (self), "sink-element");
     }
     else
     {
@@ -947,12 +946,12 @@ fsu_sink_request_new_pad (GstElement * element,
       g_free (device_name);
       gst_object_unref (chosen_sink);
     }
-
-    g_object_notify (G_OBJECT (self), "sink-element");
   }
 
   if (mixer)
     gst_object_unref (mixer);
+
+  g_object_notify (G_OBJECT (self), "sink-element");
 
   return pad;
 
@@ -1059,13 +1058,14 @@ fsu_sink_release_pad (GstElement * element,
           gst_message_new_element (GST_OBJECT (self),
               gst_structure_new ("fsusink-sink-destroyed",
                   NULL)));
-      g_object_notify (G_OBJECT (self), "sink-element");
     }
   }
 
   gst_element_remove_pad (element, pad);
 
   g_mutex_unlock (priv->mutex);
+
+  g_object_notify (G_OBJECT (self), "sink-element");
 }
 
 static GstElement *

@@ -316,7 +316,10 @@ reset_and_restart_source_unlock (FsuSource *self)
   else if (self->priv->tee && GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
+    g_mutex_lock (self->priv->mutex);
     create_source_and_link_tee (self);
+    g_mutex_unlock (self->priv->mutex);
+    g_object_notify (G_OBJECT (self), "source-element");
   }
   else
   {
@@ -574,7 +577,6 @@ check_and_remove_tee (FsuSource *self)
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusource-source-destroyed",
                 NULL)));
-    g_object_notify (G_OBJECT (self), "source-element");
 
     GST_OBJECT_LOCK (GST_OBJECT (self));
     if (priv->ignore_source)
@@ -693,7 +695,6 @@ create_source_and_link_tee (FsuSource *self)
       gst_message_new_element (GST_OBJECT (self),
           gst_structure_new ("fsusource-source-destroyed",
               NULL)));
-  g_object_notify (G_OBJECT (self), "source-element");
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
   if (priv->ignore_source)
@@ -871,6 +872,8 @@ fsu_source_request_new_pad (GstElement * element,
  out:
   g_mutex_unlock (priv->mutex);
 
+  g_object_notify (G_OBJECT (self), "source-element");
+
   return pad;
 }
 
@@ -913,6 +916,8 @@ fsu_source_release_pad (GstElement * element,
   check_and_remove_tee (self);
 
   g_mutex_unlock (priv->mutex);
+
+  g_object_notify (G_OBJECT (self), "source-element");
 }
 
 
@@ -1348,7 +1353,6 @@ create_source (FsuSource *self)
                 "source-device", G_TYPE_STRING, device,
                 "source-device-name", G_TYPE_STRING, device_name,
                 NULL)));
-    g_object_notify (G_OBJECT (self), "source-element");
 
     g_free (device);
     g_free (device_name);
@@ -1474,7 +1478,6 @@ replace_source_thread_unlock (gpointer data)
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusource-source-destroyed",
                 NULL)));
-    g_object_notify (G_OBJECT (self), "source-element");
 
   }
 
@@ -1490,6 +1493,8 @@ replace_source_thread_unlock (gpointer data)
 
   /* This was locked before creating the thread, so unlock it now.*/
   g_mutex_unlock (priv->mutex);
+
+  g_object_notify (G_OBJECT (self), "source-element");
 
   return NULL;
 }
