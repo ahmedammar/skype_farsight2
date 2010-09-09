@@ -138,7 +138,8 @@ dnl these are all the transmitter plug-ins
 FS2_TRANSMITTER_PLUGINS_ALL=" \
 	rawudp \
 	multicast \
-	nice
+	nice \
+	shm
 	"
 AC_SUBST(FS2_TRANSMITTER_PLUGINS_ALL)
 
@@ -235,7 +236,11 @@ dnl *** checks for library functions ***
 dnl *** checks for dependency libraries ***
 
 dnl GLib is required
-AG_GST_GLIB_CHECK([2.14])
+AG_GST_GLIB_CHECK([2.16])
+
+PKG_CHECK_MODULES(GIO_UNIX, gio-unix-2.0 >= 2.16)
+AC_SUBST(GIO_UNIX_CFLAGS)
+AC_SUBST(GIO_UNIX_LIBS)
 
 dnl checks for gstreamer
 dnl uninstalled is selected preferentially -- see pkg-config(1)
@@ -413,6 +418,7 @@ transmitters/Makefile
 transmitters/rawudp/Makefile
 transmitters/multicast/Makefile
 transmitters/nice/Makefile
+transmitters/shm/Makefile
 dnl pkgconfig/Makefile
 dnl pkgconfig/farsight2.pc
 dnl pkgconfig/farsight2-uninstalled.pc
