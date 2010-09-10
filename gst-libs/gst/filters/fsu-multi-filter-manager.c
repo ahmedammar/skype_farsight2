@@ -457,8 +457,11 @@ fsu_multi_filter_manager_apply (FsuFilterManager *iface,
     g_hash_table_insert (id->associations, fm, sub_id);
   }
 
+  g_mutex_unlock (priv->mutex);
   ret = fsu_filter_manager_apply (fm, bin, pad);
+  g_mutex_lock (priv->mutex);
 
+  /* Can't get reverted here since return value is needed for revert */
   if (!ret)
   {
     for (i = priv->filters; i; i = i->next)
@@ -524,10 +527,10 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
     FsuFilterId *id = i->data;
     g_hash_table_remove (id->associations, revert_fm);
   }
+  g_mutex_unlock (priv->mutex);
+
   ret = fsu_filter_manager_revert (revert_fm, bin, pad);
   g_object_unref (revert_fm);
-
-  g_mutex_unlock (priv->mutex);
 
   return ret;
 }
