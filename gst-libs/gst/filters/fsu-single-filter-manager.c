@@ -109,6 +109,7 @@ typedef struct
 struct _FsuSingleFilterManagerPrivate
 {
   GList *applied_filters;
+  int list_id;
   GList *filters;
   GstBin *applied_bin;
   GstPad *applied_pad;
@@ -241,6 +242,8 @@ fsu_single_filter_manager_dispose (GObject *object)
   if (priv->applied_filters)
     g_list_free (priv->applied_filters);
   priv->applied_filters = NULL;
+  priv->list_id = -1;
+
   if (priv->filters)
   {
     g_list_foreach (priv->filters, (GFunc) free_filter_id, NULL);
@@ -561,12 +564,16 @@ apply_modifs (GstPad *pad,
       insert_position = modif->insert_position;
 
     if (insert_position != -1)
+    {
       priv->applied_filters = g_list_insert (priv->applied_filters,
           modif->id, insert_position);
+      priv->list_id++;
+    }
     if (to_remove)
     {
       priv->applied_filters = g_list_remove (priv->applied_filters, to_remove);
       free_filter_id (to_remove);
+      priv->list_id++;
     }
 
     g_slice_free (FilterModification, modif);
@@ -862,6 +869,7 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
 
   priv->out_pad = gst_object_ref (pad);
   priv->applied_filters = g_list_copy (self->priv->filters);
+  priv->list_id++;
   priv->applying = FALSE;
 
   g_mutex_unlock (priv->mutex);
@@ -988,6 +996,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
   if (priv->applied_filters)
     g_list_free (priv->applied_filters);
   priv->applied_filters = NULL;
+  priv->list_id++;
 
   g_mutex_unlock (priv->mutex);
 
@@ -1002,16 +1011,25 @@ fsu_single_filter_manager_handle_message (FsuFilterManager *iface,
   FsuSingleFilterManagerPrivate *priv = self->priv;
   GList *i = NULL;
   gboolean drop = FALSE;
+  gint list_id = 0;
 
   g_mutex_lock (priv->mutex);
-  for (i = priv->applied_filters; i && !drop; i = i->next)
+ retry:
+  for (i = priv->applied_filters, list_id = priv->list_id;
+       i && !drop && list_id == priv->list_id;
+       i = i->next)
   {
     FsuFilterId *id = i->data;
 
     /* Only handle messages to successfully applied filters */
-    if (id->in_pad)
+    if (id->in_pad) {
+      g_mutex_unlock (priv->mutex);
       drop = fsu_filter_handle_message (id->filter, message);
+      g_mutex_lock (priv->mutex);
+    }
   }
+  if (list_id != priv->sessions_id)
+    goto retry;
   g_mutex_unlock (priv->mutex);
 
   return drop;
