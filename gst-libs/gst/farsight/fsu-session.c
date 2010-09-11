@@ -278,12 +278,18 @@ fsu_session_constructed (GObject *object)
         "pipeline", &pipeline,
         NULL);
 
-    if ((parent && parent != GST_OBJECT (pipeline)) ||
-        !gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source)))
+    /* If the source has a parent and it's the pipeline, then skip it,
+     * if it has a parent and it's not a pipeline, then unref/NULL it
+     * otherwise, try to add it and unref/NULL it if it failed
+     */
+    if ((!parent || parent != GST_OBJECT (pipeline)) &&
+        ((parent && parent != GST_OBJECT (pipeline)) ||
+            !gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->source))))
     {
       gst_object_unref (GST_OBJECT (priv->source));
       priv->source = NULL;
     }
+
     gst_object_unref (pipeline);
 
     if (parent)

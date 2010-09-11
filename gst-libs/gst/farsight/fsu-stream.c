@@ -300,8 +300,13 @@ fsu_stream_constructed (GObject *object)
         "pipeline", &pipeline,
         NULL);
 
-    if ((parent && parent != GST_OBJECT (pipeline)) ||
-        !gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->sink)))
+    /* If the sink has a parent and it's the pipeline, then skip it,
+     * if it has a parent and it's not a pipeline, then unref/NULL it
+     * otherwise, try to add it and unref/NULL it if it failed
+     */
+    if ((!parent || parent != GST_OBJECT (pipeline)) &&
+        ((parent && parent != GST_OBJECT (pipeline)) ||
+            !gst_bin_add (GST_BIN (pipeline), GST_ELEMENT (priv->sink))))
     {
       gst_object_unref (GST_OBJECT (priv->sink));
       priv->sink = NULL;
