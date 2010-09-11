@@ -622,7 +622,8 @@ fsu_single_filter_manager_insert_filter_before (FsuFilterManager *iface,
 
   index = g_list_index (priv->filters, before);
 
-  if (priv->applying || index < 0) {
+  if (priv->applying || index < 0)
+  {
     g_mutex_unlock (priv->mutex);
     return NULL;
   }
@@ -642,7 +643,8 @@ fsu_single_filter_manager_insert_filter_after (FsuFilterManager *iface,
   g_mutex_lock (priv->mutex);
   index = g_list_index (priv->filters, after);
 
-  if (priv->applying || index < 0) {
+  if (priv->applying || index < 0)
+  {
     g_mutex_unlock (priv->mutex);
     return NULL;
   }
@@ -665,7 +667,8 @@ fsu_single_filter_manager_replace_filter (FsuFilterManager *iface,
 
   index = g_list_index (priv->filters, replace);
 
-  if (priv->applying || index < 0) {
+  if (priv->applying || index < 0)
+  {
     g_mutex_unlock (priv->mutex);
     return NULL;
   }
@@ -708,6 +711,7 @@ fsu_single_filter_manager_insert_filter_unlock (FsuSingleFilterManager *self,
 
   return id;
 }
+
 static FsuFilterId *
 fsu_single_filter_manager_insert_filter (FsuFilterManager *iface,
     FsuFilter *filter,
@@ -718,7 +722,8 @@ fsu_single_filter_manager_insert_filter (FsuFilterManager *iface,
 
   g_mutex_lock (priv->mutex);
 
-  if (priv->applying) {
+  if (priv->applying)
+  {
     g_mutex_unlock (priv->mutex);
     return NULL;
   }
@@ -752,7 +757,8 @@ fsu_single_filter_manager_remove_filter (FsuFilterManager *iface,
   g_mutex_lock (priv->mutex);
   find = g_list_find (priv->filters, id);
 
-  if (priv->applying || !find) {
+  if (priv->applying || !find)
+  {
     g_mutex_unlock (priv->mutex);
     return FALSE;
   }
@@ -802,6 +808,8 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
   }
 
   g_mutex_lock (priv->mutex);
+
+  /* Check applied filters to make sure we're not in a revert */
   if (priv->applied_bin || priv->applied_filters)
   {
     g_mutex_unlock (priv->mutex);
@@ -829,11 +837,6 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
     out_pad = fsu_filter_apply (id->filter, bin, pad);
     g_mutex_lock (priv->mutex);
 
-    /* Add to applied filter, so the next revert will work */
-    if (GST_PAD_IS_SRC (pad))
-      priv->applied_filters = g_list_append (priv->applied_filters, id);
-    else
-      priv->applied_filters = g_list_prepend (priv->applied_filters, id);
 
     if (out_pad)
     {
@@ -858,6 +861,7 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
   }
 
   priv->out_pad = gst_object_ref (pad);
+  priv->applied_filters = g_list_copy (self->priv->filters);
   priv->applying = FALSE;
 
   g_mutex_unlock (priv->mutex);
