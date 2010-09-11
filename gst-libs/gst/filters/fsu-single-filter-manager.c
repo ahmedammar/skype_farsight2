@@ -1028,7 +1028,7 @@ fsu_single_filter_manager_handle_message (FsuFilterManager *iface,
       g_mutex_lock (priv->mutex);
     }
   }
-  if (list_id != priv->sessions_id)
+  if (list_id != priv->list_id)
     goto retry;
   g_mutex_unlock (priv->mutex);
 
