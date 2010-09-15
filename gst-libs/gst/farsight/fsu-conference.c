@@ -71,6 +71,7 @@ struct _FsuConferencePrivate
 {
   GstElement *pipeline;
   GstElement *conference;
+  gboolean created_pipeline;
   GList *sessions;
   gint sessions_id;
   GError *error;
@@ -180,8 +181,10 @@ fsu_conference_constructed (GObject *object)
   if (G_OBJECT_CLASS (fsu_conference_parent_class)->constructed)
      G_OBJECT_CLASS (fsu_conference_parent_class)->constructed (object);
 
-  if (!priv->pipeline)
+  if (!priv->pipeline) {
     priv->pipeline = gst_pipeline_new ("fsu_pipeline");
+    priv->created_pipeline = TRUE;
+  }
 
   if (!priv->pipeline)
   {
@@ -194,6 +197,7 @@ fsu_conference_constructed (GObject *object)
   {
     gst_object_unref (priv->pipeline);
     priv->pipeline = NULL;
+    priv->created_pipeline = FALSE;
     g_set_error_literal (&priv->error, FS_ERROR, FS_ERROR_CONSTRUCTION,
         "Couldn't add fsrtpconference to the pipeline");
     goto error;
@@ -240,7 +244,7 @@ fsu_conference_dispose (GObject *object)
 
   if (priv->pipeline)
   {
-    if (GST_OBJECT_REFCOUNT(priv->pipeline) == 1)
+    if (priv->created_pipeline)
       gst_element_set_state (priv->pipeline, GST_STATE_NULL);
     gst_object_unref (priv->pipeline);
   }
