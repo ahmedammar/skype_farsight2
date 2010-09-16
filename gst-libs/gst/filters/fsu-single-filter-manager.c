@@ -602,6 +602,35 @@ apply_modifs (GstPad *pad,
 }
 
 static void
+block_pad (FsuSingleFilterManager *self, gboolean block)
+{
+  FsuSingleFilterManagerPrivate *priv = self->priv;
+  GstPad *pad = NULL;
+
+  if (GST_PAD_IS_SRC (priv->applied_pad))
+    pad = gst_object_ref (priv->applied_pad);
+  else
+    pad = gst_pad_get_peer (priv->out_pad);
+
+
+  if (pad)
+  {
+    if (block)
+    {
+      /* Keep a reference to self for the pad block thread */
+      g_object_ref (self);
+      gst_pad_set_blocked_async_full (pad, TRUE, apply_modifs, self,
+          destroy_pad_block_data);
+    }
+    else
+    {
+      gst_pad_set_blocked_async (pad, FALSE, pad_block_do_nothing, NULL);
+    }
+    gst_object_unref (pad);
+  }
+}
+
+static void
 new_modification (FsuSingleFilterManager *self,
     ModificationAction action,
     FsuFilterId *id,
@@ -617,21 +646,8 @@ new_modification (FsuSingleFilterManager *self,
   modif->replace_id = replace_id;
 
   g_queue_push_tail (priv->modifications, modif);
-
-  /* Keep a reference to self for the pad block thread */
-  g_object_ref (self);
-  if (GST_PAD_IS_SRC (priv->applied_pad))
-  {
-    gst_pad_set_blocked_async_full (priv->applied_pad, TRUE, apply_modifs,
-        self, destroy_pad_block_data);
-  }
-  else
-  {
-    GstPad *src_pad = gst_pad_get_peer (priv->out_pad);
-    gst_pad_set_blocked_async_full (src_pad, TRUE, apply_modifs, self,
-        destroy_pad_block_data);
-    gst_object_unref (src_pad);
-  }
+  if (!priv->applying)
+    block_pad (self, TRUE);
 }
 
 static FsuFilterId *
@@ -647,7 +663,7 @@ fsu_single_filter_manager_insert_filter_before (FsuFilterManager *iface,
 
   index = g_list_index (priv->filters, before);
 
-  if (priv->applying || index < 0)
+  if (index < 0)
   {
     g_mutex_unlock (priv->mutex);
     return NULL;
@@ -668,7 +684,7 @@ fsu_single_filter_manager_insert_filter_after (FsuFilterManager *iface,
   g_mutex_lock (priv->mutex);
   index = g_list_index (priv->filters, after);
 
-  if (priv->applying || index < 0)
+  if (index < 0)
   {
     g_mutex_unlock (priv->mutex);
     return NULL;
@@ -692,7 +708,7 @@ fsu_single_filter_manager_replace_filter (FsuFilterManager *iface,
 
   index = g_list_index (priv->filters, replace);
 
-  if (priv->applying || index < 0)
+  if (index < 0)
   {
     g_mutex_unlock (priv->mutex);
     return NULL;
@@ -747,12 +763,6 @@ fsu_single_filter_manager_insert_filter (FsuFilterManager *iface,
 
   g_mutex_lock (priv->mutex);
 
-  if (priv->applying)
-  {
-    g_mutex_unlock (priv->mutex);
-    return NULL;
-  }
-
   return fsu_single_filter_manager_insert_filter_unlock (self, filter,
       position);
 }
@@ -782,7 +792,7 @@ fsu_single_filter_manager_remove_filter (FsuFilterManager *iface,
   g_mutex_lock (priv->mutex);
   find = g_list_find (priv->filters, id);
 
-  if (priv->applying || !find)
+  if (!find)
   {
     g_mutex_unlock (priv->mutex);
     return FALSE;
@@ -890,6 +900,11 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
   priv->list_id++;
   priv->applying = FALSE;
 
+  /* If new modifications were added while we were applying, then block the
+     pad so they can be executed */
+  if (!g_queue_is_empty (priv->modifications))
+    block_pad (self, TRUE);
+
   g_mutex_unlock (priv->mutex);
 
   return pad;
@@ -928,23 +943,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
 
   /* Disable the pad block but don't free removed filter ids */
   if (!g_queue_is_empty (priv->modifications))
-  {
-    if (GST_PAD_IS_SRC (priv->applied_pad))
-    {
-      gst_pad_set_blocked_async (priv->applied_pad, FALSE,
-          pad_block_do_nothing, NULL);
-    }
-    else
-    {
-      GstPad *src_pad = gst_pad_get_peer (priv->out_pad);
-      /* The source might have been removed already */
-      if (src_pad)
-      {
-        gst_pad_set_blocked_async (src_pad, FALSE, pad_block_do_nothing, NULL);
-        gst_object_unref (src_pad);
-      }
-    }
-  }
+    block_pad (self, FALSE);
 
   /* Remove applied_bin as it's unnecessary and will prevent concurrent
      additions/removals from triggering the pad_block */
