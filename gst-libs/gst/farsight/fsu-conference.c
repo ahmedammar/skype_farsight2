@@ -206,6 +206,7 @@ fsu_conference_constructed (GObject *object)
   if (gst_element_set_state (priv->pipeline, GST_STATE_PLAYING) ==
       GST_STATE_CHANGE_FAILURE)
   {
+    gst_element_set_state (priv->conference, GST_STATE_NULL);
     gst_bin_remove (GST_BIN (priv->pipeline), priv->conference);
     priv->conference = NULL;
     g_set_error_literal (&priv->error, FS_ERROR, FS_ERROR_CONSTRUCTION,
@@ -235,6 +236,7 @@ fsu_conference_dispose (GObject *object)
 
   if (priv->conference)
   {
+    gst_element_set_state (priv->conference, GST_STATE_NULL);
     if (priv->pipeline)
       gst_bin_remove (GST_BIN (priv->pipeline), priv->conference);
     else
