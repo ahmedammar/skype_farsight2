@@ -21,6 +21,8 @@
 
 #include <gst/filters/fsu-multi-filter-manager.h>
 #include <gst/filters/fsu-single-filter-manager.h>
+#include "fsu-marshal.h"
+
 
 static void fsu_multi_filter_manager_interface_init (
     FsuFilterManagerInterface *iface);
@@ -70,6 +72,16 @@ static gboolean fsu_multi_filter_manager_handle_message (
     FsuFilterManager *iface,
     GstMessage *message);
 
+/* signals  */
+enum {
+  SIGNAL_APPLIED,
+  SIGNAL_REVERTED,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
+
+
 struct _FsuMultiFilterManagerPrivate
 {
   GList *filters;
@@ -95,6 +107,42 @@ fsu_multi_filter_manager_class_init (FsuMultiFilterManagerClass *klass)
 
   gobject_class->dispose = fsu_multi_filter_manager_dispose;
   gobject_class->finalize = fsu_multi_filter_manager_finalize;
+
+  /**
+   * FsuMultiFilterManager::applied:
+   * @filter_manager: The #FsuMultiFilterManager
+   * @single_filter_manager: The #FsuSingleFilterManager used
+   *
+   * This signal is sent when the filter manager gets applied on a pad. It is
+   * meant to provide you with the #FsuSingleFilterManager used internally.
+   * It is important not to do anything on this filter manager apart from
+   * listening to signals.
+   */
+  signals[SIGNAL_APPLIED] = g_signal_new ("applied",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1,
+      FSU_TYPE_SINGLE_FILTER_MANAGER);
+
+  /**
+   * FsuMultiFilterManager::reverted:
+   * @filter_manager: The #FsuMultiFilterManager
+   * @single_filter_manager: The #FsuSingleFilterManager used
+   *
+   * This signal is sent when the filter manager gets reverted from a pad and
+   * the associated #FsuSingleFilterManager is destroyed
+   */
+  signals[SIGNAL_REVERTED] = g_signal_new ("reverted",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__OBJECT,
+      G_TYPE_NONE, 1,
+      FSU_TYPE_SINGLE_FILTER_MANAGER);
 }
 
 static void
@@ -475,6 +523,7 @@ fsu_multi_filter_manager_apply (FsuFilterManager *iface,
   }
 
   g_mutex_unlock (priv->mutex);
+  g_signal_emit (self, signals[SIGNAL_APPLIED], 0, fm);
 
   return ret;
 }
@@ -530,6 +579,7 @@ fsu_multi_filter_manager_revert (FsuFilterManager *iface,
   g_mutex_unlock (priv->mutex);
 
   ret = fsu_filter_manager_revert (revert_fm, bin, pad);
+  g_signal_emit (self, signals[SIGNAL_REVERTED], 0, revert_fm);
   g_object_unref (revert_fm);
 
   return ret;
