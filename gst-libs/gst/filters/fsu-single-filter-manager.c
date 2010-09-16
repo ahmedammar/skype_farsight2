@@ -116,6 +116,7 @@ struct _FsuSingleFilterManagerPrivate
   GstPad *out_pad;
   GQueue *modifications;
   GMutex *mutex;
+  GMutex *modifs_mutex;
   gboolean applying;
 };
 
@@ -213,6 +214,7 @@ fsu_single_filter_manager_init (FsuSingleFilterManager *self)
   self->priv = priv;
   priv->modifications = g_queue_new ();
   priv->mutex = g_mutex_new ();
+  priv->modifs_mutex = g_mutex_new ();
 }
 
 
@@ -267,9 +269,11 @@ static void
 fsu_single_filter_manager_finalize (GObject *object)
 {
   FsuSingleFilterManager *self = FSU_SINGLE_FILTER_MANAGER (object);
+  FsuSingleFilterManagerPrivate *priv = self->priv;
 
-  g_queue_free (self->priv->modifications);
-  g_mutex_free (self->priv->mutex);
+  g_queue_free (priv->modifications);
+  g_mutex_free (priv->mutex);
+  g_mutex_free (priv->modifs_mutex);
 
   G_OBJECT_CLASS (fsu_single_filter_manager_parent_class)->finalize (object);
 }
@@ -353,6 +357,7 @@ apply_modifs (GstPad *pad,
 {
   FsuSingleFilterManager *self = user_data;
   FsuSingleFilterManagerPrivate *priv = self->priv;
+  GstBin *applied_bin = NULL;
 
 
   g_mutex_lock (priv->mutex);
@@ -368,6 +373,11 @@ apply_modifs (GstPad *pad,
     g_mutex_unlock (priv->mutex);
     return;
   }
+
+  g_mutex_lock (priv->modifs_mutex);
+
+  g_assert (priv->applied_bin);
+  applied_bin = gst_object_ref (priv->applied_bin);
 
   while (!g_queue_is_empty (priv->modifications))
   {
@@ -476,16 +486,18 @@ apply_modifs (GstPad *pad,
     {
       out_pad = NULL;
 
+      g_mutex_unlock (priv->mutex);
       // unlink
       if (gst_pad_unlink (srcpad, sinkpad))
       {
         if (remove)
-          out_pad = fsu_filter_revert (to_remove->filter, priv->applied_bin,
+          out_pad = fsu_filter_revert (to_remove->filter, applied_bin,
               current_pad);
         else if (insert)
-          out_pad = fsu_filter_apply (modif->id->filter, priv->applied_bin,
+          out_pad = fsu_filter_apply (modif->id->filter, applied_bin,
               current_pad);
       }
+      g_mutex_lock (priv->mutex);
 
       if (out_pad)
       {
@@ -493,8 +505,12 @@ apply_modifs (GstPad *pad,
         if (remove && insert)
         {
           GstPad *out_pad2 = NULL;
+
+          g_mutex_unlock (priv->mutex);
           out_pad2 = fsu_filter_apply (modif->id->filter,
-              priv->applied_bin, out_pad);
+              applied_bin, out_pad);
+          g_mutex_lock (priv->mutex);
+
           if (out_pad2)
           {
             modif->id->in_pad = gst_pad_get_peer (out_pad);
@@ -578,6 +594,8 @@ apply_modifs (GstPad *pad,
 
     g_slice_free (FilterModification, modif);
   }
+  gst_object_unref (applied_bin);
+  g_mutex_unlock (priv->modifs_mutex);
   g_mutex_unlock (priv->mutex);
 
   gst_pad_set_blocked_async (pad, FALSE, pad_block_do_nothing, NULL);
@@ -928,15 +946,27 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
     }
   }
 
+  /* Remove applied_bin as it's unnecessary and will prevent concurrent
+     additions/removals from triggering the pad_block */
+  gst_object_unref (priv->applied_bin);
+  priv->applied_bin = NULL;
+
+  /* If we're called at the same time as a pad_block, wait until it finishes
+   * doing all of its modifications by releasing the lock for it to continue
+   * and waiting for it by requesting the modifs_mutex
+   */
+  if (!g_mutex_trylock (priv->modifs_mutex))
+  {
+    g_mutex_unlock (priv->mutex);
+    g_mutex_lock (priv->modifs_mutex);
+    g_mutex_lock (priv->mutex);
+  }
+
   if (GST_PAD_IS_SRC (pad))
     i = g_list_last (priv->applied_filters);
   else
     i = priv->applied_filters;
 
-  /* Remove applied_bin as it's unnecessary and will prevent concurrent
-     additions/removals from triggering the pad_block */
-  gst_object_unref (priv->applied_bin);
-  priv->applied_bin = NULL;
 
   pad = gst_object_ref (pad);
 
@@ -998,6 +1028,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
   priv->applied_filters = NULL;
   priv->list_id++;
 
+  g_mutex_unlock (priv->modifs_mutex);
   g_mutex_unlock (priv->mutex);
 
   return pad;
