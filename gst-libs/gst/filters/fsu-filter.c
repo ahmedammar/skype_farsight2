@@ -95,6 +95,7 @@ fsu_filter_class_init (FsuFilterClass *klass)
 
   /**
    * FsuFilter::applied:
+   * @filter: The #FsuFilter
    * @bin: The #GstBin the filter got applied on
    * @pad: The #GstPad the filter got applied on
    * @out_pad: The resulting output pad
@@ -112,6 +113,7 @@ fsu_filter_class_init (FsuFilterClass *klass)
 
   /**
    * FsuFilter::apply-failed:
+   * @filter: The #FsuFilter
    * @bin: The #GstBin the filter got applied on
    * @pad: The #GstPad the filter got applied on
    *
@@ -123,11 +125,12 @@ fsu_filter_class_init (FsuFilterClass *klass)
       0,
       NULL, NULL,
       _fsu_marshal_VOID__OBJECT_OBJECT,
-      G_TYPE_NONE, 3,
+      G_TYPE_NONE, 2,
       GST_TYPE_BIN, GST_TYPE_PAD);
 
   /**
    * FsuFilter::reverted:
+   * @filter: The #FsuFilter
    * @bin: The #GstBin the filter got reverted from
    * @pad: The #GstPad the filter got reverted from
    * @out_pad: The resulting output pad
@@ -145,6 +148,7 @@ fsu_filter_class_init (FsuFilterClass *klass)
 
   /**
    * FsuFilter::revert-failed:
+   * @filter: The #FsuFilter
    * @bin: The #GstBin the filter got reverted from
    * @pad: The #GstPad the filter got reverted from
    *
@@ -156,7 +160,7 @@ fsu_filter_class_init (FsuFilterClass *klass)
       0,
       NULL, NULL,
       _fsu_marshal_VOID__OBJECT_OBJECT,
-      G_TYPE_NONE, 3,
+      G_TYPE_NONE, 2,
       GST_TYPE_BIN, GST_TYPE_PAD);
 }
 
