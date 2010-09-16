@@ -596,7 +596,6 @@ create_source_and_link_tee (FsuSource *self)
   GstPad *src_pad = NULL;
   GstPad *tee_pad = NULL;
 
-  /* TODO: mutex on these ? */
   g_return_if_fail (priv->tee);
   g_return_if_fail (!priv->source);
 

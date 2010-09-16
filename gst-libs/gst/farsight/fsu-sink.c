@@ -824,11 +824,6 @@ fsu_sink_request_new_pad (GstElement * element,
       goto error_not_filtered;
     }
     GST_OBJECT_LOCK (GST_OBJECT (self));
-    if (priv->mixer)
-    {
-      /* TODO: we need a mutex for this whole thing to prevent two from being
-       * run at the same time */
-    }
     if (mixer)
       priv->mixer = gst_object_ref (mixer);
     else
