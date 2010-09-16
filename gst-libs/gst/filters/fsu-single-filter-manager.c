@@ -26,6 +26,7 @@
 
 
 #include <gst/filters/fsu-single-filter-manager.h>
+#include "fsu-marshal.h"
 
 
 static void fsu_single_filter_manager_interface_init (
@@ -88,6 +89,16 @@ static gboolean fsu_single_filter_manager_handle_message (
     GstMessage *message);
 
 typedef enum {INSERT, REMOVE, REPLACE} ModificationAction;
+
+/* signals  */
+enum {
+  SIGNAL_FILTER_APPLIED,
+  SIGNAL_FILTER_FAILED,
+  SIGNAL_FILTER_REVERTED,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = {0};
 
 enum
 {
@@ -185,6 +196,55 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
           "If applied, the output pad it applied",
           GST_TYPE_PAD,
           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FsuSingleFilterManager::filter-applied:
+   * @filter_manager: The #FsuSingleFilterManager
+   * @filter: The #FsuFilterId of the filter that was applied
+   *
+   * This signal is sent when the filter manager applies a filter
+   * and the application was successful.
+   */
+  signals[SIGNAL_FILTER_APPLIED] = g_signal_new ("filter-applied",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__POINTER,
+      G_TYPE_NONE, 1,
+      G_TYPE_POINTER);
+
+  /**
+   * FsuSingleFilterManager::filter-failed:
+   * @filter_manager: The #FsuSingleFilterManager
+   * @filter: The #FsuFilterId of the filter that failed to apply
+   *
+   * This signal is sent when a filter fails to apply in the filter manager
+   */
+  signals[SIGNAL_FILTER_FAILED] = g_signal_new ("filter-failed",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__POINTER,
+      G_TYPE_NONE, 1,
+      G_TYPE_POINTER);
+
+  /**
+   * FsuSingleFilterManager::filter-reverted:
+   * @filter_manager: The #FsuSingleFilterManager
+   * @filter: The #FsuFilterId of the filter that was reverted
+   *
+   * This signal is sent when a filter gets reverted from the filter manager.
+   */
+  signals[SIGNAL_FILTER_REVERTED] = g_signal_new ("filter-reverted",
+      G_OBJECT_CLASS_TYPE (klass),
+      G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
+      0,
+      NULL, NULL,
+      _fsu_marshal_VOID__POINTER,
+      G_TYPE_NONE, 1,
+      G_TYPE_POINTER);
 
 }
 
@@ -491,11 +551,20 @@ apply_modifs (GstPad *pad,
       if (gst_pad_unlink (srcpad, sinkpad))
       {
         if (remove)
+        {
           out_pad = fsu_filter_revert (to_remove->filter, applied_bin,
               current_pad);
+          g_signal_emit (self, signals[SIGNAL_FILTER_REVERTED], 0, to_remove);
+        }
         else if (insert)
+        {
           out_pad = fsu_filter_apply (modif->id->filter, applied_bin,
               current_pad);
+          if (out_pad)
+            g_signal_emit (self, signals[SIGNAL_FILTER_APPLIED], 0, modif->id);
+          else
+            g_signal_emit (self, signals[SIGNAL_FILTER_FAILED], 0, modif->id);
+        }
       }
       g_mutex_lock (priv->mutex);
 
@@ -507,8 +576,11 @@ apply_modifs (GstPad *pad,
           GstPad *out_pad2 = NULL;
 
           g_mutex_unlock (priv->mutex);
-          out_pad2 = fsu_filter_apply (modif->id->filter,
-              applied_bin, out_pad);
+          out_pad2 = fsu_filter_apply (modif->id->filter, applied_bin, out_pad);
+          if (out_pad2)
+            g_signal_emit (self, signals[SIGNAL_FILTER_APPLIED], 0, modif->id);
+          else
+            g_signal_emit (self, signals[SIGNAL_FILTER_FAILED], 0, modif->id);
           g_mutex_lock (priv->mutex);
 
           if (out_pad2)
@@ -870,6 +942,10 @@ fsu_single_filter_manager_apply (FsuFilterManager *iface,
 
     g_mutex_unlock (priv->mutex);
     out_pad = fsu_filter_apply (id->filter, bin, pad);
+    if (out_pad)
+      g_signal_emit (self, signals[SIGNAL_FILTER_APPLIED], 0, id);
+    else
+      g_signal_emit (self, signals[SIGNAL_FILTER_FAILED], 0, id);
     g_mutex_lock (priv->mutex);
 
 
@@ -978,6 +1054,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
     {
       g_mutex_unlock (priv->mutex);
       out_pad = fsu_filter_revert (id->filter, bin, pad);
+      g_signal_emit (self, signals[SIGNAL_FILTER_REVERTED], 0, id);
       g_mutex_lock (priv->mutex);
 
       gst_object_unref (id->in_pad);
