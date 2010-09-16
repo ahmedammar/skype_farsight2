@@ -115,8 +115,12 @@ fsu_multi_filter_manager_class_init (FsuMultiFilterManagerClass *klass)
    *
    * This signal is sent when the filter manager gets applied on a pad. It is
    * meant to provide you with the #FsuSingleFilterManager used internally.
-   * It is important not to do anything on this filter manager apart from
-   * listening to signals.
+   <note>
+     <para>
+       It is important not to do anything on this filter manager apart from
+       listening to signals.
+     </para>
+   </note>
    */
   signals[SIGNAL_APPLIED] = g_signal_new ("applied",
       G_OBJECT_CLASS_TYPE (klass),

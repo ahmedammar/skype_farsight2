@@ -200,7 +200,7 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
   /**
    * FsuSingleFilterManager::filter-applied:
    * @filter_manager: The #FsuSingleFilterManager
-   * @filter: The #FsuFilterId of the filter that was applied
+   * @filter_id: The #FsuFilterId of the filter that was applied
    *
    * This signal is sent when the filter manager applies a filter
    * and the application was successful.
@@ -217,7 +217,7 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
   /**
    * FsuSingleFilterManager::filter-failed:
    * @filter_manager: The #FsuSingleFilterManager
-   * @filter: The #FsuFilterId of the filter that failed to apply
+   * @filter_id: The #FsuFilterId of the filter that failed to apply
    *
    * This signal is sent when a filter fails to apply in the filter manager
    */
@@ -233,7 +233,7 @@ fsu_single_filter_manager_class_init (FsuSingleFilterManagerClass *klass)
   /**
    * FsuSingleFilterManager::filter-reverted:
    * @filter_manager: The #FsuSingleFilterManager
-   * @filter: The #FsuFilterId of the filter that was reverted
+   * @filter_id: The #FsuFilterId of the filter that was reverted
    *
    * This signal is sent when a filter gets reverted from the filter manager.
    */
