@@ -125,6 +125,7 @@ struct _FsuSingleFilterManagerPrivate
   GstBin *applied_bin;
   GstPad *applied_pad;
   GstPad *out_pad;
+  GstPad *blocked_pad;
   GQueue *modifications;
   GMutex *mutex;
   GMutex *modifs_mutex;
@@ -300,6 +301,7 @@ fsu_single_filter_manager_dispose (GObject *object)
   }
 
   g_assert (g_queue_is_empty (priv->modifications));
+  g_assert (!priv->blocked_pad);
 
   if (priv->applied_filters)
     g_list_free (priv->applied_filters);
@@ -679,26 +681,30 @@ block_pad (FsuSingleFilterManager *self, gboolean block)
   FsuSingleFilterManagerPrivate *priv = self->priv;
   GstPad *pad = NULL;
 
-  if (GST_PAD_IS_SRC (priv->applied_pad))
-    pad = gst_object_ref (priv->applied_pad);
-  else
-    pad = gst_pad_get_peer (priv->out_pad);
-
-
-  if (pad)
+  if (block)
   {
-    if (block)
+    if (GST_PAD_IS_SRC (priv->applied_pad))
+      pad = gst_object_ref (priv->applied_pad);
+    else
+      pad = gst_pad_get_peer (priv->out_pad);
+
+    if (pad)
     {
       /* Keep a reference to self for the pad block thread */
       g_object_ref (self);
       gst_pad_set_blocked_async_full (pad, TRUE, apply_modifs, self,
           destroy_pad_block_data);
+      /* Do not ref the pad, we reffed it before */
+      priv->blocked_pad = pad;
     }
-    else
-    {
-      gst_pad_set_blocked_async (pad, FALSE, pad_block_do_nothing, NULL);
-    }
-    gst_object_unref (pad);
+  }
+  else if (priv->blocked_pad)
+  {
+    gst_pad_set_blocked_async (priv->blocked_pad, FALSE,
+        pad_block_do_nothing, NULL);
+    /* Remove the reference held previously during the block */
+    gst_object_unref (priv->blocked_pad);
+    priv->blocked_pad = NULL;
   }
 }
 
@@ -1018,7 +1024,7 @@ fsu_single_filter_manager_revert (FsuFilterManager *iface,
   }
 
   /* Disable the pad block but don't free removed filter ids */
-  if (!g_queue_is_empty (priv->modifications))
+  if (priv->blocked_pad)
     block_pad (self, FALSE);
 
   /* Remove applied_bin as it's unnecessary and will prevent concurrent
