@@ -205,6 +205,8 @@ struct _FsuSourcePrivate
   /* A mutex to block concurrent request/release pad calls.
      one pipeline modification at a time is allowed */
   GMutex *mutex;
+  /* Queue of GstMessage to send */
+  GQueue *messages;
 };
 
 
@@ -281,6 +283,7 @@ fsu_source_init (FsuSource *self, FsuSourceClass *klass)
   if (klass->add_filters)
     klass->add_filters (self, priv->filters);
   priv->mutex = g_mutex_new ();
+  priv->messages = g_queue_new ();
 
 }
 
@@ -307,19 +310,28 @@ reset_source_search_locked (FsuSource *self)
 static void
 reset_and_restart_source_unlock (FsuSource *self)
 {
+  FsuSourcePrivate *priv = self->priv;
+
   reset_source_search_locked (self);
-  if (self->priv->source)
+  if (priv->source)
   {
     destroy_source_locked (self);
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
   }
-  else if (self->priv->tee && GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
+  else if (priv->tee && GST_STATE (GST_ELEMENT (self)) > GST_STATE_NULL)
   {
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
-    g_mutex_lock (self->priv->mutex);
+    g_mutex_lock (priv->mutex);
     create_source_and_link_tee (self);
-    g_mutex_unlock (self->priv->mutex);
+    g_mutex_unlock (priv->mutex);
     g_object_notify (G_OBJECT (self), "source-element");
+    /* Send pending GstMessages once unlocked */
+    while (!g_queue_is_empty (priv->messages))
+    {
+      GstMessage *msg = g_queue_pop_head (priv->messages);
+
+      gst_element_post_message (GST_ELEMENT (self), msg);
+    }
   }
   else
   {
@@ -416,6 +428,13 @@ fsu_source_dispose (GObject *object)
     }
   }
 
+  while (!g_queue_is_empty (priv->messages))
+  {
+    GstMessage *msg = g_queue_pop_head (priv->messages);
+
+    gst_message_unref (msg);
+  }
+
   priv->current_filtered_source = NULL;
 
   for (walk = priv->filtered_sources; walk; walk = g_list_next (walk))
@@ -466,6 +485,7 @@ fsu_source_finalize (GObject *object)
   FsuSource *self = FSU_SOURCE (object);
 
   g_mutex_free (self->priv->mutex);
+  g_queue_free (self->priv->messages);
 
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -573,7 +593,7 @@ check_and_remove_tee (FsuSource *self)
     gst_element_set_state (source, GST_STATE_NULL);
     gst_object_unref (source);
 
-    gst_element_post_message (GST_ELEMENT (self),
+    g_queue_push_tail (priv->messages,
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusource-source-destroyed",
                 NULL)));
@@ -690,7 +710,7 @@ create_source_and_link_tee (FsuSource *self)
   gst_element_set_state (src, GST_STATE_NULL);
   gst_object_unref (src);
 
-  gst_element_post_message (GST_ELEMENT (self),
+  g_queue_push_tail (priv->messages,
       gst_message_new_element (GST_OBJECT (self),
           gst_structure_new ("fsusource-source-destroyed",
               NULL)));
@@ -873,6 +893,13 @@ fsu_source_request_new_pad (GstElement * element,
 
   g_object_notify (G_OBJECT (self), "source-element");
 
+  /* Send pending GstMessages once unlocked */
+  while (!g_queue_is_empty (priv->messages))
+  {
+      GstMessage *msg = g_queue_pop_head (priv->messages);
+
+      gst_element_post_message (GST_ELEMENT (self), msg);
+  }
   return pad;
 }
 
@@ -917,6 +944,14 @@ fsu_source_release_pad (GstElement * element,
   g_mutex_unlock (priv->mutex);
 
   g_object_notify (G_OBJECT (self), "source-element");
+
+  /* Send pending GstMessages once unlocked */
+  while (!g_queue_is_empty (priv->messages))
+  {
+    GstMessage *msg = g_queue_pop_head (priv->messages);
+
+    gst_element_post_message (GST_ELEMENT (self), msg);
+  }
 }
 
 
@@ -1344,7 +1379,7 @@ create_source (FsuSource *self)
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
 
-    gst_element_post_message (GST_ELEMENT (self),
+    g_queue_push_tail (priv->messages,
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusource-source-chosen",
                 "source", GST_TYPE_ELEMENT, chosen_src,
@@ -1366,7 +1401,7 @@ create_source (FsuSource *self)
     priv->last_working_device = NULL;
     GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
-    gst_element_post_message (GST_ELEMENT (self),
+    g_queue_push_tail (priv->messages,
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusource-no-sources-available",
                 NULL)));
@@ -1429,7 +1464,7 @@ fsu_source_change_state (GstElement *element,
         gst_bin_remove (GST_BIN (self), source);
         gst_object_unref (source);
 
-        gst_element_post_message (GST_ELEMENT (self),
+        g_queue_push_tail (priv->messages,
             gst_message_new_element (GST_OBJECT (self),
                 gst_structure_new ("fsusource-source-destroyed",
                     NULL)));
@@ -1473,7 +1508,7 @@ replace_source_thread_unlock (gpointer data)
     state_ret = gst_element_set_state (source, GST_STATE_NULL);
     gst_object_unref (source);
 
-    gst_element_post_message (GST_ELEMENT (self),
+    g_queue_push_tail (priv->messages,
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusource-source-destroyed",
                 NULL)));
@@ -1494,6 +1529,14 @@ replace_source_thread_unlock (gpointer data)
   g_mutex_unlock (priv->mutex);
 
   g_object_notify (G_OBJECT (self), "source-element");
+
+  /* Send pending GstMessages once unlocked */
+  while (!g_queue_is_empty (priv->messages))
+  {
+    GstMessage *msg = g_queue_pop_head (priv->messages);
+
+    gst_element_post_message (GST_ELEMENT (self), msg);
+  }
 
   return NULL;
 }
@@ -1597,7 +1640,7 @@ fsu_source_handle_message (GstBin *bin,
         GST_MESSAGE_SRC (message) == GST_OBJECT (real_source))
     {
       DEBUG ("Source got an error. Destroying source");
-      gst_element_post_message (GST_ELEMENT (self),
+      g_queue_push_tail (priv->messages,
           gst_message_new_element (GST_OBJECT (self),
               gst_structure_new ("fsusource-source-error",
                   "error", GST_TYPE_G_ERROR, error,

@@ -180,6 +180,8 @@ struct _FsuSinkPrivate
   /* A mutex to block concurrent request/release pad calls.
      one pipeline modification at a time is allowed */
   GMutex *mutex;
+  /* Pending GstMessage to send */
+  GstMessage *pending_message;
 };
 
 
@@ -372,6 +374,9 @@ fsu_sink_dispose (GObject *object)
     }
   }
 
+  if (priv->pending_message)
+    gst_message_unref (priv->pending_message);
+  priv->pending_message = NULL;
   g_free (priv->sink_name);
   priv->sink_name = NULL;
   g_free (priv->sink_device);
@@ -615,10 +620,9 @@ check_and_remove_mixer (FsuSink *self)
       gst_bin_remove (GST_BIN (self), sink);
       gst_object_unref (sink);
 
-      gst_element_post_message (GST_ELEMENT (self),
-          gst_message_new_element (GST_OBJECT (self),
-              gst_structure_new ("fsusink-sink-destroyed",
-                  NULL)));
+      if (!priv->pending_message)
+        priv->pending_message = gst_message_new_element (GST_OBJECT (self),
+            gst_structure_new ("fsusink-sink-destroyed", NULL));
     }
     else
     {
@@ -875,6 +879,11 @@ fsu_sink_request_new_pad (GstElement * element,
   }
 
   g_mutex_unlock (priv->mutex);
+
+  if (priv->pending_message)
+    gst_element_post_message (GST_ELEMENT (self), priv->pending_message);
+  priv->pending_message = NULL;
+
   if (sink)
   {
     gboolean using_pipeline = FALSE;
@@ -974,6 +983,11 @@ fsu_sink_request_new_pad (GstElement * element,
     gst_object_unref (filter_pad);
 
   g_mutex_unlock (priv->mutex);
+
+  if (priv->pending_message)
+    gst_element_post_message (GST_ELEMENT (self), priv->pending_message);
+  priv->pending_message = NULL;
+
   return NULL;
 
 }
@@ -1049,16 +1063,19 @@ fsu_sink_release_pad (GstElement * element,
       /* From the get_parent */
       gst_object_unref (sink);
 
-      gst_element_post_message (GST_ELEMENT (self),
-          gst_message_new_element (GST_OBJECT (self),
-              gst_structure_new ("fsusink-sink-destroyed",
-                  NULL)));
+      if (!priv->pending_message)
+        priv->pending_message = gst_message_new_element (GST_OBJECT (self),
+            gst_structure_new ("fsusink-sink-destroyed", NULL));
     }
   }
 
   gst_element_remove_pad (element, pad);
 
   g_mutex_unlock (priv->mutex);
+
+  if (priv->pending_message)
+    gst_element_post_message (GST_ELEMENT (self), priv->pending_message);
+  priv->pending_message = NULL;
 
   g_object_notify (G_OBJECT (self), "sink-element");
 }
