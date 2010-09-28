@@ -169,7 +169,7 @@ fsu_stream_class_init (FsuStreamClass *klass)
       0,
       NULL, NULL,
       _fs_marshal_VOID__OBJECT_STRING_STRING_STRING,
-      G_TYPE_NONE, 3,
+      G_TYPE_NONE, 4,
       GST_TYPE_ELEMENT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 
   /**
