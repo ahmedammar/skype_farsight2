@@ -6,6 +6,7 @@ libfsufiltersinclude_HEADERS = \
 		fsu-multi-filter-manager.h \
 		fsu-filter.h \
 		fsu-filter-helper.h \
+		fsu-bin-filter.h \
 		fsu-volume-filter.h \
 		fsu-level-filter.h \
 		fsu-resolution-filter.h \
@@ -31,6 +32,7 @@ libfsufilters_@GST_MAJORMINOR@_la_SOURCES = \
 		fsu-multi-filter-manager.c \
 		fsu-filter.c \
 		fsu-filter-helper.c \
+		fsu-bin-filter.c \
 		fsu-volume-filter.c \
 		fsu-level-filter.c \
 		fsu-resolution-filter.c \
