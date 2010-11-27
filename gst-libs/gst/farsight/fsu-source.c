@@ -99,6 +99,7 @@
 
 #include <gst/farsight/fsu-source-class.h>
 #include <gst/farsight/fsu-common.h>
+#include <gst/farsight/fsu-probe.h>
 #include "fs-marshal.h"
 
 GST_DEBUG_CATEGORY_STATIC (fsu_source_debug);
@@ -960,13 +961,12 @@ test_source (FsuSource *self,
     const gchar *name)
 {
   FsuSourcePrivate *priv = self->priv;
-  GstPropertyProbe *probe = NULL;
   GstElement *element = NULL;
   GstState target_state = GST_STATE_READY;
   const gchar * target_state_name = "READY";
   GstStateChangeReturn state_ret;
-  GValueArray *arr;
   const gchar **blacklist = FSU_SOURCE_GET_CLASS (self)->blacklisted_sources;
+  FsuProbeDeviceElement *probe = NULL;
   gint probe_idx;
 
   GST_OBJECT_LOCK (GST_OBJECT (self));
@@ -1031,71 +1031,40 @@ test_source (FsuSource *self,
     }
   }
 
-  if (GST_IS_PROPERTY_PROBE (element))
+  probe = fsu_probe_element (name);
+  if (probe)
   {
-    probe = GST_PROPERTY_PROBE (element);
-    if (probe && _fsu_get_device_property_name(element))
+    guint i;
+    for (i = probe_idx; i < g_list_length (probe->devices); i++)
     {
-      const gchar *property_name = _fsu_get_device_property_name(element);
-      const GList *properties = NULL;
-      const GList *prop_walk;
+      const gchar *device = g_list_nth_data (probe->devices, i);
 
-      arr = NULL;
-      properties = gst_property_probe_get_properties (probe);
-      for (prop_walk = properties; prop_walk; prop_walk = prop_walk->next)
+      DEBUG ("Testing device %s", device);
+      g_object_set(element,
+          _fsu_get_device_property_name(element), device,
+          NULL);
+
+      state_ret = gst_element_set_state (element, target_state);
+      if (state_ret == GST_STATE_CHANGE_ASYNC)
       {
-        GParamSpec *spec = prop_walk->data;
-        if (!g_strcmp0 (property_name, g_param_spec_get_name (spec)))
-        {
-          arr = gst_property_probe_probe_and_get_values (probe, spec);
-          break;
-        }
+        DEBUG ("Waiting for %s to go to state %s", name, target_state_name);
+        state_ret = gst_element_get_state (element, NULL, NULL,
+            GST_CLOCK_TIME_NONE);
       }
 
-      if (arr)
+      if (state_ret != GST_STATE_CHANGE_FAILURE)
       {
-        guint i;
-        for (i = probe_idx; i < arr->n_values; i++)
-        {
-          const gchar *device;
-          GValue *val;
+        DEBUG ("Took device %s with idx %d", device, i);
+        fsu_probe_device_element_free (probe);
 
-          val = g_value_array_get_nth (arr, i);
-          if (!val || !G_VALUE_HOLDS_STRING (val))
-            continue;
+        GST_OBJECT_LOCK (GST_OBJECT (self));
+        priv->probe_idx = i + 1;
+        GST_OBJECT_UNLOCK (GST_OBJECT (self));
 
-          device = g_value_get_string (val);
-          if (!device)
-            continue;
-
-          DEBUG ("Testing device %s", device);
-          g_object_set(element,
-              _fsu_get_device_property_name(element), device,
-              NULL);
-
-          state_ret = gst_element_set_state (element, target_state);
-          if (state_ret == GST_STATE_CHANGE_ASYNC)
-          {
-            DEBUG ("Waiting for %s to go to state %s", name, target_state_name);
-            state_ret = gst_element_get_state (element, NULL, NULL,
-                GST_CLOCK_TIME_NONE);
-          }
-
-          if (state_ret != GST_STATE_CHANGE_FAILURE)
-          {
-            DEBUG ("Took device %s with idx %d", device, i);
-            g_value_array_free (arr);
-
-            GST_OBJECT_LOCK (GST_OBJECT (self));
-            priv->probe_idx = i + 1;
-            GST_OBJECT_UNLOCK (GST_OBJECT (self));
-
-            return element;
-          }
-        }
-        g_value_array_free (arr);
+        return element;
       }
     }
+    fsu_probe_device_element_free (probe);
   }
 
   gst_element_set_state (element, GST_STATE_NULL);
