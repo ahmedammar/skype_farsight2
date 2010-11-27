@@ -77,9 +77,10 @@ typedef struct {
   GList *devices;
 } FsuProbeDeviceElement;
 
+FsuProbeDeviceElement *fsu_probe_element (const gchar *element_name);
 GList *fsu_probe_devices (gboolean full);
-void fsu_probe_free (GList *devices);
-
+void fsu_probe_devices_list_free (GList *devices);
+void fsu_probe_device_element_free (FsuProbeDeviceElement *probe_element);
 G_END_DECLS
 
 #endif /* __FSU_PROBE_H__ */

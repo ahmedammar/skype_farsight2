@@ -45,7 +45,7 @@ int main (int argc, char *argv[]) {
       }
       g_debug (" ");
     }
-    fsu_probe_free (devices);
+    fsu_probe_devices_list_free (devices);
   }
 
   return 0;
