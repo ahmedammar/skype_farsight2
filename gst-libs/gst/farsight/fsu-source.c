@@ -1477,6 +1477,13 @@ replace_source_thread_unlock (gpointer data)
     state_ret = gst_element_set_state (source, GST_STATE_NULL);
     gst_object_unref (source);
 
+    if (state_ret == GST_STATE_CHANGE_ASYNC)
+    {
+      DEBUG ("Waiting for source to go to state NULL");
+      state_ret = gst_element_get_state (source, NULL, NULL,
+          GST_CLOCK_TIME_NONE);
+    }
+
     g_queue_push_tail (priv->messages,
         gst_message_new_element (GST_OBJECT (self),
             gst_structure_new ("fsusource-source-destroyed",
