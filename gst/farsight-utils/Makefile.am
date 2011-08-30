@@ -16,4 +16,8 @@ libfsutils_la_LIBADD = \
 	$(FS2_LIBS) \
 	$(GST_LIBS)
 
-noinst_HEADERS =
+noinst_HEADERS = fsu.h \
+			fsu-audio-source.h \
+			fsu-video-source.h \
+			fsu-audio-sink.h \
+			fsu-video-sink.h
