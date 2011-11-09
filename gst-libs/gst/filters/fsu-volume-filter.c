@@ -216,7 +216,7 @@ fsu_volume_filter_apply (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad)
 {
-  FsuVolumeFilter *self = FSU_VOLUME_FILTER (filter);
+  /*FsuVolumeFilter *self = FSU_VOLUME_FILTER (filter);
   GstElement *volume = NULL;
   GstPad *ret = NULL;
 
@@ -229,9 +229,9 @@ fsu_volume_filter_apply (FsuFilter *filter,
         "volume", self->priv->volume,
         "mute", self->priv->mute, NULL);
     gst_object_unref (volume);
-  }
+  }*/
 
-  return ret;
+  return pad;//ret;
 }
 
 static GstPad *

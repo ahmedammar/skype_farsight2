@@ -241,7 +241,7 @@ fsu_maxframerate_filter_apply (FsuFilter *filter,
     GstPad *pad)
 {
 
-  FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (filter);
+  /*FsuMaxFramerateFilter *self = FSU_MAXFRAMERATE_FILTER (filter);
   FsuMaxFramerateFilterPrivate *priv = self->priv;
   GstElement *capsfilter = NULL;
   GstElement *filter_bin = NULL;
@@ -266,7 +266,8 @@ fsu_maxframerate_filter_apply (FsuFilter *filter,
     gst_object_unref (filter_bin);
   }
 
-  return out_pad;
+  return out_pad;*/
+  return pad;
 }
 
 static GstPad *

@@ -70,8 +70,9 @@ fsu_videoconverter_filter_apply (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad)
 {
-  return fsu_filter_add_standard_element (bin, pad, "ffmpegcolorspace",
-      NULL, NULL);
+  /*return fsu_filter_add_standard_element (bin, pad, "ffmpegcolorspace",
+      NULL, NULL);*/
+  return pad;
 }
 
 static GstPad *

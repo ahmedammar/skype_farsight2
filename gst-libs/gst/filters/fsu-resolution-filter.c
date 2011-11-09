@@ -47,8 +47,8 @@ static GstPad *fsu_resolution_filter_revert (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad);
 
-#define DEFAULT_WIDTH 320
-#define DEFAULT_HEIGHT 240
+#define DEFAULT_WIDTH 240 
+#define DEFAULT_HEIGHT 128
 
 /* properties */
 enum

@@ -81,16 +81,16 @@ fsu_audioconverter_filter_apply (FsuFilter *filter,
     GstBin *bin,
     GstPad *pad)
 {
-  GstElement *converters = NULL;
-  GstPad *out_pad = NULL;
+  //GstElement *converters = NULL;
+  //GstPad *out_pad = NULL;
 
 
-  converters = fsu_filter_add_element_by_description (bin, pad,
-      "audioconvert ! audioresample ! audioconvert", &out_pad);
+  //converters = fsu_filter_add_element_by_description (bin, pad,
+  //    "audioconvert", &out_pad);
 
-  gst_object_unref (converters);
+  //gst_object_unref (converters);
 
-  return out_pad;
+  return pad;//out_pad;
 }
 
 static GstPad *

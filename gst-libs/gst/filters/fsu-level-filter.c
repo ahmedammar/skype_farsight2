@@ -145,6 +145,7 @@ fsu_level_filter_apply (FsuFilter *filter,
 
   return fsu_filter_add_standard_element (bin, pad, "level",
       NULL, &self->priv->elements);
+  //return pad;
 }
 
 static GstPad *
